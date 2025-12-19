@@ -1,0 +1,7 @@
+
+> @pgb/api@0.1.0 dev C:\Users\pietr\OneDrive\Documentos\Bravo-Project\Bravo-PortalGlobal\apps\api
+> tsx watch src/server.ts
+
+{"level":30,"time":1762265594049,"pid":9932,"hostname":"PietroG","msg":"Server listening at http://127.0.0.1:4001"}
+{"level":30,"time":1762265594050,"pid":9932,"hostname":"PietroG","msg":"Server listening at http://26.219.165.89:4001"}
+{"level":30,"time":1762265594050,"pid":9932,"hostname":"PietroG","msg":"Server listening at http://192.168.1.105:4001"}

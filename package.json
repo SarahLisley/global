@@ -1,0 +1,22 @@
+{
+  "name": "portal-global-bravo",
+  "private": true,
+  "packageManager": "pnpm@9.11.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.11.0",
+    "prettier": "^3.3.3",
+    "turbo": "^2.2.2",
+    "typescript": "^5.6.3"
+  },
+  "workspaces": ["apps/*","packages/*"]
+}

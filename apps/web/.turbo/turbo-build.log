@@ -1,0 +1,37 @@
+
+> @pgb/web@0.1.0 build C:\Users\pietr\OneDrive\Documentos\Bravo-Project\Bravo-PortalGlobal\apps\web
+> next build
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\pietr\pnpm-lock.yaml as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * C:\Users\pietr\OneDrive\Documentos\Bravo-Project\Bravo-PortalGlobal\pnpm-lock.yaml
+
+   ▲ Next.js 15.5.4
+   - Environments: .env
+   - Experiments (use with caution):
+     · optimizePackageImports
+
+   Creating an optimized production build ...
+Failed to compile.
+
+./src/app/(auth)/register/page.tsx
+Module not found: Can't resolve 'apps/web/src/lib/mask'
+
+https://nextjs.org/docs/messages/module-not-found
+
+./src/components/charts/LineAreaChart.tsx
+Module not found: Can't resolve 'react-chartjs-2'
+
+https://nextjs.org/docs/messages/module-not-found
+
+./src/components/charts/LineAreaChart.tsx
+Module not found: Can't resolve 'chart.js'
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+> Build failed because of webpack errors
+ ELIFECYCLE  Command failed with exit code 1.

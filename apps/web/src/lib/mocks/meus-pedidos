@@ -1,0 +1,86 @@
+// Mock generator for "meus pedidos"
+export type Item = {
+  codProduto: string;
+  descricao: string;
+  qtd: number;
+  qtdFalta: number;
+  pvUnit: number;
+  pvTotal: number;
+};
+
+export type Pedido = {
+  id: string;
+  nroPedido: string;
+  nroNF?: string;
+  nroTransVenda?: string;
+  posicao?: string;
+  data: string;
+  filial?: string;
+  codCliente?: string;
+  vendedor?: string;
+  vlrTotal?: number;
+  vlrDesconto?: number;
+  vlrFrete?: number;
+  nroItens?: number;
+  itens?: Item[];
+};
+
+function rand(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function pad(n: number, size = 6) {
+  return String(n).padStart(size, '0');
+}
+
+export function generateMockPedidos(count = 120): Pedido[] {
+  const pedidos: Pedido[] = [];
+  const today = new Date();
+  for (let i = 1; i <= count; i++) {
+    const daysAgo = rand(0, 90);
+    const d = new Date(today.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+    const isoDate = d.toISOString().slice(0, 10);
+
+    const numItens = rand(0, 6);
+    const itens: Item[] = [];
+    let vlrTotal = 0;
+    for (let j = 0; j < numItens; j++) {
+      const unit = +(rand(50, 2000) / 10).toFixed(2);
+      const qtd = rand(1, 10);
+      const pvTotal = +(unit * qtd).toFixed(2);
+      itens.push({
+        codProduto: `PRD-${pad(i)}-${j + 1}`,
+        descricao: `Produto exemplo ${i}-${j + 1}`,
+        qtd,
+        qtdFalta: rand(0, qtd),
+        pvUnit: unit,
+        pvTotal,
+      });
+      vlrTotal += pvTotal;
+    }
+
+    const desconto = +(rand(0, 200) / 100).toFixed(2);
+    const frete = +(rand(0, 500) / 100).toFixed(2);
+    const pedido: Pedido = {
+      id: `TCK-${pad(i, 8)}`,
+      nroPedido: `PED${pad(1000 + i, 6)}`,
+      nroNF: rand(0, 1) ? `NF-${100000 + i}` : undefined,
+      nroTransVenda: `TRV${pad(5000 + i, 5)}`,
+      posicao: ['Aberto', 'Faturado', 'Cancelado'][rand(0, 2)],
+      data: isoDate,
+      filial: `F${rand(1, 10)}`,
+      codCliente: `${rand(900, 999)}`,
+      vendedor: `Vendedor ${rand(1, 8)}`,
+      vlrTotal: +vlrTotal.toFixed(2),
+      vlrDesconto: desconto,
+      vlrFrete: frete,
+      nroItens: numItens,
+      itens: itens.length ? itens : undefined,
+    };
+
+    pedidos.push(pedido);
+  }
+
+  pedidos.sort((a, b) => (a.data < b.data ? 1 : -1));
+  return pedidos;
+}
