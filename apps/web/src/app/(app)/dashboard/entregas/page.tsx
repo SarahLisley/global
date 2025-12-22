@@ -54,14 +54,17 @@ export default function EntregasPage() {
       if (notaFiscal.trim()) params.append('nf', notaFiscal.trim());
 
       const res = await fetch(`${API_ROUTE}?${params.toString()}`);
-      if (!res.ok) throw new Error('Falha ao carregar entregas');
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const apiMsg = body?.error || `HTTP ${res.status}`;
+        throw new Error(apiMsg);
+      }
 
-      const data = await res.json();
-      setDados(data.entregas || []);
-      setTotal(data.total || 0);
-      setPage(data.page || 1);
+      setDados(body.entregas || []);
+      setTotal(body.total || 0);
+      setPage(body.page || 1);
     } catch (e: any) {
-      console.error(e);
+      console.error('[entregas] fetch failed:', e);
       setError(e?.message || 'Erro ao carregar entregas');
       setDados([]);
       setTotal(0);
@@ -252,7 +255,7 @@ export default function EntregasPage() {
             {/* Paginação */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-4 border-t">
               <div className="text-sm text-slate-700">
-                Página {page} de {totalPages}
+                Página {page} de {Math.max(1, Math.ceil(total / pageSize))}
               </div>
               <div className="flex gap-2">
                 <button
@@ -271,15 +274,15 @@ export default function EntregasPage() {
                 </button>
                 <button
                   className="px-3 py-1.5 border rounded hover:bg-slate-50 disabled:opacity-50"
-                  disabled={page >= totalPages}
+                  disabled={page >= Math.max(1, Math.ceil(total / pageSize))}
                   onClick={() => fetchEntregas(page + 1)}
                 >
                   {'>'}
                 </button>
                 <button
                   className="px-3 py-1.5 border rounded hover:bg-slate-50 disabled:opacity-50"
-                  disabled={page >= totalPages}
-                  onClick={() => fetchEntregas(totalPages)}
+                  disabled={page >= Math.max(1, Math.ceil(total / pageSize))}
+                  onClick={() => fetchEntregas(Math.max(1, Math.ceil(total / pageSize)))}
                 >
                   {'>>'}
                 </button>

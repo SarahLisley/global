@@ -12,9 +12,9 @@ export type Delivery = {
   dtEntrega?: string;
   transportadora?: string;
   status?: 'Entregue' | 'Em trânsito' | 'Aguardando coleta' | 'Agendado';
-  rastreio?: string; 
-  descricao?: string; 
-  ocorrencia?: string; 
+  rastreio?: string;
+  descricao?: string;
+  ocorrencia?: string;
   cidade?: string;
   destinatario?: string;
   nomeRecebedor?: string;
@@ -30,14 +30,19 @@ export async function searchDeliveries(params: {
   page: number;
   pageSize: number;
 }) {
+  const limit = Math.max(1, Math.min(100, params.pageSize));
+  const offset = (Math.max(1, params.page) - 1) * limit;
+  const startRow = offset + 1;
+  const endRow = offset + limit;
+
   const binds: Record<string, any> = {
     CODCLI: params.codcli,
     DATE_FROM: params.dateFrom ?? null,
     DATE_TO: params.dateTo ?? null,
     NF: params.nf ?? null,
     PEDIDO: params.pedido ?? null,
-    OFFSET: (Math.max(1, params.page) - 1) * Math.max(1, Math.min(100, params.pageSize)),
-    LIMIT: Math.max(1, Math.min(100, params.pageSize)),
+    START_ROW: startRow,
+    END_ROW: endRow,
   };
 
   const rows = await select<any>(
@@ -71,12 +76,21 @@ export async function searchDeliveries(params: {
         AND (:PEDIDO IS NULL OR L.NUMPED = :PEDIDO)
         AND (:DATE_FROM IS NULL OR TRUNC(NVL(N.DTFAT, L.DATA_HORA)) >= TO_DATE(:DATE_FROM, 'YYYY-MM-DD'))
         AND (:DATE_TO   IS NULL OR TRUNC(NVL(N.DTFAT, L.DATA_HORA)) <= TO_DATE(:DATE_TO, 'YYYY-MM-DD'))
+    ),
+    filt AS (
+      SELECT b.*
+      FROM base b
+      WHERE b.RN = 1
+    ),
+    pag AS (
+      SELECT
+        f.*,
+        ROW_NUMBER() OVER (ORDER BY NVL(f.DATA_HORA_EFETIVA, NVL(f.PREVENTREGA, f.DATA_HORA)) DESC NULLS LAST) AS RNO
+      FROM filt f
     )
     SELECT *
-    FROM base
-    WHERE RN = 1
-    ORDER BY NVL(DATA_HORA_EFETIVA, NVL(PREVENTREGA, DATA_HORA)) DESC
-    OFFSET :OFFSET ROWS FETCH NEXT :LIMIT ROWS ONLY
+    FROM pag
+    WHERE RNO BETWEEN :START_ROW AND :END_ROW
     `,
     binds
   );
@@ -99,7 +113,13 @@ export async function searchDeliveries(params: {
     FROM base
     WHERE RN = 1
     `,
-    binds
+    {
+      CODCLI: params.codcli,
+      DATE_FROM: params.dateFrom ?? null,
+      DATE_TO: params.dateTo ?? null,
+      NF: params.nf ?? null,
+      PEDIDO: params.pedido ?? null,
+    }
   );
 
   const total = Number(countRows?.[0]?.TOTAL ?? 0);
@@ -133,4 +153,44 @@ export async function searchDeliveries(params: {
   }));
 
   return { list: mapped, total };
+}
+
+export async function getDeliveryTimeline(numTrans: number, codcli: number) {
+  const rows = await select<any>(
+    `
+    SELECT
+      L.NUMNOTA,
+      L.NUMTRANSVENDA,
+      L.DESTINATARIO,
+      L.NUMPED,
+      L.DATA_HORA,
+      L.DOMINIO,
+      L.FILIAL,
+      L.CIDADE,
+      L.OCORRENCIA,
+      L.DESCRICAO,
+      L.TIPO,
+      L.DATA_HORA_EFETIVA,
+      L.PREVENTREGA,
+      L.NOME_RECEBEDOR,
+      L.NRO_DOC_RECEBEDOR
+    FROM ${OWNER}.BRLOGSSW L
+    JOIN ${OWNER}.PCNFSAID N
+      ON N.NUMTRANSVENDA = L.NUMTRANSVENDA
+    WHERE L.NUMTRANSVENDA = :NUMTRANS
+      AND N.CODCLI = :CODCLI
+    ORDER BY NVL(L.DATA_HORA_EFETIVA, L.DATA_HORA) ASC NULLS LAST
+    `,
+    { NUMTRANS: numTrans, CODCLI: codcli }
+  );
+
+  return rows.map(r => ({
+    when: new Date(r.DATA_HORA_EFETIVA ?? r.DATA_HORA).toISOString(),
+    occurrence: r.OCORRENCIA ?? '',
+    description: r.DESCRICAO ?? '',
+    city: r.CIDADE ?? '',
+    destinatario: r.DESTINATARIO ?? '',
+    nomeRecebedor: r.NOME_RECEBEDOR ?? '',
+    docRecebedor: r.NRO_DOC_RECEBEDOR ?? '',
+  }));
 }

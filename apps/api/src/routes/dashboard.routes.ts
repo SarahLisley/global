@@ -5,7 +5,7 @@ import { env, OWNER } from '../utils/env';
 import { getRecentOrders } from '../controllers/ordersController';
 import { getDocsValidity } from '../controllers/docsController';
 import { getSACSeries, createTicket } from '../controllers/sacController';
-import { searchDeliveries } from '../controllers/deliveriesController'
+import { getDeliveryTimeline, searchDeliveries } from '../controllers/deliveriesController';
 import { select } from '../db/query';
 
 function normalizeStatus(status: any, dtFinaliza: any): 'pendente' | 'em_andamento' | 'finalizado' {
@@ -52,7 +52,7 @@ export default async function dashboardRoutes(app: FastifyInstance) {
       const data = await getRecentOrders({ codcli });
       return reply.send({ orders: data });
     } catch (err) {
-      return reply.status(400).send({ error: (err as Error).message });
+      return reply.status(500).send({ error: (err as Error).message });
     }
   });
 
@@ -68,7 +68,7 @@ export default async function dashboardRoutes(app: FastifyInstance) {
       const docs = await getDocsValidity({ codcli });
       return reply.send({ docs });
     } catch (err) {
-      return reply.status(400).send({ error: (err as Error).message });
+      return reply.status(500).send({ error: (err as Error).message });
     }
   });
 
@@ -84,7 +84,7 @@ export default async function dashboardRoutes(app: FastifyInstance) {
       const series = await getSACSeries({ codcli });
       return reply.send(series);
     } catch (err) {
-      return reply.status(400).send({ error: (err as Error).message });
+      return reply.status(500).send({ error: (err as Error).message });
     }
   });
 
@@ -192,7 +192,7 @@ export default async function dashboardRoutes(app: FastifyInstance) {
 
       return reply.send({ ok: true, list, page, pageSize, total });
     } catch (err) {
-      return reply.status(400).send({ error: (err as Error).message });
+      return reply.status(500).send({ error: (err as Error).message });
     }
   });
 
@@ -270,7 +270,7 @@ export default async function dashboardRoutes(app: FastifyInstance) {
 
       return reply.send({ ok: true, ticket, timeline });
     } catch (err) {
-      return reply.status(400).send({ error: (err as Error).message });
+      return reply.status(500).send({ error: (err as Error).message });
     }
   });
 
@@ -299,7 +299,7 @@ export default async function dashboardRoutes(app: FastifyInstance) {
 
       return reply.send({ ok: true, ticket: created });
     } catch (err) {
-      return reply.status(400).send({ error: (err as Error).message });
+      return reply.status(500).send({ error: (err as Error).message });
     }
   });
 
@@ -329,7 +329,28 @@ export default async function dashboardRoutes(app: FastifyInstance) {
 
       return reply.send({ entregas: list, total, page, pageSize });
     } catch (err) {
-      return reply.status(400).send({ error: (err as Error).message });
+      // DB/SQL/infra: 500
+      return reply.status(500).send({ error: (err as Error).message });
+    }
+  });
+
+  app.get('/entregas/:numTrans', async (req, reply) => {
+    try {
+      const auth = req.headers.authorization;
+      if (!auth?.startsWith('Bearer ')) return reply.status(401).send({ error: 'Token ausente' });
+      const t = auth.slice(7);
+      const v = verifyToken(t, env.JWT_SECRET);
+      if (!v.ok) return reply.status(401).send({ error: v.error });
+      const codcli = Number(v.payload?.codcli);
+      if (!codcli) return reply.status(400).send({ error: 'CODCLI inválido no token' });
+
+      const numTrans = Number((req.params as any)?.numTrans);
+      if (!Number.isFinite(numTrans)) return reply.status(400).send({ error: 'numTrans inválido' });
+
+      const timeline = await getDeliveryTimeline(numTrans, codcli);
+      return reply.send({ timeline });
+    } catch (err) {
+      return reply.status(500).send({ error: (err as Error).message });
     }
   });
 }
