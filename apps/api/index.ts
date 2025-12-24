@@ -3,17 +3,18 @@ import { buildApp } from './src/app';
 
 const app = buildApp();
 
+// Prepare fastify antes de aceitar requisições
 let readyPromise: Promise<void> | null = null;
 function ensureReady() {
   if (!readyPromise) readyPromise = Promise.resolve(app.ready()).then(() => undefined);
   return readyPromise;
 }
-// handler serverless para Vercel
+
+// Handler serverless para Vercel (NÃO usa app.listen aqui)
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   try {
     await ensureReady();
-    // envia req/res cruos para o roteador do Fastify (sem listen)
-    // @ts-ignore - Fastify expõe .routing(req, res)
+    // @ts-ignore Fastify expõe .routing(req, res)
     app.routing(req, res);
   } catch (err: any) {
     res.statusCode = 500;
