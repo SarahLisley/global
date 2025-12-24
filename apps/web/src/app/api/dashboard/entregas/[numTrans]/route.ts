@@ -1,15 +1,18 @@
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
 
-export async function GET(_req: Request, { params }: { params: { numTrans: string } }) {
+export async function GET(req: Request) {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('pgb_session')?.value;
+    const token = (await cookies()).get('pgb_session')?.value;
     if (!token) return NextResponse.json({ error: 'Sem sessão' }, { status: 401 });
 
-    const res = await fetch(`${API_BASE}/dashboard/entregas/${encodeURIComponent(params.numTrans)}`, {
+    const { pathname } = new URL(req.url);
+    const numTrans = pathname.split('/').pop() || '';
+    if (!numTrans) return NextResponse.json({ error: 'numTrans ausente' }, { status: 400 });
+
+    const res = await fetch(`${API_BASE}/dashboard/entregas/${encodeURIComponent(numTrans)}`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     });
