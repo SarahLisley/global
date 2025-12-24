@@ -11,3 +11,5 @@ export async function GET(_req: Request) {
     return NextResponse.json({ ok: false, apiBase: API_BASE, error: e?.message }, { status: 530 });
   }
 }
+
+// This is a simple ping endpoint to check if the API is reachable.
