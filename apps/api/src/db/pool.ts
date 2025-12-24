@@ -1,18 +1,27 @@
 import oracledb from 'oracledb';
 import { connectString, env } from '../utils/env';
 
+const cfg = {
+  user: process.env.ORACLE_USER!,
+  password: process.env.ORACLE_PASSWORD!,
+  connectString: `${process.env.ORACLE_HOST}:${process.env.ORACLE_PORT}/${process.env.ORACLE_SERVICE}`,
+  poolMin: Number(process.env.DB_POOL_MIN ?? 0),
+  poolMax: Number(process.env.DB_POOL_MAX ?? 4),
+  poolTimeout: Number(process.env.DB_POOL_TIMEOUT_SEC ?? 60),
+};
+
 let pool: oracledb.Pool | null = null;
 
 export async function getPool(): Promise<oracledb.Pool> {
   if (pool) return pool;
   pool = await oracledb.createPool({
-    user: env.ORACLE_USER,
-    password: env.ORACLE_PASSWORD,
-    connectString,
-    poolMin: env.DB_POOL_MIN,
-    poolMax: env.DB_POOL_MAX,
-    poolTimeout: env.DB_POOL_TIMEOUT_SEC,
-    homogeneous: true,
+    user: cfg.user,
+    password: cfg.password,
+    connectString: cfg.connectString,
+    poolMin: cfg.poolMin,
+    poolMax: cfg.poolMax,
+    poolTimeout: cfg.poolTimeout,
+    // thin mode por padrão em v6+
   });
   return pool;
 }
