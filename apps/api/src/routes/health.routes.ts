@@ -1,20 +1,22 @@
 import type { FastifyInstance } from 'fastify';
-import { pingDb, serverTime } from '../controllers/health.controller';
-import { select } from '../db/query';
+import { getConnection } from '../db/pool';
 
 export default async function healthRoutes(app: FastifyInstance) {
   app.get('/health', async () => ({ ok: true }));
-  app.get('/db/ping', async () => await pingDb());
-  app.get('/db/time', async () => await serverTime());
 
-  app.get('/db/whoami', async () => {
-    const rows = await select<{ USERNAME: string; CURRENT_SCHEMA: string; SERVICE_NAME: string }>(
-      `SELECT 
-         SYS_CONTEXT('USERENV','SESSION_USER') AS USERNAME,
-         SYS_CONTEXT('USERENV','CURRENT_SCHEMA') AS CURRENT_SCHEMA,
-         SYS_CONTEXT('USERENV','SERVICE_NAME') AS SERVICE_NAME
-       FROM DUAL`
-    );
-    return rows[0];
+  app.get('/health/db', async (_req, reply) => {
+    try {
+      const conn = await getConnection();
+      try {
+        const res = await conn.execute(`SELECT 1 AS OK FROM DUAL`);
+        await conn.close();
+        return reply.code(200).send({ ok: true, db: res?.rows?.[0]?.[0] === 1 });
+      } catch (e: any) {
+        await conn.close();
+        return reply.code(503).send({ ok: false, error: e?.message || 'DB query failed' });
+      }
+    } catch (e: any) {
+      return reply.code(503).send({ ok: false, error: e?.message || 'DB connection failed' });
+    }
   });
 }

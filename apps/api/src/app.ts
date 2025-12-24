@@ -21,10 +21,7 @@ export function buildApp() {
     credentials: true,
   });
 
-  // Health leve (sem tocar Oracle)
-  app.get('/health', async () => ({ ok: true }));
-
-  // Rotas reais
+  // Rotas
   app.register(healthRoutes, { prefix: '/' });
   app.register(authRoutes, { prefix: '/auth' });
   app.register(dashboardRoutes, { prefix: '/dashboard' });
