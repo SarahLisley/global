@@ -15,14 +15,16 @@ export function buildApp() {
   app.register(cors, {
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
-      const ok = allowed.includes(origin) || origin.endsWith('.vercel.app');
+      const ok = allowed.includes(origin) || origin.endsWith('.vercel.app'); // previews (opcional)
       cb(null, ok);
     },
     credentials: true,
   });
 
+  // Health leve (não conectar ao Oracle aqui)
   app.get('/health', async () => ({ ok: true }));
 
+  // Rotas da aplicação
   app.register(healthRoutes, { prefix: '/' });
   app.register(authRoutes, { prefix: '/auth' });
   app.register(dashboardRoutes, { prefix: '/dashboard' });
