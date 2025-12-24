@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "stop": "powershell -NoProfile -Command \"Get-NetTCPConnection -LocalPort 4001 | Select-Object -ExpandProperty OwningProcess | ForEach-Object { Stop-Process -Id $_ -Force }\""
   },
   "dependencies": {
     "@fastify/cors": "^10.0.0",

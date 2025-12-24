@@ -19,6 +19,7 @@ export type Delivery = {
   destinatario?: string;
   nomeRecebedor?: string;
   docRecebedor?: string;
+  dominio?: string; 
 };
 
 export async function searchDeliveries(params: {
@@ -150,6 +151,7 @@ export async function searchDeliveries(params: {
     destinatario: r.DESTINATARIO ?? undefined,
     nomeRecebedor: r.NOME_RECEBEDOR ?? undefined,
     docRecebedor: r.NRO_DOC_RECEBEDOR ?? undefined,
+    dominio: r.DOMINIO ?? undefined, // novo
   }));
 
   return { list: mapped, total };
@@ -192,5 +194,6 @@ export async function getDeliveryTimeline(numTrans: number, codcli: number) {
     destinatario: r.DESTINATARIO ?? '',
     nomeRecebedor: r.NOME_RECEBEDOR ?? '',
     docRecebedor: r.NRO_DOC_RECEBEDOR ?? '',
+    dominio: r.DOMINIO ?? undefined,
   }));
 }
