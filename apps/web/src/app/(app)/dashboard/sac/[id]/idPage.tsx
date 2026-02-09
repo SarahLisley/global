@@ -18,7 +18,6 @@ function formatDateTime(date: string | Date) {
   });
 }
 
-// Ajuste Next 15: params é Promise<{ id: string }>
 export default async function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const res = await fetchTicketDetail(id);

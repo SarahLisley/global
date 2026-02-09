@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
@@ -7,7 +8,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001'
 export async function searchTicketsAction(form: {
   dateFrom?: string;
   dateTo?: string;
-  status?: 'todos' | 'em_andamento' | 'finalizado' | 'pendente';
+  status?: 'todos' | 'em_andamento' | 'finalizado';
   orderNumber?: string;
   invoiceNumber?: string;
   page?: number;
@@ -74,8 +75,109 @@ export async function createTicketAction(form: {
     }
 
     const data = await res.json();
+    revalidatePath('/dashboard/sac');
     return { ok: true, ticket: data?.ticket };
   } catch (e: any) {
     return { ok: false, message: e?.message ?? 'Erro inesperado ao criar ticket' };
+  }
+}
+
+export async function addCommentAction(ticketId: string, content: string, type: 'message' | 'note' = 'message') {
+  try {
+    const token = (await cookies()).get('pgb_session')?.value;
+    if (!token) return { ok: false, message: 'Sem sessão' };
+
+    const res = await fetch(`${API_BASE}/dashboard/sac/tickets/${encodeURIComponent(ticketId)}/comments`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ content, type }),
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { ok: false, message: err?.error || `Falha ao enviar comentário (${res.status})` };
+    }
+
+    const data = await res.json();
+    revalidatePath(`/dashboard/sac/${ticketId}`);
+    return { ok: true, comment: data?.comment };
+  } catch (e: any) {
+    return { ok: false, message: e?.message ?? 'Erro inesperado ao enviar comentário' };
+  }
+}
+
+export async function fetchCommentsAction(ticketId: string) {
+  try {
+    const token = (await cookies()).get('pgb_session')?.value;
+    if (!token) return { ok: false, message: 'Sem sessão', comments: [] };
+
+    const res = await fetch(`${API_BASE}/dashboard/sac/tickets/${encodeURIComponent(ticketId)}/comments`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { ok: false, message: err?.error || `Falha ao buscar comentários (${res.status})`, comments: [] };
+    }
+
+    const data = await res.json();
+    return { ok: true, comments: data?.comments ?? [] };
+  } catch (e: any) {
+    return { ok: false, message: e?.message ?? 'Erro inesperado', comments: [] };
+  }
+}
+
+export async function editCommentAction(ticketId: string, commentId: string, content: string) {
+  try {
+    const token = (await cookies()).get('pgb_session')?.value;
+    if (!token) return { ok: false, message: 'Sem sessão' };
+
+    const res = await fetch(`${API_BASE}/dashboard/sac/tickets/${encodeURIComponent(ticketId)}/comments/${encodeURIComponent(commentId)}`, {
+      method: 'PUT',
+      headers: {
+        'content-type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ content }),
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { ok: false, message: err?.error || `Falha ao editar comentário (${res.status})` };
+    }
+
+    revalidatePath(`/dashboard/sac/${ticketId}`);
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, message: e?.message ?? 'Erro inesperado ao editar comentário' };
+  }
+}
+
+export async function deleteCommentAction(ticketId: string, commentId: string) {
+  try {
+    const token = (await cookies()).get('pgb_session')?.value;
+    if (!token) return { ok: false, message: 'Sem sessão' };
+
+    const res = await fetch(`${API_BASE}/dashboard/sac/tickets/${encodeURIComponent(ticketId)}/comments/${encodeURIComponent(commentId)}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { ok: false, message: err?.error || `Falha ao apagar comentário (${res.status})` };
+    }
+
+    revalidatePath(`/dashboard/sac/${ticketId}`);
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, message: e?.message ?? 'Erro inesperado ao apagar comentário' };
   }
 }

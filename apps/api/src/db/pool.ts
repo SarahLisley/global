@@ -1,6 +1,9 @@
 import oracledb from 'oracledb';
 import { connectString, env } from '../utils/env';
 
+// Configure oracledb to return CLOBs as strings
+(oracledb as any).fetchAsString = [(oracledb as any).CLOB];
+
 const cfg = {
   user: process.env.ORACLE_USER!,
   password: process.env.ORACLE_PASSWORD!,

@@ -86,3 +86,35 @@ export async function registerAction(form: RegisterInput) {
     return { ok: false, message: e?.message ?? 'Erro inesperado no cadastro' };
   }
 }
+
+export async function forgotPasswordAction(form: { email: string }) {
+  try {
+    if (MOCK) {
+      // Simular delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return { ok: true, message: 'Se o e-mail existir, você receberá um link de recuperação.' };
+    }
+
+    const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(form),
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      // Por segurança, geralmente não devemos informar se o e-mail não existe, mas aqui vamos retornar a mensagem do back se houver
+      // ou uma genérica de sucesso
+      const err = await res.json().catch(() => ({}));
+      // Se for 404 ou erro, podemos decidir como tratar. Por enquanto retornamos ok para não vazar info, ou o erro se for crítico.
+      // Mas para UX melhor em dev:
+      if (res.status >= 500) {
+        return { ok: false, message: 'Erro no servidor. Tente novamente mais tarde.' };
+      }
+    }
+
+    return { ok: true, message: 'Se o e-mail existir, você receberá um link de recuperação.' };
+  } catch (e: any) {
+    return { ok: false, message: e?.message ?? 'Erro inesperado' };
+  }
+}

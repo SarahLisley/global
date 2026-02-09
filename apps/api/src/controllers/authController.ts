@@ -17,47 +17,101 @@ function unmaskCNPJ(v?: string | null) {
 }
 
 export async function login(email: string, password: string) {
-  const rows = await select<DbUser>(
-    `
-    SELECT 
-      l.EMAIL, l.SENHA, l.CGC, l.TIPO, l.NOME,
-      c.CODCLI, c.CLIENTE
-    FROM ${OWNER}.BRLOGINWEB l
-    LEFT JOIN ${OWNER}.PCCLIENT c
-      ON REPLACE(REPLACE(REPLACE(l.CGC, '/',''), '.',''), '-','')
-       = REPLACE(REPLACE(REPLACE(c.CGCENT, '/',''), '.',''), '-','')
-    WHERE UPPER(TRIM(l.EMAIL)) = UPPER(TRIM(:email))
-    FETCH FIRST 1 ROWS ONLY
-    `,
-    { email }
-  );
 
-  const user = rows[0];
-  if (!user) return { ok: false, status: 401, message: 'Usuário não encontrado' as const };
+  try {
+    const rows = await select<DbUser>(
+      `
+      SELECT 
+        l.EMAIL, l.SENHA, l.CGC, l.TIPO, l.NOME,
+        c.CODCLI, c.CLIENTE
+      FROM ${OWNER}.BRLOGINWEB l
+      LEFT JOIN ${OWNER}.PCCLIENT c
+        ON REPLACE(REPLACE(REPLACE(l.CGC, '/',''), '.',''), '-','')
+         = REPLACE(REPLACE(REPLACE(c.CGCENT, '/',''), '.',''), '-','')
+      WHERE UPPER(TRIM(l.EMAIL)) = UPPER(TRIM(:email))
+      FETCH FIRST 1 ROWS ONLY
+      `,
+      { email }
+    );
 
-  const ok = (password ?? '') === (user.SENHA ?? '').trim();
-  if (!ok) return { ok: false, status: 401, message: 'Senha inválida' as const };
+    const user = rows[0];
+    if (!user) return { ok: false, status: 401, message: 'Usuário não encontrado' as const };
 
-  const cgc = user.CGC ?? '';
-  const codcli = user.CODCLI ?? null;
+    const ok = (password ?? '') === (user.SENHA ?? '').trim();
+    if (!ok) return { ok: false, status: 401, message: 'Senha inválida' as const };
 
-  const token = signToken({ sub: user.EMAIL, codcli, cgc: unmaskCNPJ(cgc) }, env.JWT_SECRET, 60 * 60);
+    const cgc = user.CGC ?? '';
+    const codcli = user.CODCLI ?? null;
 
-  return {
-    ok: true,
-    status: 200,
-    session: {
-      token,
-      user: {
+    const token = signToken({ sub: user.EMAIL, codcli, cgc: unmaskCNPJ(cgc), name: user.NOME }, env.JWT_SECRET, 60 * 60);
+
+    return {
+      ok: true,
+      status: 200,
+      session: {
+        token,
+        user: {
+          email: user.EMAIL,
+          name: user.NOME ?? '',
+          cgc: cgc,
+          tipo: user.TIPO ?? '',
+          codcli,
+          cliente: user.CLIENTE ?? '',
+        },
+      },
+    };
+  } catch (err: any) {
+    console.error('Login Error:', err);
+    return { ok: false, status: 500, message: `DB Error: ${err.message}` as const };
+  }
+}
+
+export async function getUserProfile(email: string) {
+  try {
+    const rows = await select<DbUser>(
+      `
+      SELECT 
+        l.EMAIL, l.NOME, l.CGC, l.TIPO,
+        c.CODCLI, c.CLIENTE,
+        c.ENDE, c.BAIRRO, c.CIDADE, c.UF, c.CEP, c.TEL
+      FROM ${OWNER}.BRLOGINWEB l
+      LEFT JOIN ${OWNER}.PCCLIENT c
+        ON REPLACE(REPLACE(REPLACE(l.CGC, '/',''), '.',''), '-','')
+         = REPLACE(REPLACE(REPLACE(c.CGCENT, '/',''), '.',''), '-','')
+      WHERE UPPER(TRIM(l.EMAIL)) = UPPER(TRIM(:email))
+      FETCH FIRST 1 ROWS ONLY
+      `,
+      { email }
+    );
+
+    const user = rows[0];
+    if (!user) return { ok: false, status: 404, message: 'Usuário não encontrado' as const };
+
+    return {
+      ok: true,
+      status: 200,
+      profile: {
         email: user.EMAIL,
         name: user.NOME ?? '',
-        cgc: cgc,
-        tipo: user.TIPO ?? '',
-        codcli,
-        cliente: user.CLIENTE ?? '',
-      },
-    },
-  };
+        type: user.TIPO ?? '',
+        client: {
+          code: user.CODCLI ?? null,
+          name: user.CLIENTE ?? '',
+          document: user.CGC ?? '',
+          phone: (user as any).TEL ?? '',
+          address: {
+            street: (user as any).ENDE,
+            neighborhood: (user as any).BAIRRO,
+            city: (user as any).CIDADE,
+            state: (user as any).UF,
+            zip: (user as any).CEP,
+          }
+        }
+      }
+    };
+  } catch (err: any) {
+    return { ok: false, status: 500, message: `DB Error: ${err.message}` as const };
+  }
 }
 
 export function parseBearer(authHeader?: string | null) {

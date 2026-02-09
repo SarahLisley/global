@@ -6,11 +6,13 @@ export const metadata: Metadata = {
   description: 'Portal do Cliente - Global Hospitalar',
 };
 
+import { MSWProvider } from './MSWProvider';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className="min-h-screen font-sans antialiased" suppressHydrationWarning>
-        {children}
+        <MSWProvider>{children}</MSWProvider>
       </body>
     </html>
   );

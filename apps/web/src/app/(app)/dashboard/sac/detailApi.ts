@@ -16,7 +16,7 @@ export async function fetchTicketDetail(id: string) {
       return { ok: false, message: err?.error || `Falha ao obter ticket (${res.status})` };
     }
     const data = await res.json();
-    return { ok: true, ticket: data.ticket, timeline: data.timeline ?? [] };
+    return { ok: true, ticket: data.ticket, timeline: data.timeline ?? [], comments: data.comments ?? [] };
   } catch (e: any) {
     return { ok: false, message: e?.message ?? 'Erro inesperado' };
   }

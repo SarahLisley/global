@@ -46,6 +46,8 @@ async function resolveCodcli(params: { email?: string; codcli?: string | number 
   return Number(row.CODCLI);
 }
 
+
+
 export async function getDashboardKpis(params: { email?: string; codcli?: string | number }): Promise<KPIs> {
   const codcli = await resolveCodcli(params);
 
@@ -108,6 +110,8 @@ export async function getDashboardKpis(params: { email?: string; codcli?: string
 }
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
+  /* MOCK REMOVED - Using Real DB */
+
   const [u] = await select<{ TOTAL: number; CLIENTES: number }>(
     `
     SELECT

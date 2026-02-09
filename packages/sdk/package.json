@@ -1,31 +1,13 @@
 {
   "name": "@pgb/sdk",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "sideEffects": false,
+  "version": "0.0.0",
   "main": "./src/index.ts",
-  "module": "./src/index.ts",
   "types": "./src/index.ts",
-  "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts"
-    }
-  },
-  "files": ["dist"],
   "scripts": {
-    "dev": "tsc -w -p tsconfig.json",
-    "build": "tsc -p tsconfig.json",
-    "clean": "rimraf dist"
+    "lint": "eslint .",
+    "clean": "rm -rf .turbo node_modules"
   },
-  "dependencies": {
-    "zod": "^4.1.12"
-  },
-  "peerDependencies": {
-    "undici": ">=5 || >=6 || >=7"
-  },
-  "engines": {
-    "node": ">=18"
+  "devDependencies": {
+    "typescript": "^5.0.0"
   }
 }

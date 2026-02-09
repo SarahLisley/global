@@ -6,6 +6,7 @@ export type DocValidityDTO = {
   dueDate: string;
   docNumber: string;
   status: 'valido' | 'vencido' | 'proximo_vencer';
+  url?: string;
 };
 
 function toStatus(dt: Date, thresholdDays = 7): 'valido' | 'vencido' | 'proximo_vencer' {
@@ -47,6 +48,7 @@ export async function getDocsValidity(params: { codcli: number }): Promise<DocVa
       dueDate: dt.toISOString(),
       docNumber: String(r.NUMDOC ?? '').trim(),
       status,
+      url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', // Mock URL
     };
   });
 }

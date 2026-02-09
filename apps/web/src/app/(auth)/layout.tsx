@@ -4,32 +4,40 @@ import '../globals.css';
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-dvh w-full flex items-center justify-center relative py-8 px-4">
-      <div className="relative w-[min(1200px,92vw)]">
-        <div className="pointer-events-none select-none">
-          <div className="hidden md:block absolute -left-12 -top-12 w-24 h-24 rounded-full bg-[color:var(--brand-blue)] z-0" />
-          <div className="hidden md:block absolute -right-12 -bottom-12 w-24 h-24 rounded-full bg-[color:var(--brand-orange)] z-0" />
-        </div>
+    <div className="min-h-dvh w-full flex items-center justify-center relative py-8 px-4 bg-slate-50 overflow-hidden">
+      {/* Background Ambient Glow */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-[30%] -left-[15%] w-[60vw] h-[60vw] rounded-full bg-blue-100 opacity-50 blur-[80px]" />
+        <div className="absolute -bottom-[30%] -right-[15%] w-[50vw] h-[50vw] rounded-full bg-blue-50 opacity-60 blur-[60px]" />
+      </div>
 
-        <div className="relative bg-white rounded-2.5xl shadow-card overflow-hidden z-10">
-          <div className="col-divider" />
-          <div className="grid grid-cols-1 md:grid-cols-2">
-            <div className="px-8 sm:px-12 py-10">
-              {children}
+      <div className="relative w-[min(1000px,94vw)] shadow-2xl shadow-slate-300/50 border border-slate-100 rounded-3xl overflow-hidden bg-white z-10 flex animate-in fade-in zoom-in-95 duration-500">
+        <div className="grid grid-cols-1 md:grid-cols-2 w-full">
+          {/* Form Section */}
+          <div className="p-8 sm:p-12 lg:p-14 flex flex-col justify-center bg-white min-h-[520px]">
+            {children}
+          </div>
+
+          {/* Side Panel - Clean & Minimal */}
+          <div className="hidden md:flex flex-col items-center justify-center bg-gradient-to-br from-blue-600 to-blue-700 relative overflow-hidden p-10">
+            {/* Subtle pattern overlay */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute inset-0" style={{
+                backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+                backgroundSize: '32px 32px'
+              }} />
             </div>
 
-            <div className="relative hidden md:block">
-              <div className="absolute inset-0 bg-gradient-to-b from-[color:var(--brand-blue-light)] to-[color:var(--brand-blue)]" />
-              <div className="relative h-full w-full grid place-items-center p-8">
-                <Image
-                  src="/images/Componente-medico.png"
-                  alt="Ilustração médica"
-                  width={550}
-                  height={550}
-                  className="object-contain drop-shadow-xl"
-                  priority
-                />
-              </div>
+            {/* Content */}
+            <div className="relative z-10 flex items-center justify-center h-full w-full">
+              <Image
+                src="/images/Componente-medico.png"
+                alt="Ilustração médica"
+                width={300}
+                height={300}
+                className="object-contain drop-shadow-xl"
+                priority
+              />
             </div>
           </div>
         </div>

@@ -28,3 +28,41 @@ export async function select<T = any>(sql: string, binds?: Record<string, unknow
     await conn.close();
   }
 }
+
+/**
+ * Execute DML statements (INSERT, UPDATE, DELETE) with auto-commit.
+ * Returns the number of rows affected.
+ */
+export async function execute(sql: string, binds?: Record<string, unknown> | unknown[]): Promise<number> {
+  const conn = await getConnection();
+  try {
+    const res = await conn.execute(sql, binds ?? {}, {
+      autoCommit: true,
+    } as any);
+    return res.rowsAffected ?? 0;
+  } finally {
+    await conn.close();
+  }
+}
+
+/**
+ * Execute an INSERT and return the generated ID (for IDENTITY columns).
+ */
+export async function insertReturning<T = any>(
+  sql: string,
+  binds: Record<string, unknown>,
+  returningColumn: string
+): Promise<T | null> {
+  const conn = await getConnection();
+  try {
+    const result = await conn.execute(
+      `${sql} RETURNING ${returningColumn} INTO :out_id`,
+      { ...binds, out_id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER } },
+      { autoCommit: true } as any
+    );
+    const outValues = (result.outBinds as any)?.out_id;
+    return outValues?.[0] ?? null;
+  } finally {
+    await conn.close();
+  }
+}

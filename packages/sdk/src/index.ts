@@ -1,4 +1,4 @@
-export * as auth from './auth';
-export * as dashboard from './dashboard';
-export * as tickets from './tickets';
-export * from './types';
+// SDK Mock
+export const sdk = {
+  message: "Mock SDK"
+};

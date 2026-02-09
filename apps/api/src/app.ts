@@ -15,7 +15,7 @@ export function buildApp() {
   app.register(cors, {
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
-      const ok = allowed.includes(origin) || origin.endsWith('.vercel.app'); // previews, opcional
+      const ok = allowed.includes(origin) || origin.endsWith('.vercel.app');
       cb(null, ok);
     },
     credentials: true,

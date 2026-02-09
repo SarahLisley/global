@@ -3,32 +3,33 @@
 @tailwind utilities;
 
 :root {
-  --bg: #F8FAFC; 
-  --card: #FFFFFF; 
-  --brand-orange: #FF7F50; 
-  --brand-orange-dark: #FF4500; 
-  --brand-blue: #1E3A8A; 
-  --brand-blue-light: #60A5FA; 
+  --bg: #F8FAFC;
+  --card: #FFFFFF;
+  --brand-orange: #FF7F50;
+  --brand-orange-dark: #FF4500;
+  --brand-blue: #1E3A8A;
+  --brand-blue-light: #60A5FA;
 }
 
-html, body, #__next {
+html,
+body,
+#__next {
   height: 100%;
 }
 
 body {
   background: var(--bg);
-  color: #0F172A; 
-  font-family: 'Inter', 'Helvetica', 'Arial', sans-serif; /* Replace with your Tailwind sans font stack */
+  color: #0F172A;
+  font-family: 'Inter', 'Helvetica', 'Arial', sans-serif;
+  /* Replace with your Tailwind sans font stack */
 }
 
 .btn-gradient {
-  @apply bg-gradient-to-b from-[color:var(--brand-orange)] to-[color:var(--brand-orange-dark)]
-    text-white font-medium rounded-xl shadow-md hover:brightness-105 active:brightness-95 transition;
+  @apply bg-gradient-to-b from-[color:var(--brand-orange)] to-[color:var(--brand-orange-dark)] text-white font-bold rounded-lg shadow-md hover:brightness-105 active:brightness-95 transition;
 }
 
 .input-pill {
-  @apply rounded-xl bg-slate-100/90 border border-slate-200 px-4 py-3 text-slate-800
-    placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300;
+  @apply rounded-xl bg-slate-100/90 border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300;
 }
 
 .col-divider {

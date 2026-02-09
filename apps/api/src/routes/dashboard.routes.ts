@@ -2,11 +2,12 @@ import type { FastifyInstance } from 'fastify';
 import { getDashboardSummary, getDashboardKpis } from '../controllers/dashboardController';
 import { verifyToken } from '../utils/token';
 import { env, OWNER } from '../utils/env';
-import { getRecentOrders } from '../controllers/ordersController';
+import { getRecentOrders, searchOrders } from '../controllers/ordersController';
 import { getDocsValidity } from '../controllers/docsController';
 import { getSACSeries, createTicket } from '../controllers/sacController';
 import { getDeliveryTimeline, searchDeliveries } from '../controllers/deliveriesController';
-import { select } from '../db/query';
+import { select, insertReturning, execute } from '../db/query';
+import { getTitulos } from '../controllers/financeiroController';
 
 function normalizeStatus(status: any, dtFinaliza: any): 'pendente' | 'em_andamento' | 'finalizado' {
   if (dtFinaliza != null) return 'finalizado';
@@ -49,8 +50,59 @@ export default async function dashboardRoutes(app: FastifyInstance) {
       if (!v.ok) return reply.status(401).send({ error: v.error });
       const codcli = Number(v.payload?.codcli);
       if (!codcli) return reply.status(400).send({ error: 'CODCLI inválido no token' });
-      const data = await getRecentOrders({ codcli });
-      return reply.send({ orders: data });
+
+      const q = req.query as { page?: string, pageSize?: string };
+      const page = q.page ? Number(q.page) : 1;
+      const pageSize = q.pageSize ? Number(q.pageSize) : 10;
+
+      const data = await getRecentOrders({ codcli, page, pageSize });
+      return reply.send(data);
+    } catch (err) {
+      return reply.status(500).send({ error: (err as Error).message });
+    }
+  });
+
+  app.get('/orders', async (req, reply) => {
+    try {
+      const auth = req.headers.authorization;
+      if (!auth?.startsWith('Bearer ')) return reply.status(401).send({ error: 'Token ausente' });
+      const t = auth.slice(7);
+      const v = verifyToken(t, env.JWT_SECRET);
+      if (!v.ok) return reply.status(401).send({ error: v.error });
+      const codcli = Number(v.payload?.codcli);
+      if (!codcli) return reply.status(400).send({ error: 'CODCLI inválido no token' });
+
+      const q = req.query as any;
+      const data = await searchOrders({
+        codcli,
+        dtInicial: q.dtInicial,
+        dtFinal: q.dtFinal,
+        pedido: q.pedido,
+        nf: q.nf,
+        page: Number(q.page),
+        pageSize: Number(q.pageSize),
+      });
+      return reply.send({
+        ok: true,
+        pedidos: data.orders.map(o => ({
+          id: o.orderNumber,
+          nroPedido: o.orderNumber,
+          nroNF: o.numNota,
+          nroTransVenda: o.numTransVenda,
+          posicao: o.posicao,
+          data: o.date,
+          filial: '1', // Mock or fetch
+          codCliente: String(o.codcli),
+          vendedor: o.seller,
+          vlrTotal: o.total,
+          vlrDesconto: o.desconto,
+          vlrFrete: o.frete,
+          nroItens: (o as any).itens?.length ?? 0,
+          itens: (o as any).itens ?? []
+        })),
+        total: data.total,
+        page: data.page
+      });
     } catch (err) {
       return reply.status(500).send({ error: (err as Error).message });
     }
@@ -268,7 +320,47 @@ export default async function dashboardRoutes(app: FastifyInstance) {
         status: normalizeStatus(h.STATUS, h.DTMOV_FINAL),
       }));
 
-      return reply.send({ ok: true, ticket, timeline });
+      // Buscar comentários do ticket
+      const commentRows = await select<any>(
+        `SELECT 
+          ID,
+          AUTOR,
+          TIPO_AUTOR,
+          TIPO_MSG,
+          CONTEUDO,
+          ANEXO_FILENAME,
+          ANEXO_PATH,
+          DTCRIACAO
+        FROM ${OWNER}.BRSACC_COMMENTS 
+        WHERE NUMTICKET = :NUMTICKET 
+        ORDER BY DTCRIACAO ASC`,
+        { NUMTICKET: numTicket }
+      );
+
+      const comments = commentRows.map(c => {
+        let content = '';
+        if (c.CONTEUDO) {
+          if (typeof c.CONTEUDO === 'string') {
+            content = c.CONTEUDO;
+          } else if (typeof c.CONTEUDO === 'object' && c.CONTEUDO.toString) {
+            content = c.CONTEUDO.toString();
+          }
+        }
+        return {
+          id: String(c.ID),
+          author: String(c.AUTOR ?? 'Sistema'),
+          authorType: c.TIPO_AUTOR === 'S' ? 'suporte' : 'cliente',
+          type: (c.TIPO_MSG === 'N' ? 'note' : 'message') as 'note' | 'message',
+          content,
+          attachment: c.ANEXO_PATH ? {
+            filename: c.ANEXO_FILENAME,
+            url: `/uploads/${c.ANEXO_PATH}`
+          } : undefined,
+          createdAt: new Date(c.DTCRIACAO).toISOString(),
+        };
+      });
+
+      return reply.send({ ok: true, ticket, timeline, comments });
     } catch (err) {
       return reply.status(500).send({ error: (err as Error).message });
     }
@@ -299,6 +391,216 @@ export default async function dashboardRoutes(app: FastifyInstance) {
 
       return reply.send({ ok: true, ticket: created });
     } catch (err) {
+      return reply.status(500).send({ error: (err as Error).message });
+    }
+  });
+
+  // ---------- Comentários de Tickets ----------
+
+  app.get('/sac/tickets/:id/comments', async (req, reply) => {
+    try {
+      const auth = req.headers.authorization;
+      if (!auth?.startsWith('Bearer ')) return reply.status(401).send({ error: 'Token ausente' });
+      const t = auth.slice(7);
+      const v = verifyToken(t, env.JWT_SECRET);
+      if (!v.ok) return reply.status(401).send({ error: v.error });
+      const codcli = Number(v.payload?.codcli);
+      if (!codcli) return reply.status(400).send({ error: 'CODCLI inválido no token' });
+
+      const id = String((req.params as any)?.id ?? '').trim();
+      if (!/^\d+$/.test(id)) return reply.status(400).send({ error: 'ID inválido' });
+      const numTicket = Number(id);
+
+      // Busca comentários da tabela BRSACC_COMMENTS
+      const rows = await select<any>(
+        `SELECT 
+          ID,
+          AUTOR,
+          TIPO_AUTOR,
+          TIPO_MSG,
+          CONTEUDO,
+          ANEXO_FILENAME,
+          ANEXO_PATH,
+          DTCRIACAO
+        FROM ${OWNER}.BRSACC_COMMENTS 
+        WHERE NUMTICKET = :NUMTICKET 
+        ORDER BY DTCRIACAO ASC`,
+        { NUMTICKET: numTicket }
+      );
+
+      const comments = rows.map(r => {
+        // Handle CLOB - may come as object with getData() or as string
+        let content = '';
+        if (r.CONTEUDO) {
+          if (typeof r.CONTEUDO === 'string') {
+            content = r.CONTEUDO;
+          } else if (typeof r.CONTEUDO === 'object' && r.CONTEUDO.toString) {
+            content = r.CONTEUDO.toString();
+          }
+        }
+
+        return {
+          id: String(r.ID),
+          author: String(r.AUTOR ?? 'Sistema'),
+          authorType: r.TIPO_AUTOR === 'S' ? 'suporte' : 'cliente',
+          type: (r.TIPO_MSG === 'N' ? 'note' : 'message') as 'note' | 'message',
+          content,
+          attachment: r.ANEXO_PATH ? {
+            filename: r.ANEXO_FILENAME,
+            url: `/uploads/${r.ANEXO_PATH}`
+          } : undefined,
+          createdAt: new Date(r.DTCRIACAO).toISOString(),
+        };
+      });
+
+      return reply.send({ ok: true, comments });
+    } catch (err) {
+      return reply.status(500).send({ error: (err as Error).message });
+    }
+  });
+
+  app.post('/sac/tickets/:id/comments', async (req, reply) => {
+    try {
+      const auth = req.headers.authorization;
+      if (!auth?.startsWith('Bearer ')) return reply.status(401).send({ error: 'Token ausente' });
+      const t = auth.slice(7);
+      const v = verifyToken(t, env.JWT_SECRET);
+      if (!v.ok) return reply.status(401).send({ error: v.error });
+      const codcli = Number(v.payload?.codcli);
+      const userName = String(v.payload?.name ?? v.payload?.email ?? 'Cliente');
+      if (!codcli) return reply.status(400).send({ error: 'CODCLI inválido no token' });
+
+      const id = String((req.params as any)?.id ?? '').trim();
+      if (!/^\d+$/.test(id)) return reply.status(400).send({ error: 'ID inválido' });
+      const numTicket = Number(id);
+
+      const body = (req.body ?? {}) as { content?: string; type?: 'message' | 'note' };
+      if (!body.content || !String(body.content).trim()) {
+        return reply.status(400).send({ error: 'Conteúdo do comentário é obrigatório' });
+      }
+
+      const content = String(body.content).trim().slice(0, 1000);
+      const msgType = body.type === 'note' ? 'N' : 'M'; // M=Message (Interact), N=Note (Anotação)
+
+      console.log('[POST /sac/tickets/:id/comments] Inserting comment:', { numTicket, codcli, userName, contentLength: content.length, msgType });
+
+      // Insere comentário no banco
+      const newId = await insertReturning<number>(
+        `INSERT INTO ${OWNER}.BRSACC_COMMENTS (NUMTICKET, CODCLI, AUTOR, TIPO_AUTOR, TIPO_MSG, CONTEUDO, DTCRIACAO)
+         VALUES (:NUMTICKET, :CODCLI, :AUTOR, 'C', :TIPO_MSG, :CONTEUDO, SYSTIMESTAMP)`,
+        {
+          NUMTICKET: numTicket,
+          CODCLI: codcli,
+          AUTOR: userName,
+          TIPO_MSG: msgType,
+          CONTEUDO: content,
+        },
+        'ID'
+      );
+
+      console.log('[POST /sac/tickets/:id/comments] Insert result, newId:', newId);
+
+      const newComment = {
+        id: String(newId ?? Date.now()),
+        author: userName,
+        authorType: 'cliente' as const,
+        type: (msgType === 'N' ? 'note' : 'message') as 'note' | 'message',
+        content,
+        createdAt: new Date().toISOString(),
+      };
+
+      app.log.info({ numTicket, codcli, commentId: newId, msgType }, 'Comment created');
+
+      return reply.send({ ok: true, comment: newComment });
+    } catch (err) {
+      return reply.status(500).send({ error: (err as Error).message });
+    }
+  });
+
+  // ---------- Editar Comentário ----------
+  app.put('/sac/tickets/:id/comments/:commentId', async (req, reply) => {
+    try {
+      const auth = req.headers.authorization;
+      if (!auth?.startsWith('Bearer ')) return reply.status(401).send({ error: 'Token ausente' });
+      const t = auth.slice(7);
+      const v = verifyToken(t, env.JWT_SECRET);
+      if (!v.ok) return reply.status(401).send({ error: v.error });
+      const codcli = Number(v.payload?.codcli);
+      if (!codcli) return reply.status(400).send({ error: 'CODCLI inválido no token' });
+
+      const id = String((req.params as any)?.id ?? '').trim();
+      const commentId = String((req.params as any)?.commentId ?? '').trim();
+      if (!/^\d+$/.test(id) || !/^\d+$/.test(commentId)) {
+        return reply.status(400).send({ error: 'ID inválido' });
+      }
+
+      const body = (req.body ?? {}) as { content?: string };
+      if (!body.content || !String(body.content).trim()) {
+        return reply.status(400).send({ error: 'Conteúdo do comentário é obrigatório' });
+      }
+
+      const content = String(body.content).trim().slice(0, 1000);
+
+      // Verifica se o comentário pertence ao cliente
+      const rows = await execute(
+        `UPDATE ${OWNER}.BRSACC_COMMENTS 
+         SET CONTEUDO = :CONTEUDO 
+         WHERE ID = :ID AND CODCLI = :CODCLI AND TIPO_AUTOR = 'C'`,
+        { CONTEUDO: content, ID: Number(commentId), CODCLI: codcli }
+      );
+
+      if (rows === 0) {
+        return reply.status(404).send({ error: 'Comentário não encontrado ou sem permissão' });
+      }
+
+      return reply.send({ ok: true });
+    } catch (err) {
+      return reply.status(500).send({ error: (err as Error).message });
+    }
+  });
+
+  // ---------- Apagar Comentário ----------
+  app.delete('/sac/tickets/:id/comments/:commentId', async (req, reply) => {
+    try {
+      const auth = req.headers.authorization;
+      if (!auth?.startsWith('Bearer ')) return reply.status(401).send({ error: 'Token ausente' });
+      const t = auth.slice(7);
+      const v = verifyToken(t, env.JWT_SECRET);
+      if (!v.ok) return reply.status(401).send({ error: v.error });
+      const codcli = Number(v.payload?.codcli);
+      if (!codcli) return reply.status(400).send({ error: 'CODCLI inválido no token' });
+
+      const id = String((req.params as any)?.id ?? '').trim();
+      const commentId = String((req.params as any)?.commentId ?? '').trim();
+
+      console.log(`[DELETE COMMENT] Request received. Ticket: ${id}, Comment: ${commentId}, CodCli: ${codcli}`);
+
+      if (!/^\d+$/.test(id) || !/^\d+$/.test(commentId)) {
+        console.log('[DELETE COMMENT] Invalid ID format');
+        return reply.status(400).send({ error: 'ID inválido' });
+      }
+
+      // Apaga apenas comentários do próprio cliente
+      const query = `DELETE FROM ${OWNER}.BRSACC_COMMENTS WHERE ID = :ID AND CODCLI = :CODCLI AND TIPO_AUTOR = 'C'`;
+      const binds = { ID: Number(commentId), CODCLI: codcli };
+
+      console.log('[DELETE COMMENT] Executing query:', query, binds);
+
+      const rows = await execute(query, binds);
+
+      console.log('[DELETE COMMENT] Rows affected:', rows);
+
+      if (rows === 0) {
+        // Tenta verificar se o comentário existe mas pertence a outro usuario/autor
+        const check = await select(`SELECT ID, CODCLI, TIPO_AUTOR FROM ${OWNER}.BRSACC_COMMENTS WHERE ID = :ID`, { ID: Number(commentId) });
+        console.log('[DELETE COMMENT] Check existence:', check);
+
+        return reply.status(404).send({ error: 'Comentário não encontrado ou sem permissão para apagar' });
+      }
+
+      return reply.send({ ok: true });
+    } catch (err) {
+      console.error('[DELETE COMMENT] Error:', err);
       return reply.status(500).send({ error: (err as Error).message });
     }
   });
@@ -349,6 +651,34 @@ export default async function dashboardRoutes(app: FastifyInstance) {
 
       const timeline = await getDeliveryTimeline(numTrans, codcli);
       return reply.send({ timeline });
+    } catch (err) {
+      return reply.status(500).send({ error: (err as Error).message });
+    }
+  });
+
+  app.get('/financeiro', async (req, reply) => {
+    try {
+      const auth = req.headers.authorization;
+      if (!auth?.startsWith('Bearer ')) return reply.status(401).send({ error: 'Token ausente' });
+      const t = auth.slice(7);
+      const v = verifyToken(t, env.JWT_SECRET);
+      if (!v.ok) return reply.status(401).send({ error: v.error });
+      const codcli = Number(v.payload?.codcli);
+      if (!codcli) return reply.status(400).send({ error: 'CODCLI inválido no token' });
+
+      const q = req.query as any;
+      const data = await getTitulos({
+        codcli,
+        dtInicial: q.dtInicial,
+        dtFinal: q.dtFinal,
+        status: q.status,
+        numped: q.numped,
+        nf: q.nf,
+        page: Number(q.page),
+        pageSize: Number(q.pageSize)
+      });
+
+      return reply.send(data);
     } catch (err) {
       return reply.status(500).send({ error: (err as Error).message });
     }

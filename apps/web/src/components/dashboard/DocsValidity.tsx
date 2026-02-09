@@ -1,17 +1,50 @@
+'use client';
+
 import { Badge, Card } from '@pgb/ui';
+import { useState } from 'react';
 
 type Doc = {
   description: string;
   dueDate: string;
   docNumber: string;
   status: 'valido' | 'vencido' | 'proximo_vencer';
+  url?: string;
 };
 
 export function DocsValidity({ docs }: { docs: Doc[] }) {
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(text);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  const getRelativeTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '';
+
+    const now = new Date();
+    const diffTime = date.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    const rtf = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto' });
+
+    if (Math.abs(diffDays) > 60) {
+      const diffMonths = Math.ceil(diffDays / 30);
+      return rtf.format(diffMonths, 'month');
+    }
+    return rtf.format(diffDays, 'day');
+  };
+
   const badge = (s: Doc['status']) => {
     if (s === 'valido') return <Badge variant="success">Válido</Badge>;
     if (s === 'proximo_vencer') return <Badge variant="warning">Próx. vencimento</Badge>;
-    return <Badge variant="danger">Vencido</Badge>;
+    if (s === 'vencido') return (
+      <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
+        Vencido
+      </span>
+    );
   };
 
   const icon = (s: Doc['status']) => {
@@ -71,24 +104,60 @@ export function DocsValidity({ docs }: { docs: Doc[] }) {
                 <div className="flex-1 grid grid-cols-1 sm:grid-cols-4 gap-3 sm:gap-4">
                   <div className="sm:col-span-1">
                     <div className="text-[10px] sm:text-xs font-medium text-gray-500 mb-0.5 sm:mb-1 uppercase tracking-wide">Descrição</div>
-                    <a className="text-xs sm:text-sm font-semibold text-[#4a90e2] hover:text-[#2563eb] hover:underline cursor-pointer break-words">
+                    <a
+                      href={d.url ?? '#'}
+                      target={d.url ? "_blank" : undefined}
+                      rel="noopener noreferrer"
+                      className={`text-xs sm:text-sm font-semibold text-[#4a90e2] hover:text-[#2563eb] hover:underline cursor-pointer break-words ${!d.url ? 'opacity-50 cursor-not-allowed hover:no-underline' : ''}`}
+                      onClick={(e) => {
+                        if (!d.url) {
+                          e.preventDefault();
+                          alert('Documento indisponível para download.');
+                        }
+                      }}
+                    >
                       {d.description}
                     </a>
                   </div>
 
                   <div>
                     <div className="text-[10px] sm:text-xs font-medium text-gray-500 mb-0.5 sm:mb-1 uppercase tracking-wide">Dt. Validade</div>
-                    <div className="text-xs sm:text-sm font-semibold text-gray-900">
-                      {(() => {
-                        const date = new Date(d.dueDate);
-                        return isNaN(date.getTime()) ? '-' : new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' }).format(date);
-                      })()}
+                    <div className="flex flex-col">
+                      <span className="text-xs sm:text-sm font-semibold text-gray-900">
+                        {(() => {
+                          const date = new Date(d.dueDate);
+                          return isNaN(date.getTime()) ? '-' : new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' }).format(date);
+                        })()}
+                      </span>
+                      <span className="text-[10px] sm:text-xs text-gray-500">
+                        {getRelativeTime(d.dueDate)}
+                      </span>
                     </div>
                   </div>
 
                   <div>
                     <div className="text-[10px] sm:text-xs font-medium text-gray-500 mb-0.5 sm:mb-1 uppercase tracking-wide">Nro Documento</div>
-                    <div className="text-xs sm:text-sm font-medium text-gray-700 break-all">{d.docNumber}</div>
+                    <div className="group/copy flex items-center gap-2">
+                      <code className="text-xs sm:text-sm font-mono text-gray-700 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 break-all">
+                        {d.docNumber}
+                      </code>
+                      <button
+                        onClick={() => handleCopy(d.docNumber)}
+                        className="opacity-0 group-hover/copy:opacity-100 focus:opacity-100 transition-opacity p-1 text-gray-400 hover:text-[#4a90e2]"
+                        title="Copiar"
+                      >
+                        {copied === d.docNumber ? (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-500">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div>

@@ -6,7 +6,8 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Input, Button, FormField } from '@pgb/ui';
+import { Input } from '../../../components/ui/input';
+import { Button } from '../../../components/ui/button';
 import { BrandLogo } from '../../../components/brand-logo';
 import { registerAction } from '../actions';
 import { maskCNPJ, unmask } from '../../../lib/mask';
@@ -77,14 +78,16 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="max-w-md">
-      <BrandLogo className="mb-6" />
+    <div className="w-full max-w-[460px] mx-auto -my-6">
+      <div className="mb-0 text-center sm:text-left">
+        <BrandLogo className="mx-auto sm:mx-0" width={80} height={28} />
+        <h1 className="text-lg font-semibold tracking-tight text-slate-900 mt-0">Cadastro</h1>
+        <p className="text-slate-500 mt-0 text-xs">Crie sua conta para acessar o sistema.</p>
+      </div>
 
-      <h1 className="text-2xl font-extrabold tracking-tight">CADASTRO</h1>
-      <p className="text-slate-600 mt-1 mb-6">Crie sua conta para acessar o sistema</p>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <FormField label="CNPJ" htmlFor="cnpj" error={errors.cnpj?.message ?? undefined}>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-1.5">
+        <div className="space-y-1">
+          <label htmlFor="cnpj" className="text-sm font-semibold text-slate-700">CNPJ</label>
           <Controller
             name="cnpj"
             control={control}
@@ -95,40 +98,85 @@ export default function RegisterPage() {
                 inputMode="numeric"
                 value={field.value}
                 onChange={(e) => field.onChange(maskCNPJ(e.target.value))}
+                className="h-9 bg-white border-slate-200 transition-all sm:text-sm py-2"
               />
             )}
           />
-        </FormField>
+          {errors.cnpj && <p className="text-sm text-red-600 font-medium ml-1">{errors.cnpj.message}</p>}
+        </div>
 
-        <FormField label="Nome completo" htmlFor="name" error={errors.name?.message ?? undefined}>
-          <Input id="name" placeholder="Ex.: Maria Souza" {...register('name')} />
-        </FormField>
+        <div className="space-y-1">
+          <label htmlFor="name" className="text-sm font-semibold text-slate-700">Nome completo</label>
+          <Input
+            id="name"
+            placeholder="Ex.: Maria Souza"
+            className="h-9 bg-white border-slate-200 transition-all sm:text-sm py-2"
+            {...register('name')}
+          />
+          {errors.name && <p className="text-sm text-red-600 font-medium ml-1">{errors.name.message}</p>}
+        </div>
 
-        <FormField label="E-mail" htmlFor="email" error={errors.email?.message ?? undefined}>
-          <Input id="email" type="email" placeholder="seu@email.com" {...register('email')} />
-        </FormField>
+        <div className="space-y-1">
+          <label htmlFor="email" className="text-sm font-semibold text-slate-700">E-mail</label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="seu@email.com"
+            className="h-9 bg-white border-slate-200 transition-all sm:text-sm py-2"
+            {...register('email')}
+          />
+          {errors.email && <p className="text-sm text-red-600 font-medium ml-1">{errors.email.message}</p>}
+        </div>
 
-        <FormField label="Senha" htmlFor="password" error={errors.password?.message ?? undefined}>
-          <Input id="password" type="password" withPasswordToggle placeholder="••••••••" {...register('password')} />
-        </FormField>
+        <div className="space-y-1">
+          <label htmlFor="password" className="text-sm font-semibold text-slate-700">Senha</label>
+          <Input
+            id="password"
+            type="password"
+            withPasswordToggle
+            placeholder="••••••••"
+            className="h-9 bg-white border-slate-200 transition-all sm:text-sm py-2"
+            {...register('password')}
+          />
+          {errors.password && <p className="text-sm text-red-600 font-medium ml-1">{errors.password.message}</p>}
+        </div>
 
-        <FormField label="Confirmar senha" htmlFor="confirm" error={errors.confirm?.message ?? undefined}>
-          <Input id="confirm" type="password" withPasswordToggle placeholder="••••••••" {...register('confirm')} />
-        </FormField>
+        <div className="space-y-1">
+          <label htmlFor="confirm" className="text-sm font-semibold text-slate-700">Confirmar senha</label>
+          <Input
+            id="confirm"
+            type="password"
+            withPasswordToggle
+            placeholder="••••••••"
+            className="h-9 bg-white border-slate-200 transition-all sm:text-sm py-2"
+            {...register('confirm')}
+          />
+          {errors.confirm && <p className="text-sm text-red-600 font-medium ml-1">{errors.confirm.message}</p>}
+        </div>
 
-        {serverError && <div className="text-sm text-red-600">{serverError}</div>}
+        {serverError && (
+          <div className="w-full p-2 rounded-lg bg-red-50 border border-red-100 flex items-start gap-2">
+            <p className="text-xs text-red-700 leading-relaxed font-medium">{serverError}</p>
+          </div>
+        )}
 
-        <Button type="submit" className="mt-2" loading={isPending}>
-          Criar conta
+        <Button
+          type="submit"
+          className="w-full h-10 mt-3 btn-gradient text-sm font-bold shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 focus:ring-2 focus:ring-orange-500/50 focus:ring-offset-1"
+          disabled={isPending}
+        >
+          {isPending ? 'Criando conta...' : 'Criar conta'}
         </Button>
       </form>
 
-      <p className="text-sm text-slate-600 mt-6">
-        Já tem conta?{' '}
-        <Link className="text-[color:var(--brand-orange)] font-medium hover:underline" href="/login">
-          Entrar
-        </Link>
-      </p>
+      <div className="mt-2 text-left pt-2 border-t border-slate-100">
+        <p className="text-slate-600">
+          Já tem conta?{' '}
+          <Link className="font-semibold text-[color:var(--brand-blue)] hover:text-[color:var(--brand-blue-dark)] hover:underline transition-colors" href="/login">
+            Entrar
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

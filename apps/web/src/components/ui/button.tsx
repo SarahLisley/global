@@ -5,7 +5,7 @@ import clsx from 'clsx';
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   full?: boolean;
-  variant?: 'primary' | 'ghost';
+  variant?: 'primary' | 'ghost' | 'outline';
 };
 
 export function Button({ className, full, variant = 'primary', ...props }: Props) {
@@ -13,7 +13,7 @@ export function Button({ className, full, variant = 'primary', ...props }: Props
     return (
       <button
         className={clsx(
-          'rounded-xl px-5 py-2.5 text-sm font-medium text-slate-700',
+          'rounded-lg px-5 py-2.5 text-sm font-medium text-slate-700',
           'hover:bg-slate-100 active:bg-slate-200',
           'transition-colors duration-200',
           'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent',
@@ -25,12 +25,30 @@ export function Button({ className, full, variant = 'primary', ...props }: Props
       />
     );
   }
-  
+
+  if (variant === 'outline') {
+    return (
+      <button
+        className={clsx(
+          'rounded-lg px-5 py-2.5 text-sm font-medium',
+          'border border-slate-200 bg-white text-slate-700',
+          'hover:bg-slate-50 active:bg-slate-100',
+          'transition-colors duration-200',
+          'disabled:opacity-50 disabled:cursor-not-allowed',
+          'inline-flex items-center justify-center gap-2',
+          full && 'w-full',
+          className
+        )}
+        {...props}
+      />
+    );
+  }
+
   return (
     <button
       className={clsx(
         'btn-gradient',
-        'px-8 py-3.5 rounded-xl',
+        'px-8 py-3.5 rounded-lg',
         'text-base font-semibold text-white',
         'inline-flex items-center justify-center gap-2',
         'hover:opacity-90 active:scale-[0.98]',

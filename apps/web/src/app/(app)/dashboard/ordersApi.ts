@@ -9,11 +9,11 @@ export type OrderDTO = {
   status: 'faturado' | 'bloqueado' | 'liberado';
 };
 
-export async function fetchRecentOrders(): Promise<OrderDTO[]> {
+export async function fetchRecentOrders(page = 1, pageSize = 10): Promise<{ orders: OrderDTO[], total: number }> {
   const token = (await cookies()).get('pgb_session')?.value;
   if (!token) throw new Error('Sem token de sessão');
 
-  const res = await fetch(`${API_BASE}/dashboard/orders/recent`, {
+  const res = await fetch(`${API_BASE}/dashboard/orders/recent?page=${page}&pageSize=${pageSize}`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
   });
@@ -23,10 +23,15 @@ export async function fetchRecentOrders(): Promise<OrderDTO[]> {
   }
   const data = await res.json();
   const orders = (data?.orders ?? []) as any[];
-  return orders.map((o) => ({
-    orderNumber: o.orderNumber,
-    seller: o.seller,
-    total: o.total,
-    status: o.status,
-  }));
+  const total = Number(data?.total ?? 0);
+
+  return {
+    orders: orders.map((o) => ({
+      orderNumber: o.orderNumber,
+      seller: o.seller,
+      total: o.total,
+      status: o.status,
+    })),
+    total
+  };
 }

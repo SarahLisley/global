@@ -7,6 +7,7 @@ export type DocDTO = {
   dueDate: string;
   docNumber: string;
   status: 'valido' | 'vencido' | 'proximo_vencer';
+  url?: string;
 };
 
 export async function fetchDocsValidity(): Promise<DocDTO[]> {

@@ -1,24 +1,28 @@
-'use client';
+import { ReactNode } from 'react';
+import { cookies } from 'next/headers';
+import { jwtDecode } from 'jwt-decode';
+import { DashboardScaffold } from '../../components/dashboard/DashboardScaffold';
 
-import type { ReactNode } from 'react';
-import { Sidebar } from '../../components/dashboard/Sidebar';
-import { Topbar } from '../../components/dashboard/Topbar';
-import { useState } from 'react';
-
-export default function AppLayout({ children }: { children: ReactNode }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+export default async function AppLayout({ children }: { children: ReactNode }) {
+  // Server-side user extraction
+  let user = undefined;
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('pgb_session')?.value;
+    if (token) {
+      const decoded = jwtDecode<{ name?: string; sub?: string; email?: string }>(token);
+      user = {
+        name: decoded.name || decoded.sub || 'Usuário',
+        email: decoded.email || decoded.sub || '',
+      };
+    }
+  } catch (error) {
+    console.error('Failed to decode user token in layout:', error);
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      
-      {/* Container principal com margin-left apenas no desktop */}
-      <div className="lg:ml-60 flex min-h-screen flex-col">
-        <Topbar onMenuClick={() => setIsSidebarOpen(true)} />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
-          {children}
-        </main>
-      </div>
-    </div>
+    <DashboardScaffold user={user}>
+      {children}
+    </DashboardScaffold>
   );
 }

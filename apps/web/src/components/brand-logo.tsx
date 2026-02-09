@@ -14,6 +14,7 @@ export function BrandLogo({ className, width = 180, height = 60 }: Props) {
         alt="GLOBAL Hospitalar"
         width={width}
         height={height}
+        style={{ width: 'auto', height: 'auto' }}
         priority
         unoptimized
       />
