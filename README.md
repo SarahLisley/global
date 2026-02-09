@@ -14,5 +14,5 @@ pnpm dev
 ```
 
 Rotas:
-- Web: http://localhost:3000
+- Web: http://localhost:3200
 - API stub: http://localhost:4001/health
