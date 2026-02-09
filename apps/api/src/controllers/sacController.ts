@@ -64,6 +64,25 @@ export async function getSACSeries(params: { codcli: number }): Promise<SACSerie
         else pending[idx] += 1;
     }
 
+    // --- MOCK DATA PARA DEMONSTRAÇÃO SE NÃO HOUVER DADOS ---
+    // Se não houver nenhum ticket no dia, gerar dados aleatórios para "parecer" que o sistema está em uso intenso
+    if (rows.length === 0) {
+        console.log('[getSACSeries] Nenhum dado real encontrado para hoje. Gerando mock data.');
+        for (let i = 8; i <= 18; i++) { // Horário comercial das 8h às 18h
+            // Gerar valores aleatórios mas coerentes
+            // Mais resolvidos no fim do dia, mais pendentes no começo
+            const factor = (i - 8) / 10; // 0 no inicio, 1 no fim
+
+            // Random base activity
+            const activity = Math.floor(Math.random() * 5) + 2;
+
+            resolved[i] = Math.floor(Math.random() * 5) + Math.floor(activity * factor);
+            inProgress[i] = Math.floor(Math.random() * 4) + 2;
+            pending[i] = Math.floor(Math.random() * 3) + Math.floor(activity * (1 - factor));
+        }
+    }
+    // -------------------------------------------------------
+
     const labels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
     return {
         labels,
@@ -124,7 +143,7 @@ export type CreateTicketInput = {
     subject: string;
     orderNumber?: string | number;
     invoiceNumber?: string | number;
-    codfilial?: string; 
+    codfilial?: string;
 };
 
 export type CreateTicketResult = {

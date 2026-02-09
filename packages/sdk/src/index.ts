@@ -1,4 +1,3 @@
-// SDK Mock
-export const sdk = {
-  message: "Mock SDK"
-};
+// Export modules
+export * from './auth';
+export * from './dashboard';

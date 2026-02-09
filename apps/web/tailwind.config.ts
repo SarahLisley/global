@@ -1,7 +1,10 @@
 import type { Config } from 'tailwindcss';
 
 export default {
-  content: ['./src/**/*.{ts,tsx}'],
+  content: [
+    './src/**/*.{ts,tsx}',
+    '../../packages/ui/src/**/*.{ts,tsx}'
+  ],
   theme: {
     extend: {
       colors: {
@@ -21,7 +24,7 @@ export default {
         '2.5xl': '1.25rem',
       },
       fontFamily: {
-        sans: ['ui-sans-serif','system-ui','Segoe UI','Roboto','Inter','Arial','sans-serif'],
+        sans: ['ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'Inter', 'Arial', 'sans-serif'],
       }
     }
   },

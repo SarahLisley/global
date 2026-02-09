@@ -125,22 +125,22 @@ export default function FinanceiroPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                   <label htmlFor="dtInicial" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">De</label>
-                  <Input
+                  <input
                     id="dtInicial"
                     type="date"
-                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm shadow-none"
+                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm"
                     value={dtInicial}
-                    onChange={(e: { target: { value: React.SetStateAction<string>; }; }) => setDtInicial(e.target.value)}
+                    onChange={(e) => setDtInicial(e.target.value)}
                   />
                 </div>
                 <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                   <label htmlFor="dtFinal" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">Até</label>
-                  <Input
+                  <input
                     id="dtFinal"
                     type="date"
-                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm shadow-none"
+                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm"
                     value={dtFinal}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDtFinal(e.target.value)}
+                    onChange={(e) => setDtFinal(e.target.value)}
                   />
                 </div>
               </div>
@@ -155,22 +155,24 @@ export default function FinanceiroPage() {
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                   <label htmlFor="numped" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">Pedido</label>
-                  <Input
+                  <input
                     id="numped"
-                    placeholder="Pedido..."
-                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm shadow-none"
+                    type="text"
+                    placeholder="Número..."
                     value={numped}
-                    onChange={(e: { target: { value: React.SetStateAction<string>; }; }) => setNumped(e.target.value)}
+                    onChange={(e) => setNumped(e.target.value)}
+                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm"
                   />
                 </div>
                 <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                   <label htmlFor="notaFiscal" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">Nota Fiscal</label>
-                  <Input
+                  <input
                     id="notaFiscal"
-                    placeholder="NF..."
-                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm shadow-none"
+                    type="text"
+                    placeholder="Número..."
                     value={notaFiscal}
-                    onChange={(e: { target: { value: React.SetStateAction<string>; }; }) => setNotaFiscal(e.target.value)}
+                    onChange={(e) => setNotaFiscal(e.target.value)}
+                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm"
                   />
                 </div>
 

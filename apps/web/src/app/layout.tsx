@@ -7,12 +7,16 @@ export const metadata: Metadata = {
 };
 
 import { MSWProvider } from './MSWProvider';
+import { Toaster } from '@pgb/ui';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className="min-h-screen font-sans antialiased" suppressHydrationWarning>
-        <MSWProvider>{children}</MSWProvider>
+        <MSWProvider>
+          {children}
+          <Toaster />
+        </MSWProvider>
       </body>
     </html>
   );

@@ -134,22 +134,22 @@ export default function MeusPedidosPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                   <label htmlFor="dtInicial" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">De</label>
-                  <Input
+                  <input
                     id="dtInicial"
                     type="date"
-                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm shadow-none"
+                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm"
                     value={dtInicial}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDtInicial(e.target.value)}
+                    onChange={(e) => setDtInicial(e.target.value)}
                   />
                 </div>
                 <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                   <label htmlFor="dtFinal" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">Até</label>
-                  <Input
+                  <input
                     id="dtFinal"
                     type="date"
-                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm shadow-none"
+                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm"
                     value={dtFinal}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDtFinal(e.target.value)}
+                    onChange={(e) => setDtFinal(e.target.value)}
                   />
                 </div>
               </div>
@@ -164,22 +164,24 @@ export default function MeusPedidosPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                   <label htmlFor="pedidoNum" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">Pedido</label>
-                  <Input
+                  <input
                     id="pedidoNum"
+                    type="text"
                     placeholder="Número..."
-                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm shadow-none"
+                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm"
                     value={pedidoNum}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPedidoNum(e.target.value)}
+                    onChange={(e) => setPedidoNum(e.target.value)}
                   />
                 </div>
                 <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                   <label htmlFor="notaFiscal" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">Nota Fiscal</label>
-                  <Input
+                  <input
                     id="notaFiscal"
+                    type="text"
                     placeholder="Número..."
-                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm shadow-none"
+                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm"
                     value={notaFiscal}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotaFiscal(e.target.value)}
+                    onChange={(e) => setNotaFiscal(e.target.value)}
                   />
                 </div>
               </div>

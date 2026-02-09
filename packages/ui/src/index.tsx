@@ -59,3 +59,12 @@ export const FormField = ({ children, className }: any) => (
 export const Input = (props: any) => (
   <input style={{ padding: '0.5rem', width: '100%' }} {...props} />
 );
+
+export const Skeleton = ({ className, ...props }: any) => (
+  <div
+    className={`animate-pulse rounded-md bg-slate-200 ${className}`}
+    {...props}
+  />
+);
+
+export * from './Toast';

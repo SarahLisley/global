@@ -11,6 +11,9 @@
       ],
       "@hooks/*": [
         "hooks/*"
+      ],
+      "@pgb/sdk": [
+        "../../../packages/sdk/src/index.ts"
       ]
     },
     "incremental": true,

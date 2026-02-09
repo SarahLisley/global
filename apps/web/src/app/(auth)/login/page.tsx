@@ -9,14 +9,16 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
 import { BrandLogo } from '../../../components/brand-logo';
+import { LoginInputSchema } from '@pgb/sdk';
 import { loginAction } from '../actions';
 import { Mail, LockKeyhole, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
+// Redefine o schema completo para evitar problemas de inferência de tipos com .extend()
 const schema = z.object({
   email: z.string().email('Informe um e-mail válido'),
-  password: z.string().min(3, 'Mínimo de 3 caracteres'),
+  password: z.string().min(1, 'Senha é obrigatória'),
   remember: z.boolean().optional(),
 });
 
@@ -36,7 +38,8 @@ function LoginContent() {
   const onSubmit = (data: FormData) => {
     setServerError(null);
     startTransition(async () => {
-      const res = await loginAction(data);
+      // Cast explícito para resolver erro de tipo, já que FormData estende o tipo esperado
+      const res = await loginAction(data as { email: string; password: string });
       if (!res.ok) {
         setServerError(res.message ?? 'Erro ao entrar');
         return;
