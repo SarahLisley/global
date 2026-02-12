@@ -67,7 +67,7 @@ export default function TicketsPage() {
 
   const onClear = () => {
     const defaultFilters: Filters = {
-      dateFrom: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      dateFrom: new Date().toISOString().slice(0, 10),
       dateTo: new Date().toISOString().slice(0, 10),
       status: 'todos',
       orderNumber: '',
@@ -244,7 +244,7 @@ export default function TicketsPage() {
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
-                Limpar Pesquisa
+                Limpar
               </Button>
             </div>
           </div>

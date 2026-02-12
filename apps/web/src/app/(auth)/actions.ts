@@ -5,8 +5,10 @@ import { cookies } from 'next/headers';
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
 const MOCK = process.env.NEXT_PUBLIC_MOCK_AUTH === '1';
 
-export async function loginAction(form: { email: string; password: string }) {
+export async function loginAction(form: { email: string; password: string; remember?: boolean }) {
   try {
+    const maxAge = 60 * 60 * 2; // 2 hours
+
     if (MOCK) {
       const token = `mock-${Buffer.from(`${form.email}:${Date.now()}`).toString('base64')}`;
       (await cookies()).set('pgb_session', token, {
@@ -14,7 +16,7 @@ export async function loginAction(form: { email: string; password: string }) {
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
         path: '/',
-        maxAge: 60 * 60,
+        maxAge,
       });
       return { ok: true, redirectTo: '/dashboard' };
     }
@@ -37,14 +39,14 @@ export async function loginAction(form: { email: string; password: string }) {
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      maxAge: 60 * 60,
+      maxAge,
     });
     (await cookies()).set('pgb_user', Buffer.from(JSON.stringify(data.user)).toString('base64'), {
       httpOnly: false,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      maxAge: 60 * 60,
+      maxAge,
     });
 
     return { ok: true, redirectTo: '/dashboard' };

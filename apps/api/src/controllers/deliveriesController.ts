@@ -68,7 +68,7 @@ export async function searchDeliveries(params: {
         N.TRANSPORTADORA,
         N.VLTOTAL,
         N.DTFAT,
-        ROW_NUMBER() OVER (PARTITION BY L.NUMTRANSVENDA ORDER BY L.DATA_HORA_EFETIVA DESC NULLS LAST, L.DATA_HORA DESC NULLS LAST) AS RN
+        ROW_NUMBER() OVER (PARTITION BY L.NUMTRANSVENDA ORDER BY NVL(L.DATA_HORA_EFETIVA, L.DATA_HORA) DESC NULLS LAST) AS RN
       FROM ${OWNER}.BRLOGSSW L
       JOIN ${OWNER}.PCNFSAID N
         ON N.NUMTRANSVENDA = L.NUMTRANSVENDA
@@ -100,7 +100,7 @@ export async function searchDeliveries(params: {
     `
     WITH base AS (
       SELECT
-        ROW_NUMBER() OVER (PARTITION BY L.NUMTRANSVENDA ORDER BY L.DATA_HORA_EFETIVA DESC NULLS LAST, L.DATA_HORA DESC NULLS LAST) AS RN
+        ROW_NUMBER() OVER (PARTITION BY L.NUMTRANSVENDA ORDER BY NVL(L.DATA_HORA_EFETIVA, L.DATA_HORA) DESC NULLS LAST) AS RN
       FROM ${OWNER}.BRLOGSSW L
       JOIN ${OWNER}.PCNFSAID N
         ON N.NUMTRANSVENDA = L.NUMTRANSVENDA
@@ -155,53 +155,7 @@ export async function searchDeliveries(params: {
   }));
 
   if (mapped.length === 0) {
-    // Mock Fallback
-    const mockDeliveries: Delivery[] = [
-      {
-        id: '9001',
-        nroPedido: '500123',
-        filial: '1',
-        nroNF: '987654',
-        vlrTotal: 3500.00,
-        prevEntrega: new Date(Date.now() + 86400000 * 2).toISOString(),
-        dtAgendamento: new Date().toISOString(),
-        status: 'Em trânsito',
-        transportadora: 'Bravo Logística',
-        cidade: 'São Paulo',
-        destinatario: 'Cliente Exemplo Ltda',
-        dominio: 'https://rastreio.exemplo.com/9001'
-      },
-      {
-        id: '9002',
-        nroPedido: '500122',
-        filial: '1',
-        nroNF: '987650',
-        vlrTotal: 1250.50,
-        prevEntrega: new Date(Date.now() + 86400000).toISOString(),
-        dtAgendamento: new Date(Date.now() - 86400000).toISOString(),
-        status: 'Agendado',
-        transportadora: 'TransRapido',
-        cidade: 'Campinas',
-        destinatario: 'Cliente Exemplo Ltda'
-      },
-      {
-        id: '8999',
-        nroPedido: '500110',
-        filial: '1',
-        nroNF: '987600',
-        vlrTotal: 5000.00,
-        prevEntrega: new Date(Date.now() - 86400000 * 2).toISOString(),
-        dtAgendamento: new Date(Date.now() - 86400000 * 5).toISOString(),
-        dtEntrega: new Date(Date.now() - 86400000 * 2).toISOString(),
-        status: 'Entregue',
-        transportadora: 'Bravo Logística',
-        cidade: 'São Paulo',
-        destinatario: 'Cliente Exemplo Ltda',
-        nomeRecebedor: 'João Portaria',
-        docRecebedor: 'RG 12.345.678-9'
-      }
-    ];
-    return { list: mockDeliveries, total: 3 };
+    return { list: [], total: 0 };
   }
 
   return { list: mapped, total };

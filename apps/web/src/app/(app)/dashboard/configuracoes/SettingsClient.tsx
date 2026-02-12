@@ -280,25 +280,28 @@ export function SettingsClient({ user }: SettingsClientProps) {
                     </FormField>
                   </div>
 
-                  <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl flex items-start gap-3">
+                </div>
+
+                {formData.novaSenha && (formData.novaSenha.length < 8 || !/\d/.test(formData.novaSenha) || !/[!@#$%^&*(),.?":{}|<>]/.test(formData.novaSenha)) && (
+                  <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-600 mt-0.5">
                       <circle cx="12" cy="12" r="10"></circle>
                       <line x1="12" y1="8" x2="12" y2="12"></line>
                       <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
                     <p className="text-sm text-orange-800">
-                      Recomendamos usar uma senha com pelo menos 8 caracteres, incluindo números e símbolos.
+                      A senha deve ter pelo menos 8 caracteres, incluindo números e símbolos.
                     </p>
                   </div>
-                </div>
+                )}
               </div>
             )}
 
             <div className="mt-10 pt-6 border-t border-gray-100 flex justify-end gap-3 sticky bottom-0 bg-white/95 backdrop-blur-sm p-4 -mx-8 -mb-8 rounded-b-2xl">
-              <Button variant="secondary" className="px-6 h-11">Cancelar</Button>
-              <Button onClick={handleSave} loading={loading} className="px-8 h-11 bg-[#4a90e2] hover:bg-[#357abd] text-white">
+              <Button onClick={handleSave} loading={loading} className="px-8 h-11 bg-[#4a90e2] hover:bg-[#357abd] text-white rounded-full">
                 Salvar Alterações
               </Button>
+              <Button variant="secondary" className="px-6 h-11">Cancelar</Button>
             </div>
           </div>
         </div>

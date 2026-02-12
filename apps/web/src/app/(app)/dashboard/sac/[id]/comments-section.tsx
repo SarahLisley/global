@@ -4,6 +4,16 @@ import { useState, useTransition, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { addCommentAction, fetchCommentsAction, editCommentAction, deleteCommentAction } from '../actions';
 import { Toast } from './toast';
+import { cn } from '@lib/cn';
+
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2);
+}
 
 interface Comment {
   id: string;
@@ -212,7 +222,10 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
 
       {/* ÁREA 1: INTERAÇÃO SAC */}
       <div
-        className={`bg-white rounded-2xl border transition-all duration-300 hover:shadow-md flex flex-col h-[520px] overflow-hidden relative ${isDragOver ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-slate-200/60 shadow-sm'}`}
+        className={cn(
+          "bg-white rounded-2xl border transition-all duration-300 flex flex-col h-[600px] overflow-hidden relative shadow-sm",
+          isDragOver ? "border-blue-500 ring-2 ring-blue-500/10" : "border-slate-200/60"
+        )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -229,9 +242,9 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
         )}
 
         {/* Header */}
-        <div className="bg-white px-6 py-4 flex items-center justify-between border-b border-slate-100 sticky top-0 z-20">
+        <div className="bg-white px-6 py-4 flex items-center justify-between border-b border-slate-100 sticky top-0 z-20 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-slate-50/50 rounded-xl flex items-center justify-center border border-slate-200/50 shadow-sm text-slate-600">
+            <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center border border-blue-100/50 shadow-sm text-blue-600">
               <Icons.Chat />
             </div>
             <div>
@@ -248,47 +261,66 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
         {/* Chat Area */}
         <div
           ref={interactionListRef}
-          className="flex-1 overflow-y-auto px-6 py-6 bg-slate-50 space-y-6"
+          className="flex-1 overflow-y-auto px-6 py-6 bg-slate-50/50 space-y-8 scroll-smooth"
+          style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '24px 24px' }}
         >
           {allMessages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-slate-400 select-none">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 ring-1 ring-slate-100">
+            <div className="flex flex-col items-center justify-center h-full text-slate-400 select-none opacity-60">
+              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 ring-1 ring-slate-200/50 shadow-sm">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-slate-300"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2-2z" /></svg>
               </div>
               <span className="text-sm font-medium text-slate-500">Nenhum histórico</span>
               <span className="text-xs mt-1.5 text-slate-400">Inicie uma conversa abaixo.</span>
             </div>
           ) : (
-            allMessages.map((msg) => {
+            allMessages.map((msg, index) => {
               const isMe = msg.authorType === 'cliente';
               const isEditing = editingId === msg.id;
+              const showAvatar = true; // Could optimize to show only on group change
 
               if (isEditing) return null;
 
               return (
-                <div key={msg.id} className={`flex w-full group ${isMe ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-500`}>
-                  <div className={`flex flex-col max-w-[85%] ${isMe ? 'items-end' : 'items-start'}`}>
+                <div key={msg.id} className={cn(
+                  "flex w-full group animate-in slide-in-from-bottom-2 duration-500 gap-3",
+                  isMe ? "justify-end" : "justify-start"
+                )}>
+                  {/* Avatar SAC */}
+                  {!isMe && showAvatar && (
+                    <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-sm mt-1">
+                      <span className="text-[10px] font-bold text-slate-600">SC</span>
+                    </div>
+                  )}
+
+                  <div className={cn(
+                    "flex flex-col max-w-[75%]",
+                    isMe ? "items-end" : "items-start"
+                  )}>
                     {/* Meta */}
-                    <div className="flex items-center gap-2 mb-1.5 px-1 opacity-90">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider ${isMe ? 'text-blue-600' : 'text-slate-600'}`}>
-                        {isMe ? 'Você' : 'SAC'}
-                      </span>
+                    <div className="flex items-center gap-2 mb-1 px-1 opacity-80">
                       <span className="text-[10px] text-slate-400 font-medium">{formatDateTime(msg.createdAt)}</span>
                     </div>
 
                     {/* Bubble */}
-                    <div className={`relative px-5 py-3.5 text-sm shadow-sm transition-all duration-200 hover:shadow-md ${isMe
-                      ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl rounded-tr-sm ring-1 ring-blue-700/50'
-                      : 'bg-white text-slate-700 border border-slate-200 rounded-2xl rounded-tl-sm'
-                      }`}>
-                      <p className={`whitespace-pre-wrap break-words leading-relaxed ${isMe ? 'font-light' : 'font-normal'}`}>
+                    <div className={cn(
+                      "relative px-5 py-3.5 text-sm shadow-sm transition-all duration-200",
+                      isMe
+                        ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm shadow-blue-500/10"
+                        : "bg-white text-slate-700 border border-slate-200 rounded-2xl rounded-tl-sm shadow-slate-200/50"
+                    )}>
+                      <p className={cn(
+                        "whitespace-pre-wrap break-words leading-relaxed",
+                        isMe ? "font-normal" : "font-normal"
+                      )}>
                         {msg.content}
                       </p>
                       {msg.attachment && (
-                        <a href={msg.attachment.url} target="_blank" className={`flex items-center gap-2 mt-3 p-2 rounded-lg text-xs transition-colors border ${isMe
-                          ? 'bg-white/10 hover:bg-white/20 text-white border-white/10'
-                          : 'bg-slate-50 hover:bg-slate-100 text-blue-600 border-slate-100'
-                          }`}>
+                        <a href={msg.attachment.url} target="_blank" className={cn(
+                          "flex items-center gap-2 mt-3 p-2 rounded-lg text-xs transition-colors border",
+                          isMe
+                            ? "bg-white/10 hover:bg-white/20 text-white border-white/10"
+                            : "bg-slate-50 hover:bg-slate-100 text-blue-600 border-slate-100"
+                        )}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
                           <span className="truncate max-w-[200px] font-medium">{msg.attachment.filename}</span>
                         </a>
@@ -297,16 +329,23 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
 
                     {/* Actions */}
                     {isMe && !isDisabled && (
-                      <div className="flex items-center gap-3 mt-1.5 px-1 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0">
-                        <button onClick={() => handleEdit(msg)} className="text-[10px] text-slate-400 hover:text-blue-600 font-semibold uppercase tracking-wider flex items-center gap-1 transition-colors">
+                      <div className="flex items-center gap-3 mt-1 px-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                        <button onClick={() => handleEdit(msg)} className="text-[10px] text-slate-400 hover:text-blue-600 font-medium flex items-center gap-1 transition-colors hover:underline">
                           Editar
                         </button>
-                        <button onClick={() => handleDelete(msg.id)} className="text-[10px] text-slate-400 hover:text-red-500 font-semibold uppercase tracking-wider flex items-center gap-1 transition-colors">
+                        <button onClick={() => handleDelete(msg.id)} className="text-[10px] text-slate-400 hover:text-red-500 font-medium flex items-center gap-1 transition-colors hover:underline">
                           Apagar
                         </button>
                       </div>
                     )}
                   </div>
+
+                  {/* Avatar Me */}
+                  {isMe && showAvatar && (
+                    <div className="w-8 h-8 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center shrink-0 shadow-sm mt-1">
+                      <span className="text-[10px] font-bold text-blue-600">me</span>
+                    </div>
+                  )}
                 </div>
               );
             })
@@ -315,26 +354,28 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
 
         {/* Input Chat */}
         {!isDisabled && (
-          <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-slate-100 shrink-0 relative z-10 transition-colors focus-within:bg-slate-50/30">
-            <div className="flex gap-3 items-end">
-              {/* Botão de Anexo Restaurado */}
+          <div className="p-4 bg-white border-t border-slate-100 shrink-0 relative z-10 transition-colors focus-within:bg-slate-50/10">
+            <form onSubmit={handleSendMessage} className="flex gap-2 items-end relative bg-slate-50 rounded-2xl border border-slate-200 p-2 focus-within:ring-2 focus-within:ring-blue-500/10 focus-within:border-blue-400 transition-all shadow-sm">
               <button
                 type="button"
-                className="mb-2.5 p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
                 title="Anexar arquivo"
                 onClick={() => showToast('Funcionalidade de anexo em breve!', 'info')}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
               </button>
 
-              <div className="relative flex-1 group">
+              <div className="flex-1 py-2">
                 <textarea
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Digite sua mensagem para o suporte..."
-                  className="w-full pl-4 pr-12 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 outline-none resize-none bg-slate-50 focus:bg-white transition-all placeholder:text-slate-400 shadow-sm"
+                  onChange={(e) => {
+                    setNewMessage(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                  }}
+                  placeholder="Digite sua mensagem..."
+                  className="w-full text-sm bg-transparent border-none focus:ring-0 p-0 outline-none resize-none placeholder:text-slate-400 max-h-[120px]"
                   rows={1}
-                  style={{ minHeight: '42px' }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
@@ -342,88 +383,77 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
                     }
                   }}
                 />
-                <div className="absolute top-3 right-3 text-xs text-slate-300">↵</div>
               </div>
 
               <button
                 type="submit"
                 disabled={!newMessage.trim() || isPending}
-                className="h-[42px] w-[42px] flex items-center justify-center bg-blue-600 text-white rounded-xl hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 transition-all shadow-md shadow-blue-500/20"
+                className="p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 transition-all shadow-md shadow-blue-500/20"
               >
                 {isPending ? (
                   <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
                 ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="ml-0.5"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
                 )}
               </button>
+            </form>
+            <div className="px-2 mt-2 flex justify-end">
+              <span className="text-[10px] text-slate-400 font-medium">Pressione Enter para enviar</span>
             </div>
-          </form>
+          </div>
         )}
       </div>
 
       {/* ÁREA 2: ANOTAÇÕES */}
       <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm transition-all duration-300 hover:shadow-md flex flex-col overflow-hidden">
         {/* Header Anotações - Padronizado com o de cima */}
-        <div className="bg-white px-6 py-4 flex items-center justify-between border-b border-slate-100">
+        {/* Header Anotações - Padronizado com o de cima */}
+        <div className="bg-white px-6 py-4 flex items-center justify-between border-b border-slate-100 shadow-sm z-20">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-slate-50/50 rounded-xl flex items-center justify-center border border-slate-200/50 shadow-sm text-slate-600">
+            <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center border border-amber-100/50 shadow-sm text-amber-600">
               <Icons.Note />
             </div>
             <div>
-              <h3 className="text-slate-800 font-semibold text-base tracking-tight">Anotações Pessoais</h3>
+              <h3 className="text-slate-800 font-semibold text-base tracking-tight">Comentários</h3>
               <p className="text-slate-400 text-xs font-medium">Notas privadas do ticket</p>
             </div>
           </div>
           <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
-            <span className="text-slate-600 text-[11px] font-semibold uppercase tracking-wide">{clientNotes.length} NOTAS</span>
+            <span className="text-slate-600 text-[11px] font-semibold uppercase tracking-wide">
+              {clientNotes.length} {clientNotes.length === 1 ? 'NOTA' : 'NOTAS'}
+            </span>
           </div>
         </div>
 
-        <div className="p-6 bg-slate-50 space-y-6">
-          {!isDisabled && (
-            <form onSubmit={handleSubmitNote} className="flex gap-3">
-              <input
-                type="text"
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                className="flex-1 px-4 py-3 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-slate-800 focus:ring-4 focus:ring-slate-100 placeholder:text-slate-400 bg-slate-50 focus:bg-white transition-all shadow-sm"
-                placeholder="Adicionar uma nota rápida..."
-              />
-              <button
-                type="submit"
-                disabled={!newComment.trim() || isPending}
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:shadow-none disabled:active:scale-100 flex items-center gap-2"
-              >
-                <Icons.Plus />
-                <span>Adicionar</span>
-              </button>
-            </form>
-          )}
-
-          <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="flex-1 flex flex-col p-6 bg-slate-50/50 space-y-6 overflow-hidden">
+          {/* Scrollable Notes List */}
+          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3 min-h-0">
             {clientNotes.map(msg => {
               const isEditing = editingId === msg.id;
 
               return (
-                <div key={msg.id} className="group relative bg-white border border-slate-100 rounded-xl p-4 transition-all duration-200 hover:border-slate-300 hover:shadow-sm">
+                <div key={msg.id} className="group relative bg-white border border-slate-200 rounded-xl p-4 transition-all duration-200 hover:border-amber-200 hover:shadow-md hover:shadow-amber-500/5">
                   {isEditing ? (
                     <div className="space-y-3">
                       <textarea
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
-                        className="w-full p-3 text-sm border border-blue-400 rounded-lg focus:ring-4 focus:ring-blue-500/10 outline-none resize-none bg-white shadow-sm"
+                        className="w-full p-3 text-sm border border-amber-400 rounded-lg focus:ring-4 focus:ring-amber-500/10 outline-none resize-none bg-white shadow-sm"
                         rows={3}
                         autoFocus
                       />
                       <div className="flex gap-2 justify-end">
                         <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
-                        <button onClick={() => handleSaveEdit(msg.id)} className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">Salvar</button>
+                        <button onClick={() => handleSaveEdit(msg.id)} className="px-3 py-1.5 text-xs font-medium bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors shadow-sm">Salvar</button>
                       </div>
                     </div>
                   ) : (
                     <>
                       <div className="flex justify-between items-start mb-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 px-2 py-0.5 rounded border border-slate-100/50">{formatDateTime(msg.createdAt)}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{formatDateTime(msg.createdAt)}</span>
+                        </div>
 
                         {!isDisabled && (
                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute top-3 right-3 bg-white p-1 rounded-lg border border-slate-100 shadow-sm">
@@ -445,11 +475,50 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
             })}
 
             {clientNotes.length === 0 && !isPending && (
-              <div className="py-10 text-center border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/30">
+              <div className="py-10 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300">
+                  <Icons.Note />
+                </div>
                 <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Nenhuma nota registrada</p>
+                <p className="text-[10px] text-slate-400 mt-1">Use o campo abaixo para adicionar anotações privadas.</p>
               </div>
             )}
           </div>
+
+          {!isDisabled && (
+            <form onSubmit={handleSubmitNote} className="flex gap-2 items-end relative bg-white rounded-2xl border border-slate-200 p-2 focus-within:ring-2 focus-within:ring-amber-500/10 focus-within:border-amber-400 transition-all shadow-sm shrink-0">
+              <div className="flex-1 py-1 px-1">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => {
+                    setNewComment(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                  }}
+                  className="w-full text-sm bg-transparent border-none focus:ring-0 p-2 outline-none resize-none placeholder:text-slate-400 max-h-[120px]"
+                  placeholder="Adicionar uma nota rápida..."
+                  rows={1}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmitNote(e);
+                    }
+                  }}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={!newComment.trim() || isPending}
+                className="p-2.5 bg-amber-500 text-white rounded-xl hover:bg-amber-600 active:scale-95 transition-all shadow-md shadow-amber-500/20 disabled:opacity-50 disabled:shadow-none disabled:active:scale-100 flex items-center justify-center h-[42px] w-[42px]"
+              >
+                {isPending ? (
+                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                ) : (
+                  <Icons.Plus />
+                )}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>

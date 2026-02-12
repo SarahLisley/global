@@ -61,8 +61,8 @@ export default async function DashboardPage(props: { searchParams: Promise<{ [ke
           ];
           const gradients = ['from-blue-500 to-blue-600', 'from-emerald-500 to-emerald-600', 'from-orange-500 to-orange-600', 'from-purple-500 to-purple-600'];
           return (
-            <Card key={k.label} className="relative overflow-hidden group hover:shadow-xl transition-shadow duration-300">
-              <div className="flex items-center justify-start gap-4">
+            <Card key={k.label} className="relative overflow-hidden group hover:shadow-xl transition-shadow duration-300 p-4 sm:p-5">
+              <div className="flex items-center justify-start gap-3 sm:gap-4">
                 <div className={`p-2 sm:p-3 rounded-xl bg-gradient-to-br ${gradients[index % gradients.length]} text-white shadow-lg flex-shrink-0`}>
                   {icons[index % icons.length]}
                 </div>

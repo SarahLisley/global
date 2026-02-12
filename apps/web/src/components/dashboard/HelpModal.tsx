@@ -84,17 +84,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-gray-100">
-              <button className="w-full py-3 px-4 bg-[#4a90e2] hover:bg-[#357abd] text-white font-medium rounded-xl shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                </svg>
-                Iniciar Chat Online
-              </button>
-              <p className="text-center mt-3 text-xs text-gray-400">
-                Tempo médio de resposta: 5 minutos
-              </p>
-            </div>
+
           </div>
         </div>
       </div>

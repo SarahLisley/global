@@ -15,6 +15,9 @@ export type Titulo = {
   dtPgto?: string;
   vlrPago?: number;
   boletoUrl?: string;
+  linhaDigitavel?: string;
+  codigoBarras?: string;
+  nossoNumero?: string;
   numped?: string;
   notaFiscal?: string;
 };
@@ -70,6 +73,7 @@ export async function getTitulos(params: {
     SELECT 
       P.NUMTRANSVENDA,
       P.DUPLIC,
+      P.PREST,
       P.NUMPED,
       NF.NUMNOTA,
       P.DTEMISSAO,
@@ -77,7 +81,13 @@ export async function getTitulos(params: {
       P.DTPAG,
       P.VALOR,
       P.VPAGO,
-      P.CODFILIAL
+      P.CODFILIAL,
+      P.CODCOB,
+      P.NOSSONUMBCO,
+      P.LINHADIG,
+      P.CODBARRA,
+      P.PASTAARQUIVOBOLETO,
+      P.NOMEARQUIVO
     FROM ${OWNER}.PCPREST P
     LEFT JOIN ${OWNER}.PCNFSAID NF ON NF.NUMTRANSVENDA = P.NUMTRANSVENDA
     WHERE ${where.join(' AND ')}
@@ -99,23 +109,34 @@ export async function getTitulos(params: {
   delete countBinds.LIMIT;
   const countRes = await select<{ TOTAL: number }>(countQuery, countBinds);
 
+  // DEBUG: Inspect boleto columns
+  if (rows.length > 0) {
+    console.log('DEBUG: BOLETO INFO:', rows.map((r: any) => ({
+      id: r.NUMTRANSVENDA,
+      nossoNum: r.NOSSONUMBCO,
+      linhaDig: r.LINHADIG,
+      arquivo: r.NOMEARQUIVO,
+      pasta: r.PASTAARQUIVOBOLETO
+    })).slice(0, 3));
+  }
+
   const titulos = rows.map((r) => {
     const isPaid = !!r.DTPAG;
     let status: Titulo['status'] = isPaid ? 'paid' : 'unpaid';
 
     // Check if overdue
     if (!isPaid && new Date(r.DTVENC) < new Date()) {
-      status = 'overdue'; // Will appear as unpaid/warning in frontend logic if not explicitly handled, 
+      status = 'overdue'; // Will appear as unpaid/warning in frontend logic if not explicitly handled,
       // but frontend filters 'paid' | 'unpaid'.
       // Frontend logic: if (!dtPgto && vencido) shows warning.
     }
 
     return {
-      id: `${r.NUMTRANSVENDA}-${r.DUPLIC}`,
+      id: `${r.NUMTRANSVENDA}-${r.PREST}`,
       codCliente: String(params.codcli),
       dtEmissao: r.DTEMISSAO ? new Date(r.DTEMISSAO).toISOString() : '',
       nroDocto: String(r.DUPLIC),
-      parcela: String(r.DUPLIC), // Often DUPLIC is just the number/letter
+      parcela: String(r.PREST),
       valor: Number(r.VALOR ?? 0),
       dtVencimento: r.DTVENC ? new Date(r.DTVENC).toISOString() : '',
       cobranca: 'Boleto', // Default placeholder
@@ -124,63 +145,18 @@ export async function getTitulos(params: {
       dtPgto: r.DTPAG ? new Date(r.DTPAG).toISOString() : undefined,
       vlrPago: r.VPAGO ? Number(r.VPAGO) : undefined,
       boletoUrl: undefined, // Would need another integration for this
+      linhaDigitavel: r.LINHADIG ? String(r.LINHADIG) : undefined,
+      codigoBarras: r.CODBARRA ? String(r.CODBARRA) : undefined,
+      nossoNumero: r.NOSSONUMBCO ? String(r.NOSSONUMBCO) : undefined,
       numped: r.NUMPED ? String(r.NUMPED) : undefined,
       notaFiscal: r.NUMNOTA ? String(r.NUMNOTA) : undefined,
     };
   });
 
   if (titulos.length === 0) {
-    // Mock Fallback
-    const mockTitulos: Titulo[] = [
-      {
-        id: 'mock-1',
-        codCliente: String(params.codcli),
-        dtEmissao: new Date(Date.now() - 86400000 * 20).toISOString(),
-        nroDocto: '12345/1',
-        parcela: '1',
-        valor: 1500.00,
-        dtVencimento: new Date(Date.now() - 86400000 * 5).toISOString(),
-        cobranca: 'Boleto',
-        jurosTaxas: 15.50,
-        status: 'unpaid',
-        numped: '500123',
-        notaFiscal: '987654'
-      },
-      {
-        id: 'mock-2',
-        codCliente: String(params.codcli),
-        dtEmissao: new Date(Date.now() - 86400000 * 40).toISOString(),
-        nroDocto: '12340/1',
-        parcela: '1',
-        valor: 2500.00,
-        dtVencimento: new Date(Date.now() - 86400000 * 10).toISOString(),
-        cobranca: 'Boleto',
-        jurosTaxas: 0,
-        status: 'paid',
-        dtPgto: new Date(Date.now() - 86400000 * 12).toISOString(),
-        vlrPago: 2500.00,
-        numped: '500110',
-        notaFiscal: '987600'
-      },
-      {
-        id: 'mock-3',
-        codCliente: String(params.codcli),
-        dtEmissao: new Date(Date.now() - 86400000 * 5).toISOString(),
-        nroDocto: '12350/1',
-        parcela: '1',
-        valor: 850.00,
-        dtVencimento: new Date(Date.now() + 86400000 * 10).toISOString(),
-        cobranca: 'Boleto',
-        jurosTaxas: 0,
-        status: 'unpaid',
-        numped: '500122',
-        boletoUrl: 'https://example.com/boleto.pdf'
-      }
-    ];
-
     return {
-      titulos: mockTitulos as any[],
-      total: 3,
+      titulos: [],
+      total: 0,
       page: params.page || 1,
       pageSize: params.pageSize || 10
     };

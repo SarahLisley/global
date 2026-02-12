@@ -37,13 +37,30 @@ export function DocsValidity({ docs }: { docs: Doc[] }) {
     return rtf.format(diffDays, 'day');
   };
 
+  // Sort docs by urgency: vencido > proximo_vencer > valido
+  const sortedDocs = [...docs].sort((a, b) => {
+    const priority = { vencido: 0, proximo_vencer: 1, valido: 2 };
+    return priority[a.status] - priority[b.status];
+  });
+
   const badge = (s: Doc['status']) => {
-    if (s === 'valido') return <Badge variant="success">Válido</Badge>;
-    if (s === 'proximo_vencer') return <Badge variant="warning">Próx. vencimento</Badge>;
+    if (s === 'valido') return (
+      <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium bg-emerald-50 px-2.5 py-1 rounded-md w-fit border border-emerald-100">
+        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+        Válido
+      </div>
+    );
+    if (s === 'proximo_vencer') return (
+      <div className="flex items-center gap-1.5 text-xs text-amber-600 font-medium bg-amber-50 px-2.5 py-1 rounded-md w-fit border border-amber-100">
+        <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+        Próx. vencimento
+      </div>
+    );
     if (s === 'vencido') return (
-      <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
+      <div className="flex items-center gap-1.5 text-xs text-red-600 font-semibold bg-red-50 px-2.5 py-1 rounded-full w-fit border border-red-200">
+        <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>
         Vencido
-      </span>
+      </div>
     );
   };
 
@@ -55,9 +72,9 @@ export function DocsValidity({ docs }: { docs: Doc[] }) {
     );
     if (s === 'proximo_vencer') return (
       <svg width="18" height="18" className="sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="10" className="text-yellow-500" />
-        <line x1="12" y1="8" x2="12" y2="12" className="text-yellow-500" />
-        <line x1="12" y1="16" x2="12.01" y2="16" className="text-yellow-500" />
+        <circle cx="12" cy="12" r="10" className="text-amber-500" />
+        <line x1="12" y1="8" x2="12" y2="12" className="text-amber-500" />
+        <line x1="12" y1="16" x2="12.01" y2="16" className="text-amber-500" />
       </svg>
     );
     return (
@@ -72,15 +89,15 @@ export function DocsValidity({ docs }: { docs: Doc[] }) {
   return (
     <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300">
       {/* Header Responsivo */}
-      <div className="p-4 sm:p-6 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-white">
+      <div className="p-4 sm:p-6 border-b border-slate-100">
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="p-1.5 sm:p-2 bg-orange-100 rounded-lg flex-shrink-0">
+          <div className="p-1.5 sm:p-2 bg-slate-100 rounded-lg flex-shrink-0">
             <svg width="20" height="20" className="sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" className="text-orange-600" />
-              <polyline points="14 2 14 8 20 8" className="text-orange-600" />
-              <line x1="16" y1="13" x2="8" y2="13" className="text-orange-600" />
-              <line x1="16" y1="17" x2="8" y2="17" className="text-orange-600" />
-              <polyline points="10 9 9 9 8 9" className="text-orange-600" />
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" className="text-slate-500" />
+              <polyline points="14 2 14 8 20 8" className="text-slate-500" />
+              <line x1="16" y1="13" x2="8" y2="13" className="text-slate-500" />
+              <line x1="16" y1="17" x2="8" y2="17" className="text-slate-500" />
+              <polyline points="10 9 9 9 8 9" className="text-slate-500" />
             </svg>
           </div>
           <div className="min-w-0 flex-1">
@@ -92,77 +109,77 @@ export function DocsValidity({ docs }: { docs: Doc[] }) {
 
       <div className="p-4 sm:p-6">
         <div className="space-y-3 sm:space-y-4">
-          {docs.map((d) => (
-            <div key={d.description} className="p-3 sm:p-4 rounded-xl border border-gray-200 hover:border-[#4a90e2] hover:shadow-md transition-all group">
-              {/* Layout em coluna no mobile, grid no desktop */}
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
-                <div className="flex-shrink-0 self-start">
-                  {icon(d.status)}
-                </div>
-
-                {/* Grid responsivo */}
-                <div className="flex-1 grid grid-cols-1 sm:grid-cols-4 gap-3 sm:gap-4">
-                  <div className="sm:col-span-1">
-                    <div className="text-[10px] sm:text-xs font-medium text-gray-500 mb-0.5 sm:mb-1 uppercase tracking-wide">Descrição</div>
-                    <a
-                      href={d.url ?? '#'}
-                      target={d.url ? "_blank" : undefined}
-                      rel="noopener noreferrer"
-                      className={`text-xs sm:text-sm font-semibold text-[#4a90e2] hover:text-[#2563eb] hover:underline cursor-pointer break-words ${!d.url ? 'opacity-50 cursor-not-allowed hover:no-underline' : ''}`}
-                      onClick={(e) => {
-                        if (!d.url) {
-                          e.preventDefault();
-                          alert('Documento indisponível para download.');
-                        }
-                      }}
-                    >
-                      {d.description}
-                    </a>
+          {sortedDocs.map((d) => (
+            <div
+              key={d.description}
+              className={`rounded-lg border bg-white shadow-sm transition-all group overflow-hidden ${d.status === 'vencido'
+                ? 'border-l-4 border-l-red-300 border-y-slate-100 border-r-slate-100'
+                : 'border-l-4 border-l-emerald-400 border-y-slate-100 border-r-slate-100 hover:shadow-md'
+                }`}
+            >
+              <div className="p-4 sm:p-5">
+                {/* Layout em coluna no mobile, grid no desktop */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+                  <div className="flex-shrink-0 self-start sm:self-center">
+                    {icon(d.status)}
                   </div>
 
-                  <div>
-                    <div className="text-[10px] sm:text-xs font-medium text-gray-500 mb-0.5 sm:mb-1 uppercase tracking-wide">Dt. Validade</div>
-                    <div className="flex flex-col">
-                      <span className="text-xs sm:text-sm font-semibold text-gray-900">
-                        {(() => {
-                          const date = new Date(d.dueDate);
-                          return isNaN(date.getTime()) ? '-' : new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' }).format(date);
-                        })()}
-                      </span>
-                      <span className="text-[10px] sm:text-xs text-gray-500">
-                        {getRelativeTime(d.dueDate)}
-                      </span>
-                    </div>
-                  </div>
+                  {/* Grid responsivo */}
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-y-4 sm:gap-x-6 items-center">
 
-                  <div>
-                    <div className="text-[10px] sm:text-xs font-medium text-gray-500 mb-0.5 sm:mb-1 uppercase tracking-wide">Nro Documento</div>
-                    <div className="group/copy flex items-center gap-2">
-                      <code className="text-xs sm:text-sm font-mono text-gray-700 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 break-all">
-                        {d.docNumber}
-                      </code>
-                      <button
-                        onClick={() => handleCopy(d.docNumber)}
-                        className="opacity-0 group-hover/copy:opacity-100 focus:opacity-100 transition-opacity p-1 text-gray-400 hover:text-[#4a90e2]"
-                        title="Copiar"
+                    {/* Descrição - Foco Principal */}
+                    <div className="sm:col-span-4">
+                      <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Documento</div>
+                      <a
+                        href={d.url ?? '#'}
+                        target={d.url ? "_blank" : undefined}
+                        rel="noopener noreferrer"
+                        className={`text-base font-semibold transition-colors ${!d.url ? 'cursor-default text-slate-700' : 'text-slate-900 hover:text-blue-600'}`}
+                        onClick={(e) => {
+                          if (!d.url) {
+                            e.preventDefault();
+                          }
+                        }}
                       >
-                        {copied === d.docNumber ? (
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-500">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        ) : (
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                          </svg>
-                        )}
-                      </button>
+                        {d.description}
+                      </a>
                     </div>
-                  </div>
 
-                  <div>
-                    <div className="text-[10px] sm:text-xs font-medium text-gray-500 mb-0.5 sm:mb-1 uppercase tracking-wide">Status</div>
-                    <div>{badge(d.status)}</div>
+                    {/* Data de Validade */}
+                    <div className="sm:col-span-3">
+                      <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Vencimento</div>
+                      <div className="flex items-baseline gap-2">
+                        <span className={`text-sm font-medium ${d.status === 'vencido' ? 'text-slate-700' : 'text-slate-700'}`}>
+                          {(() => {
+                            const date = new Date(d.dueDate);
+                            return isNaN(date.getTime()) ? '-' : new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' }).format(date);
+                          })()}
+                        </span>
+                        <span className={`text-xs ${d.status === 'vencido' ? 'text-red-400' : 'text-slate-400'}`}>
+                          ({getRelativeTime(d.dueDate)})
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Número do Documento */}
+                    <div className="sm:col-span-3">
+                      <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Ref.</div>
+                      <div className="flex items-center gap-2 group/copy cursor-pointer" onClick={() => handleCopy(d.docNumber)}>
+                        <span className="font-mono text-xs text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                          {d.docNumber}
+                        </span>
+                        {copied === d.docNumber ? (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-500"><polyline points="20 6 9 17 4 12" /></svg>
+                        ) : (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-300 group-hover/copy:text-blue-400 transition-colors"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className="sm:col-span-2 flex justify-start sm:justify-end">
+                      {badge(d.status)}
+                    </div>
                   </div>
                 </div>
               </div>

@@ -29,6 +29,12 @@ function LoginContent() {
   const search = useSearchParams();
   const [serverError, setServerError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [capsLockActive, setCapsLockActive] = useState(false);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    const capsLock = e.getModifierState('CapsLock');
+    setCapsLockActive(capsLock);
+  };
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -38,8 +44,7 @@ function LoginContent() {
   const onSubmit = (data: FormData) => {
     setServerError(null);
     startTransition(async () => {
-      // Cast explícito para resolver erro de tipo, já que FormData estende o tipo esperado
-      const res = await loginAction(data as { email: string; password: string });
+      const res = await loginAction(data);
       if (!res.ok) {
         setServerError(res.message ?? 'Erro ao entrar');
         return;
@@ -52,8 +57,8 @@ function LoginContent() {
   return (
     <div className="w-full max-w-[400px] mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <BrandLogo className="mb-6" width={130} height={44} />
+      <div className="mb-8 text-center animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out fill-mode-both">
+        <BrandLogo className="mb-6 mx-auto" width={130} height={44} />
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
           Bem-vindo
         </h1>
@@ -63,7 +68,7 @@ function LoginContent() {
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 ease-out fill-mode-both">
         {/* Email Field */}
         <div className="space-y-1.5">
           <label className="text-sm font-semibold text-slate-700" htmlFor="email">
@@ -75,7 +80,8 @@ function LoginContent() {
             placeholder="seu@email.com.br"
             autoFocus
             autoComplete="email"
-            className="h-11 bg-white border-slate-200 rounded-xl pl-11 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+            disabled={isPending}
+            className="h-11 bg-white border-slate-200 rounded-xl pl-11 text-sm transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
             leftIcon={<Mail className="w-5 h-5 text-slate-400" />}
             {...register('email')}
           />
@@ -92,16 +98,26 @@ function LoginContent() {
           <label className="text-sm font-semibold text-slate-700" htmlFor="password">
             Senha
           </label>
-          <Input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            autoComplete="current-password"
-            className="h-11 bg-white border-slate-200 rounded-xl pl-11 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-            leftIcon={<LockKeyhole className="w-5 h-5 text-slate-400" />}
-            withPasswordToggle
-            {...register('password')}
-          />
+          <div className="relative">
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              autoComplete="current-password"
+              disabled={isPending}
+              onKeyDown={handleKeyDown}
+              className="h-11 bg-white border-slate-200 rounded-xl pl-11 text-sm transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              leftIcon={<LockKeyhole className="w-5 h-5 text-slate-400" />}
+              withPasswordToggle
+              {...register('password')}
+            />
+          </div>
+          {capsLockActive && !errors.password && (
+            <p className="text-xs text-orange-600 font-medium flex items-center gap-1 mt-1 animate-in fade-in slide-in-from-top-1">
+              <AlertCircle className="w-3.5 h-3.5" />
+              Caps Lock está ativo
+            </p>
+          )}
           {errors.password && (
             <p className="text-xs text-red-600 font-medium flex items-center gap-1 mt-1">
               <AlertCircle className="w-3.5 h-3.5" />
@@ -116,7 +132,8 @@ function LoginContent() {
             <input
               id="remember"
               type="checkbox"
-              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/50 focus:ring-offset-0 cursor-pointer transition-colors"
+              disabled={isPending}
+              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/50 focus:ring-offset-0 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               {...register('remember')}
             />
             <span className="ml-2 text-sm text-slate-600 group-hover:text-slate-800 transition-colors select-none">
@@ -147,7 +164,7 @@ function LoginContent() {
         {/* Submit Button */}
         <Button
           type="submit"
-          className="w-full h-12 mt-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-base font-semibold rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2"
+          className="w-full h-12 !mt-10 md:!mt-16 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-base font-semibold rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 group"
           disabled={isPending}
         >
           {isPending ? (
@@ -158,14 +175,14 @@ function LoginContent() {
           ) : (
             <>
               Entrar
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
             </>
           )}
         </Button>
       </form>
 
       {/* Footer */}
-      <div className="mt-8 text-center pt-6 border-t border-slate-100">
+      <div className="mt-8 text-center pt-6 border-t border-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 ease-out fill-mode-both">
         <p className="text-sm text-slate-600">
           Ainda não tem uma conta?{' '}
           <Link

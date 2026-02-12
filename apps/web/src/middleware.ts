@@ -22,6 +22,19 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+
+  // Sliding expiration: renew cookie if user is active on protected routes
+  if (hasSession && !isAuthPage && !PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+    response.cookies.set('pgb_session', hasSession, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 60 * 60 * 2, // 2 hours
+    });
+  }
+
+  return response;
 }
 export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico|images).*)'] };

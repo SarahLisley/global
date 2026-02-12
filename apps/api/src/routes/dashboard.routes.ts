@@ -683,4 +683,28 @@ export default async function dashboardRoutes(app: FastifyInstance) {
       return reply.status(500).send({ error: (err as Error).message });
     }
   });
+  // DEBUG BOLETO ROUTE - REMOVE LATER
+  app.get('/debug/boletos', async (req, reply) => {
+    try {
+      const rows = await select(
+        `SELECT 
+          NUMTRANSVENDA, 
+          PREST, 
+          DUPLIC, 
+          LINHADIG, 
+          CODBARRA, 
+          NOSSONUMBCO, 
+          NOMEARQUIVO, 
+          PASTAARQUIVOBOLETO,
+          DTVENC,
+          VALOR
+        FROM ${OWNER}.PCPREST 
+        WHERE ROWNUM <= 10
+        ORDER BY DTVENC DESC`
+      );
+      return reply.send(rows);
+    } catch (e) {
+      return reply.status(500).send(e);
+    }
+  });
 }

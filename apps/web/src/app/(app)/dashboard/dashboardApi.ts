@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
 export type RawKpis = {
   codcli: number;
@@ -26,27 +26,27 @@ export async function fetchKpis(): Promise<RawKpis> {
 }
 
 export type KpiCard = {
-  delta: number; label: string; value: string | number 
+  delta: number; label: string; value: string | number
 };
 
 export function mapKpisToCards(raw: RawKpis): KpiCard[] {
   const fmtCurrency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
   return [
     {
-        label: 'Valor atendido (30d)', value: fmtCurrency.format(raw.ordersLast30d.totalAmount || 0),
-        delta: 0
+      label: 'Valor atendido (30d)', value: fmtCurrency.format(raw.ordersLast30d.totalAmount || 0),
+      delta: 0
     },
     {
-        label: 'Qtde pedidos (30d)', value: raw.ordersLast30d.totalOrders || 0,
-        delta: 0
+      label: 'Qtde pedidos (30d)', value: raw.ordersLast30d.totalOrders || 0,
+      delta: 0
     },
     {
-        label: 'Títulos em aberto (R$)', value: fmtCurrency.format(raw.receivablesOpen.totalAmount || 0),
-        delta: 0
+      label: 'Títulos em aberto (R$)', value: fmtCurrency.format(raw.receivablesOpen.totalAmount || 0),
+      delta: 0
     },
     {
-        label: 'Entregas hoje', value: raw.deliveries.doneToday || 0,
-        delta: 0
+      label: 'Entregas hoje', value: raw.deliveries.doneToday || 0,
+      delta: 0
     },
   ];
 }

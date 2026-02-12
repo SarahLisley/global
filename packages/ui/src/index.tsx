@@ -1,70 +1,187 @@
-import React from 'react';
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+import { cn } from "./lib/utils"
 
-export const Card = ({ children, className }: any) => (
-  <div style={{ border: '1px solid #ccc', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }} className={className}>
-    {children}
-  </div>
-);
-
-export const Badge = ({ children, className, variant }: any) => {
-  const styles: React.CSSProperties = {
-    padding: '0.125rem 0.625rem',
-    borderRadius: '9999px',
-    fontSize: '0.75rem',
-    fontWeight: '600',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    whiteSpace: 'nowrap',
-  };
-
-  if (variant === 'success') {
-    styles.backgroundColor = '#dcfce7'; // green-100
-    styles.color = '#166534'; // green-800
-  } else if (variant === 'info') {
-    styles.backgroundColor = '#dbeafe'; // blue-100
-    styles.color = '#1e40af'; // blue-800
-  } else if (variant === 'warning') {
-    styles.backgroundColor = '#fef3c7'; // amber-100
-    styles.color = '#92400e'; // amber-800
-  } else {
-    styles.backgroundColor = '#f1f5f9'; // slate-100
-    styles.color = '#475569'; // slate-600
+// Card
+const cardVariants = cva(
+  "rounded-lg border border-slate-200 bg-white text-slate-950 shadow-sm",
+  {
+    variants: {
+      variant: {
+        default: "bg-white",
+        ghost: "border-none shadow-none bg-transparent",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
   }
+)
 
+export interface CardProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+  VariantProps<typeof cardVariants> { }
+
+export const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, variant, ...props }, ref) => (
+    <div ref={ref} className={cn(cardVariants({ variant, className }))} {...props} />
+  )
+)
+Card.displayName = "Card"
+
+// Badge
+const badgeVariants = cva(
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2",
+  {
+    variants: {
+      variant: {
+        default:
+          "border-transparent bg-slate-900 text-slate-50 hover:bg-slate-900/80",
+        secondary:
+          "border-transparent bg-slate-100 text-slate-900 hover:bg-slate-100/80",
+        destructive:
+          "border-transparent bg-red-500 text-slate-50 hover:bg-red-500/80",
+        outline: "text-slate-950",
+        success: "border-transparent bg-green-100 text-green-800 hover:bg-green-200",
+        warning: "border-transparent bg-amber-100 text-amber-800 hover:bg-amber-200",
+        info: "border-transparent bg-blue-100 text-blue-800 hover:bg-blue-200",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+)
+
+export interface BadgeProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+  VariantProps<typeof badgeVariants> { }
+
+export const Badge = ({ className, variant, ...props }: BadgeProps) => {
   return (
-    <span style={styles} className={className}>
-      {children}
-    </span>
-  );
-};
+    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+  )
+}
 
-export const Button = ({ children, className, variant, size, loading, ...props }: any) => (
-  <button
-    style={{ padding: '0.5rem 1rem', cursor: 'pointer', opacity: loading ? 0.7 : 1 }}
-    className={className}
-    disabled={loading || props.disabled}
-    {...props}
-  >
-    {loading ? 'Carregando...' : children}
-  </button>
-);
+// Button
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default: "bg-slate-900 text-slate-50 hover:bg-slate-900/90",
+        destructive:
+          "bg-red-500 text-slate-50 hover:bg-red-500/90",
+        outline:
+          "border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900",
+        secondary:
+          "bg-slate-100 text-slate-900 hover:bg-slate-100/80",
+        ghost: "hover:bg-slate-100 hover:text-slate-900",
+        link: "text-slate-900 underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
 
-export const FormField = ({ children, className }: any) => (
-  <div style={{ marginBottom: '1rem' }} className={className}>
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+  loading?: boolean
+}
+
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, loading, children, ...props }, ref) => {
+    return (
+      <button
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        disabled={loading || props.disabled}
+        {...props}
+      >
+        {loading && (
+          <svg
+            className="mr-2 h-4 w-4 animate-spin"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+        )}
+        {children}
+      </button>
+    )
+  }
+)
+Button.displayName = "Button"
+
+// Input
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> { }
+
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          "flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Input.displayName = "Input"
+
+// FormField
+interface FormFieldProps extends React.HTMLAttributes<HTMLDivElement> {
+  label?: string;
+}
+
+export const FormField = ({ children, className, label, ...props }: FormFieldProps) => (
+  <div className={cn("space-y-2 mb-4", className)} {...props}>
+    {label && <label className="text-sm font-medium text-slate-700 block">{label}</label>}
     {children}
   </div>
 );
 
-export const Input = (props: any) => (
-  <input style={{ padding: '0.5rem', width: '100%' }} {...props} />
-);
-
-export const Skeleton = ({ className, ...props }: any) => (
-  <div
-    className={`animate-pulse rounded-md bg-slate-200 ${className}`}
-    {...props}
-  />
-);
+// Skeleton
+export const Skeleton = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => {
+  return (
+    <div
+      className={cn("animate-pulse rounded-md bg-slate-200", className)}
+      {...props}
+    />
+  )
+}
 
 export * from './Toast';
