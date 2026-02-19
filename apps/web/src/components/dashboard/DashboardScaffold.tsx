@@ -17,7 +17,7 @@ export function DashboardScaffold({ children, user }: DashboardScaffoldProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} user={user} />
 
       {/* Container principal com margin-left apenas no desktop */}
       <div className="lg:ml-60 flex min-h-screen flex-col">

@@ -3,8 +3,8 @@
 import clsx from 'clsx';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { jwtDecode } from 'jwt-decode';
+import { useState } from 'react';
+
 import { logoutAction } from '../../actions/logoutAction';
 
 const moduleTitles: Record<string, string> = {
@@ -43,36 +43,16 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
 
   /* Removed client-side cookie logic as it's now handled server-side in layout.tsx */
 
-  const initialNotifications = [
-    { id: 1, title: 'Nova venda realizada', description: 'Pedido #1234 aprovado', time: 'Há 5 min', read: false },
-    { id: 2, title: 'Atualização do sistema', description: 'Versão 2.4.0 lançada', time: 'Há 1 hora', read: false },
-    { id: 3, title: 'Novo cliente', description: 'Roberto Silva se cadastrou', time: 'Há 2 horas', read: true },
-  ];
-
-  const [notifications, setNotifications] = useState(initialNotifications);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('notifications');
-    if (saved) {
-      setNotifications(JSON.parse(saved));
-    }
-    setIsLoaded(true);
-  }, []);
-
-  const updateNotifications = (newNotifications: typeof initialNotifications) => {
-    setNotifications(newNotifications);
-    localStorage.setItem('notifications', JSON.stringify(newNotifications));
-  };
+  const [notifications, setNotifications] = useState<{ id: number; title: string; description: string; time: string; read: boolean }[]>([]);
+  const isLoaded = true;
 
   const markAllAsRead = () => {
-    const updated = notifications.map(n => ({ ...n, read: true }));
-    updateNotifications(updated);
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Buscar:', searchQuery);
+    // TODO: Implementar busca global
   };
 
   const toggleSearch = () => {
@@ -231,36 +211,49 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
                       </button>
                     </div>
                     <div className="max-h-[400px] overflow-y-auto">
-                      {notifications.map((notification) => (
-                        <div
-                          key={notification.id}
-                          className={clsx(
-                            "p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors cursor-pointer",
-                            !notification.read && "bg-blue-50/30"
-                          )}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={clsx(
-                              "w-2 h-2 mt-2 rounded-full flex-shrink-0",
-                              !notification.read ? "bg-[#ff6b35]" : "bg-gray-200"
-                            )} />
-                            <div className="flex-1 min-w-0">
-                              <p className={clsx(
-                                "text-sm font-medium truncate",
-                                !notification.read ? "text-gray-900" : "text-gray-600"
-                              )}>
-                                {notification.title}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-0.5 truncate">
-                                {notification.description}
-                              </p>
-                              <p className="text-[10px] text-gray-400 mt-1.5">
-                                {notification.time}
-                              </p>
+                      {notifications.length === 0 ? (
+                        <div className="p-8 text-center">
+                          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400">
+                              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                            </svg>
+                          </div>
+                          <p className="text-sm font-medium text-gray-600">Nenhuma notificação</p>
+                          <p className="text-xs text-gray-400 mt-1">Você será notificado sobre novidades aqui.</p>
+                        </div>
+                      ) : (
+                        notifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            className={clsx(
+                              "p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors cursor-pointer",
+                              !notification.read && "bg-blue-50/30"
+                            )}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={clsx(
+                                "w-2 h-2 mt-2 rounded-full flex-shrink-0",
+                                !notification.read ? "bg-[#ff6b35]" : "bg-gray-200"
+                              )} />
+                              <div className="flex-1 min-w-0">
+                                <p className={clsx(
+                                  "text-sm font-medium truncate",
+                                  !notification.read ? "text-gray-900" : "text-gray-600"
+                                )}>
+                                  {notification.title}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-0.5 truncate">
+                                  {notification.description}
+                                </p>
+                                <p className="text-[10px] text-gray-400 mt-1.5">
+                                  {notification.time}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
                     <div className="p-3 border-t border-gray-100 bg-gray-50/50 text-center">
                       <Link

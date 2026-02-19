@@ -89,9 +89,10 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
 
   function onLimpar() {
     const hoje = new Date().toISOString().slice(0, 10);
+    const trintaDias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10); // Standardize default
     setOpen({});
     clearFilters({
-      dtInicial: hoje,
+      dtInicial: trintaDias,
       dtFinal: hoje,
       pedido: '',
       nf: '',
@@ -144,14 +145,11 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Rastreio de Entregas</h1>
           <p className="text-slate-500 mt-1">Acompanhe o status e a previsão de entrega dos seus pedidos.</p>
         </div>
-        <div className="flex items-center gap-2">
-          {/* ... button ... */}
-        </div>
       </div>
 
       <Card className="p-0 overflow-hidden border-slate-200 shadow-sm">
-        <div className="p-4 sm:p-6 bg-slate-50/50 border-b border-slate-100 space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6">
+        <div className="p-6 bg-slate-50/50 border-b border-slate-100 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
 
             {/* Período e Status */}
             <div className="md:col-span-5 space-y-4">
@@ -160,7 +158,7 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
                 Período de Emissão
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:border-blue-500 transition-all">
                   <label htmlFor="dtInicial" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">De</label>
                   <input
                     id="dtInicial"
@@ -170,7 +168,7 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
                     onChange={(e) => setFilter('dtInicial', e.target.value)}
                   />
                 </div>
-                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:border-blue-500 transition-all">
                   <label htmlFor="dtFinal" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">Até</label>
                   <input
                     id="dtFinal"
@@ -183,51 +181,53 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
               </div>
 
               {/* Status Radio Group */}
-              <div className="flex items-center gap-3 px-1 pt-1 overflow-x-auto pb-2 sm:pb-0">
-                <label className="flex items-center gap-1.5 cursor-pointer group min-w-fit">
-                  <input
-                    type="radio"
-                    name="status"
-                    value="todos"
-                    checked={filters.status === 'todos'}
-                    onChange={() => setFilter('status', 'todos')}
-                    className="w-3.5 h-3.5 text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer"
-                  />
-                  <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Todos</span>
-                </label>
-                <label className="flex items-center gap-1.5 cursor-pointer group min-w-fit">
-                  <input
-                    type="radio"
-                    name="status"
-                    value="entregue"
-                    checked={filters.status === 'entregue'}
-                    onChange={() => setFilter('status', 'entregue')}
-                    className="w-3.5 h-3.5 text-green-600 border-slate-300 focus:ring-green-500 cursor-pointer"
-                  />
-                  <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Entregues</span>
-                </label>
-                <label className="flex items-center gap-1.5 cursor-pointer group min-w-fit">
-                  <input
-                    type="radio"
-                    name="status"
-                    value="pendente"
-                    checked={filters.status === 'pendente'}
-                    onChange={() => setFilter('status', 'pendente')}
-                    className="w-3.5 h-3.5 text-amber-500 border-slate-300 focus:ring-amber-500 cursor-pointer"
-                  />
-                  <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Pendentes</span>
-                </label>
-                <label className="flex items-center gap-1.5 cursor-pointer group min-w-fit">
-                  <input
-                    type="radio"
-                    name="status"
-                    value="devolvido"
-                    checked={filters.status === 'devolvido'}
-                    onChange={() => setFilter('status', 'devolvido')}
-                    className="w-3.5 h-3.5 text-red-600 border-slate-300 focus:ring-red-500 cursor-pointer"
-                  />
-                  <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Devoluções</span>
-                </label>
+              <div className="pt-2"> {/* Added spacing container for radio group */}
+                <div className="flex flex-wrap items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="radio"
+                      name="status"
+                      value="todos"
+                      checked={filters.status === 'todos'}
+                      onChange={() => setFilter('status', 'todos')}
+                      className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Todos</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="radio"
+                      name="status"
+                      value="entregue"
+                      checked={filters.status === 'entregue'}
+                      onChange={() => setFilter('status', 'entregue')}
+                      className="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500 cursor-pointer"
+                    />
+                    <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Entregues</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="radio"
+                      name="status"
+                      value="pendente"
+                      checked={filters.status === 'pendente'}
+                      onChange={() => setFilter('status', 'pendente')}
+                      className="w-4 h-4 text-amber-500 border-slate-300 focus:ring-amber-500 cursor-pointer"
+                    />
+                    <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Pendentes</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="radio"
+                      name="status"
+                      value="devolvido"
+                      checked={filters.status === 'devolvido'}
+                      onChange={() => setFilter('status', 'devolvido')}
+                      className="w-4 h-4 text-red-600 border-slate-300 focus:ring-red-500 cursor-pointer"
+                    />
+                    <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Devoluções</span>
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -237,8 +237,8 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
                 Identificação
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:border-blue-500 transition-all">
                   <label htmlFor="pedido" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">Pedido</label>
                   <input
                     id="pedido"
@@ -249,7 +249,7 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
                     onChange={(e) => setFilter('pedido', e.target.value)}
                   />
                 </div>
-                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:border-blue-500 transition-all">
                   <label htmlFor="nf" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">Nota Fiscal</label>
                   <input
                     id="nf"
@@ -299,9 +299,10 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
           </div>
         ) : (
           <div className={`overflow-x-auto transition-opacity duration-300 ${isNavigationLoading ? 'opacity-50 pointer-events-none' : ''}`}>
+            {/* Título da Tabela */}
             <div className="px-6 pt-6 pb-2">
               <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500">
                   <rect x="1" y="3" width="15" height="13" />
                   <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
                   <circle cx="5.5" cy="18.5" r="2.5" />
@@ -332,7 +333,7 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
                       <div className="font-medium text-slate-900">{e.nroPedido}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs font-medium">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500">
                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                           <circle cx="12" cy="7" r="4"></circle>
@@ -439,31 +440,61 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
 
         {/* Paginação */}
         {total > 0 && (
-          <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
-            <div className="text-sm text-slate-500">
-              Mostrando página <span className="font-medium text-slate-900">{page}</span> de <span className="font-medium text-slate-900">{totalPages}</span>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-slate-50 border-t border-slate-200">
+            <div className="text-sm text-slate-600 flex items-center gap-2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500">
+                <rect x="1" y="3" width="15" height="13" />
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                <circle cx="5.5" cy="18.5" r="2.5" />
+                <circle cx="18.5" cy="18.5" r="2.5" />
+              </svg>
+              <span>Mostrando página <span className="font-bold text-slate-900">{page}</span> de <span className="font-bold text-slate-900">{totalPages}</span></span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-1">
               <button
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 disabled={page <= 1}
                 onClick={() => onPageChange(page - 1)}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
               </button>
+
+              <div className="flex items-center gap-1 mx-2">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) { pageNum = i + 1; }
+                  else if (page <= 3) { pageNum = i + 1; }
+                  else if (page >= totalPages - 2) { pageNum = totalPages - 4 + i; }
+                  else { pageNum = page - 2 + i; }
+
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => onPageChange(pageNum)}
+                      className={`w-9 h-9 flex items-center justify-center rounded-lg font-medium text-sm transition-colors ${page === pageNum
+                        ? 'bg-blue-600 text-white border border-blue-600'
+                        : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
+                        }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+
               <button
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 disabled={page >= totalPages}
                 onClick={() => onPageChange(page + 1)}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
               </button>
             </div>
           </div>
         )}
       </Card>
 
-      {/* Modal Timeline */}
+      {/* Modal Timeline - unchanged logic, just visual tweaks */}
       {timelineOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all" onClick={closeTimeline}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
@@ -479,6 +510,7 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
               </button>
             </div>
+            {/* ... rest of timeline is fine, fits style ... */}
             <div className="p-6 overflow-y-auto">
               {timelineLoading ? (
                 <div className="flex flex-col items-center justify-center py-12">

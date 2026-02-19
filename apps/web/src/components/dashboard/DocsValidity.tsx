@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge, Card } from '@pgb/ui';
+import { Card } from '@pgb/ui';
 import { useState } from 'react';
 
 type Doc = {
@@ -45,50 +45,34 @@ export function DocsValidity({ docs }: { docs: Doc[] }) {
 
   const badge = (s: Doc['status']) => {
     if (s === 'valido') return (
-      <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium bg-emerald-50 px-2.5 py-1 rounded-md w-fit border border-emerald-100">
+      <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium bg-emerald-50/80 px-2.5 py-1 rounded-full w-fit">
         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
         Válido
       </div>
     );
     if (s === 'proximo_vencer') return (
-      <div className="flex items-center gap-1.5 text-xs text-amber-600 font-medium bg-amber-50 px-2.5 py-1 rounded-md w-fit border border-amber-100">
+      <div className="flex items-center gap-1.5 text-xs text-amber-600 font-medium bg-amber-50/80 px-2.5 py-1 rounded-full w-fit">
         <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
         Próx. vencimento
       </div>
     );
     if (s === 'vencido') return (
-      <div className="flex items-center gap-1.5 text-xs text-red-600 font-semibold bg-red-50 px-2.5 py-1 rounded-full w-fit border border-red-200">
+      <div className="flex items-center gap-1.5 text-xs text-red-500 font-medium bg-red-50/80 px-2.5 py-1 rounded-full w-fit">
         <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>
         Vencido
       </div>
     );
   };
 
-  const icon = (s: Doc['status']) => {
-    if (s === 'valido') return (
-      <svg width="18" height="18" className="sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <polyline points="20 6 9 17 4 12" className="text-emerald-500" />
-      </svg>
-    );
-    if (s === 'proximo_vencer') return (
-      <svg width="18" height="18" className="sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="10" className="text-amber-500" />
-        <line x1="12" y1="8" x2="12" y2="12" className="text-amber-500" />
-        <line x1="12" y1="16" x2="12.01" y2="16" className="text-amber-500" />
-      </svg>
-    );
-    return (
-      <svg width="18" height="18" className="sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="10" className="text-red-500" />
-        <line x1="15" y1="9" x2="9" y2="15" className="text-red-500" />
-        <line x1="9" y1="9" x2="15" y2="15" className="text-red-500" />
-      </svg>
-    );
+  const borderColor = (s: Doc['status']) => {
+    if (s === 'vencido') return 'border-l-red-400';
+    if (s === 'proximo_vencer') return 'border-l-amber-400';
+    return 'border-l-emerald-400';
   };
 
   return (
     <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300">
-      {/* Header Responsivo */}
+      {/* Header */}
       <div className="p-4 sm:p-6 border-b border-slate-100">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="p-1.5 sm:p-2 bg-slate-100 rounded-lg flex-shrink-0">
@@ -108,33 +92,35 @@ export function DocsValidity({ docs }: { docs: Doc[] }) {
       </div>
 
       <div className="p-4 sm:p-6">
-        <div className="space-y-3 sm:space-y-4">
+        {/* Header de colunas — visível apenas no desktop */}
+        <div className="hidden sm:grid sm:grid-cols-12 gap-x-6 px-5 pb-3 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+          <div className="sm:col-span-4">Documento</div>
+          <div className="sm:col-span-3">Vencimento</div>
+          <div className="sm:col-span-3">Referência</div>
+          <div className="sm:col-span-2 text-right">Status</div>
+        </div>
+
+        {/* Lista de documentos */}
+        <div className="space-y-2">
           {sortedDocs.map((d) => (
             <div
               key={d.description}
-              className={`rounded-lg border bg-white shadow-sm transition-all group overflow-hidden ${d.status === 'vencido'
-                ? 'border-l-4 border-l-red-300 border-y-slate-100 border-r-slate-100'
-                : 'border-l-4 border-l-emerald-400 border-y-slate-100 border-r-slate-100 hover:shadow-md'
-                }`}
+              className={`rounded-lg border border-slate-100 bg-white border-l-[3px] ${borderColor(d.status)} transition-colors hover:bg-slate-50/60`}
             >
-              <div className="p-4 sm:p-5">
-                {/* Layout em coluna no mobile, grid no desktop */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
-                  <div className="flex-shrink-0 self-start sm:self-center">
-                    {icon(d.status)}
-                  </div>
+              <div className="px-4 py-3 sm:px-5 sm:py-3.5">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
 
                   {/* Grid responsivo */}
-                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-y-4 sm:gap-x-6 items-center">
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-y-3 sm:gap-x-6 items-center">
 
-                    {/* Descrição - Foco Principal */}
+                    {/* Documento */}
                     <div className="sm:col-span-4">
-                      <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Documento</div>
+                      <span className="sm:hidden text-[10px] uppercase tracking-wider text-slate-400 font-semibold block mb-0.5">Documento</span>
                       <a
                         href={d.url ?? '#'}
                         target={d.url ? "_blank" : undefined}
                         rel="noopener noreferrer"
-                        className={`text-base font-semibold transition-colors ${!d.url ? 'cursor-default text-slate-700' : 'text-slate-900 hover:text-blue-600'}`}
+                        className={`text-sm font-semibold transition-colors ${!d.url ? 'cursor-default text-slate-700' : 'text-slate-800 hover:text-blue-600'}`}
                         onClick={(e) => {
                           if (!d.url) {
                             e.preventDefault();
@@ -145,33 +131,33 @@ export function DocsValidity({ docs }: { docs: Doc[] }) {
                       </a>
                     </div>
 
-                    {/* Data de Validade */}
+                    {/* Vencimento */}
                     <div className="sm:col-span-3">
-                      <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Vencimento</div>
-                      <div className="flex items-baseline gap-2">
-                        <span className={`text-sm font-medium ${d.status === 'vencido' ? 'text-slate-700' : 'text-slate-700'}`}>
+                      <span className="sm:hidden text-[10px] uppercase tracking-wider text-slate-400 font-semibold block mb-0.5">Vencimento</span>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-sm text-slate-600">
                           {(() => {
                             const date = new Date(d.dueDate);
                             return isNaN(date.getTime()) ? '-' : new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' }).format(date);
                           })()}
                         </span>
-                        <span className={`text-xs ${d.status === 'vencido' ? 'text-red-400' : 'text-slate-400'}`}>
+                        <span className={`text-[11px] ${d.status === 'vencido' ? 'text-red-400' : 'text-slate-400'}`}>
                           ({getRelativeTime(d.dueDate)})
                         </span>
                       </div>
                     </div>
 
-                    {/* Número do Documento */}
+                    {/* Referência */}
                     <div className="sm:col-span-3">
-                      <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Ref.</div>
-                      <div className="flex items-center gap-2 group/copy cursor-pointer" onClick={() => handleCopy(d.docNumber)}>
-                        <span className="font-mono text-xs text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                      <span className="sm:hidden text-[10px] uppercase tracking-wider text-slate-400 font-semibold block mb-0.5">Referência</span>
+                      <div className="flex items-center gap-1.5 group/copy cursor-pointer" onClick={() => handleCopy(d.docNumber)}>
+                        <span className="font-mono text-xs text-slate-500">
                           {d.docNumber}
                         </span>
                         {copied === d.docNumber ? (
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-500"><polyline points="20 6 9 17 4 12" /></svg>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-500 flex-shrink-0"><polyline points="20 6 9 17 4 12" /></svg>
                         ) : (
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-300 group-hover/copy:text-blue-400 transition-colors"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-300 group-hover/copy:text-blue-400 transition-colors flex-shrink-0"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
                         )}
                       </div>
                     </div>

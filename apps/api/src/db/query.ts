@@ -36,7 +36,7 @@ export async function select<T = any>(sql: string, binds?: Record<string, unknow
 export async function execute(sql: string, binds?: Record<string, unknown> | unknown[]): Promise<number> {
   const conn = await getConnection();
   try {
-    const res = await conn.execute(sql, binds ?? {}, {
+    const res: any = await conn.execute(sql, binds ?? {}, {
       autoCommit: true,
     } as any);
     return res.rowsAffected ?? 0;
@@ -55,12 +55,12 @@ export async function insertReturning<T = any>(
 ): Promise<T | null> {
   const conn = await getConnection();
   try {
-    const result = await conn.execute(
+    const result: any = await conn.execute(
       `${sql} RETURNING ${returningColumn} INTO :out_id`,
-      { ...binds, out_id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER } },
+      { ...binds, out_id: { dir: (oracledb as any).BIND_OUT, type: (oracledb as any).NUMBER } } as any,
       { autoCommit: true } as any
     );
-    const outValues = (result.outBinds as any)?.out_id;
+    const outValues = result.outBinds?.out_id;
     return outValues?.[0] ?? null;
   } finally {
     await conn.close();

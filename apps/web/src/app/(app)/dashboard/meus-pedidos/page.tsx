@@ -28,7 +28,7 @@ async function getPedidos(searchParams: { [key: string]: string | string[] | und
   try {
     const res = await fetch(`${API_BASE}/dashboard/orders?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}` },
-      cache: 'no-store', // Ensure fresh data on every request
+      cache: 'no-store',
     });
 
     if (!res.ok) {

@@ -2,71 +2,42 @@
 
 import { useState, useTransition, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { addCommentAction, fetchCommentsAction, editCommentAction, deleteCommentAction } from '../actions';
+import { addCommentAction, fetchCommentsAction, editCommentAction, deleteCommentAction, simulateWinthorAction } from '../actions';
 import { Toast } from './toast';
 import { cn } from '@lib/cn';
+import { ChatBubble, type ChatComment } from './components/ChatBubble';
+import { MessageInput } from './components/MessageInput';
+import { NotesList } from './components/NotesList';
 
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .substring(0, 2);
-}
-
-interface Comment {
-  id: string;
-  author: string;
-  authorType: 'cliente' | 'suporte';
-  type?: 'message' | 'note';
-  content: string;
-  attachment?: {
-    filename: string;
-    url: string;
-  };
-  createdAt: string;
-}
+// Re-export for consumers
+export type { ChatComment as Comment };
 
 interface Props {
   ticketId: string;
-  initialComments: Comment[];
+  initialComments: ChatComment[];
   ticketStatus: 'em_andamento' | 'finalizado';
-}
-
-function formatDateTime(date: string | Date) {
-  return new Date(date).toLocaleString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
 }
 
 const POLLING_INTERVAL = 10000;
 
 export function CommentsSection({ ticketId, initialComments, ticketStatus }: Props) {
   const router = useRouter();
-  const [comments, setComments] = useState<Comment[]>(initialComments);
-  const [newComment, setNewComment] = useState(''); // Para comentários pessoais
-  const [newMessage, setNewMessage] = useState(''); // Para chat SAC
+  const [comments, setComments] = useState<ChatComment[]>(initialComments);
+  const [newComment, setNewComment] = useState('');
+  const [newMessage, setNewMessage] = useState('');
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
   const [isPolling, setIsPolling] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [isNotePublic, setIsNotePublic] = useState(false);
 
-  // New States for Premium Features
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // Filter messages based on type
-  // Backward compatibility: if type is undefined, assume it's a message unless it's explicitly a note
   const allMessages = comments.filter(c => c.type === 'message' || !c.type);
   const clientNotes = comments.filter(c => c.type === 'note');
 
   const isDisabled = ticketStatus === 'finalizado';
-
   const interactionListRef = useRef<HTMLDivElement>(null);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -95,70 +66,56 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
     if (interactionListRef.current) interactionListRef.current.scrollTop = interactionListRef.current.scrollHeight;
   }, [comments.length]);
 
-  // Drag & Drop Handlers
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  };
-
+  // Drag & Drop
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragOver(true); };
+  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragOver(false); };
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       showToast(`Arquivo "${files[0].name}" pronto para envio (Simulação)`, 'info');
-      // Aqui integraria o envio real do arquivo
     }
   };
 
-  // Enviar mensagem no CHAT SAC
+  // Chat message send
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || isDisabled) return;
-
-    setError(null);
     setIsPolling(false);
-
     startTransition(async () => {
       const res = await addCommentAction(ticketId, newMessage.trim(), 'message');
       if (!res.ok) {
         showToast(res.message ?? 'Erro ao enviar', 'error');
       } else if (res.comment) {
-        setComments((prev) => [...prev, res.comment as Comment]);
+        setComments((prev) => [...prev, res.comment as ChatComment]);
         setNewMessage('');
-        router.refresh(); // Atualiza timestamp no header
+        router.refresh();
       }
       setIsPolling(true);
     });
   };
 
-  // Enviar nota na área de Comentários
+  // Note submit
   const handleSubmitNote = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim() || isDisabled) return;
-
-    setError(null);
     setIsPolling(false);
-
     startTransition(async () => {
-      const res = await addCommentAction(ticketId, newComment.trim(), 'note');
+      const res = await addCommentAction(ticketId, newComment.trim(), 'note', isNotePublic);
       if (!res.ok) {
         showToast(res.message ?? 'Erro ao enviar', 'error');
       } else if (res.comment) {
-        setComments((prev) => [...prev, res.comment as Comment]);
+        setComments((prev) => [...prev, res.comment as ChatComment]);
         setNewComment('');
-        router.refresh(); // Atualiza timestamp no header
+        setIsNotePublic(false);
+        router.refresh();
       }
       setIsPolling(true);
     });
   };
 
-  const handleEdit = (comment: Comment) => {
+  const handleEdit = (comment: ChatComment) => {
     setEditingId(comment.id);
     setEditContent(comment.content);
   };
@@ -172,7 +129,7 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
         setEditingId(null);
         setEditContent('');
         showToast('Edição salva com sucesso', 'success');
-        router.refresh(); // Atualiza timestamp no header
+        router.refresh();
       } else {
         showToast(res.message ?? 'Erro ao editar', 'error');
       }
@@ -181,17 +138,14 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
 
   const handleDelete = async (commentId: string) => {
     if (!window.confirm('Tem certeza que deseja apagar?')) return;
-
-    setError(null);
     try {
       const res = await deleteCommentAction(ticketId, commentId);
       if (res.ok) {
         setComments((prev) => prev.filter((c) => c.id !== commentId));
         showToast('Mensagem apagada com sucesso', 'success');
-        router.refresh(); // Atualiza timestamp no header
+        router.refresh();
       } else {
-        const msg = res.message ?? 'Erro desconhecido ao apagar';
-        showToast(msg, 'error');
+        showToast(res.message ?? 'Erro desconhecido ao apagar', 'error');
       }
     } catch (e: any) {
       console.error('Erro no handleDelete:', e);
@@ -199,25 +153,14 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
     }
   };
 
-  // Componente de Ícone para reduzir repetição e padronizar
-  const Icons = {
-    Send: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="ml-0.5"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>,
-    Plus: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>,
-    Edit: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" /></svg>,
-    Trash: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>,
-    Chat: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>,
-    Note: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
-  };
+  // Chat icon
+  const ChatIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 relative">
-      {/* Toast Notification */}
+      {/* Toast */}
       {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
+        <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
       )}
 
       {/* ÁREA 1: INTERAÇÃO SAC */}
@@ -245,10 +188,29 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
         <div className="bg-white px-6 py-4 flex items-center justify-between border-b border-slate-100 sticky top-0 z-20 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center border border-blue-100/50 shadow-sm text-blue-600">
-              <Icons.Chat />
+              <ChatIcon />
             </div>
             <div>
-              <h3 className="text-slate-800 font-semibold text-base tracking-tight">Interação SAC</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-slate-800 font-semibold text-base tracking-tight">Interação SAC</h3>
+                <button
+                  onClick={() => {
+                    startTransition(async () => {
+                      const res = await simulateWinthorAction(ticketId);
+                      if (res.ok && res.comment) {
+                        setComments(prev => [...prev, res.comment as ChatComment]);
+                        showToast('Winthor respondeu!', 'success');
+                      } else {
+                        showToast('Erro ao simular Winthor', 'error');
+                      }
+                    });
+                  }}
+                  className="opacity-0 hover:opacity-100 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] rounded border border-amber-200 transition-opacity"
+                  title="Dev Only: Simular resposta da Winthor"
+                >
+                  Simular Winthor
+                </button>
+              </div>
               <p className="text-slate-400 text-xs font-medium">Conversa direta com o suporte</p>
             </div>
           </div>
@@ -258,7 +220,7 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
           </div>
         </div>
 
-        {/* Chat Area */}
+        {/* Chat Area — using ChatBubble components */}
         <div
           ref={interactionListRef}
           className="flex-1 overflow-y-auto px-6 py-6 bg-slate-50/50 space-y-8 scroll-smooth"
@@ -273,254 +235,58 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
               <span className="text-xs mt-1.5 text-slate-400">Inicie uma conversa abaixo.</span>
             </div>
           ) : (
-            allMessages.map((msg, index) => {
-              const isMe = msg.authorType === 'cliente';
-              const isEditing = editingId === msg.id;
-              const showAvatar = true; // Could optimize to show only on group change
-
-              if (isEditing) return null;
-
-              return (
-                <div key={msg.id} className={cn(
-                  "flex w-full group animate-in slide-in-from-bottom-2 duration-500 gap-3",
-                  isMe ? "justify-end" : "justify-start"
-                )}>
-                  {/* Avatar SAC */}
-                  {!isMe && showAvatar && (
-                    <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-sm mt-1">
-                      <span className="text-[10px] font-bold text-slate-600">SC</span>
-                    </div>
-                  )}
-
-                  <div className={cn(
-                    "flex flex-col max-w-[75%]",
-                    isMe ? "items-end" : "items-start"
-                  )}>
-                    {/* Meta */}
-                    <div className="flex items-center gap-2 mb-1 px-1 opacity-80">
-                      <span className="text-[10px] text-slate-400 font-medium">{formatDateTime(msg.createdAt)}</span>
-                    </div>
-
-                    {/* Bubble */}
-                    <div className={cn(
-                      "relative px-5 py-3.5 text-sm shadow-sm transition-all duration-200",
-                      isMe
-                        ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm shadow-blue-500/10"
-                        : "bg-white text-slate-700 border border-slate-200 rounded-2xl rounded-tl-sm shadow-slate-200/50"
-                    )}>
-                      <p className={cn(
-                        "whitespace-pre-wrap break-words leading-relaxed",
-                        isMe ? "font-normal" : "font-normal"
-                      )}>
-                        {msg.content}
-                      </p>
-                      {msg.attachment && (
-                        <a href={msg.attachment.url} target="_blank" className={cn(
-                          "flex items-center gap-2 mt-3 p-2 rounded-lg text-xs transition-colors border",
-                          isMe
-                            ? "bg-white/10 hover:bg-white/20 text-white border-white/10"
-                            : "bg-slate-50 hover:bg-slate-100 text-blue-600 border-slate-100"
-                        )}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
-                          <span className="truncate max-w-[200px] font-medium">{msg.attachment.filename}</span>
-                        </a>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    {isMe && !isDisabled && (
-                      <div className="flex items-center gap-3 mt-1 px-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                        <button onClick={() => handleEdit(msg)} className="text-[10px] text-slate-400 hover:text-blue-600 font-medium flex items-center gap-1 transition-colors hover:underline">
-                          Editar
-                        </button>
-                        <button onClick={() => handleDelete(msg.id)} className="text-[10px] text-slate-400 hover:text-red-500 font-medium flex items-center gap-1 transition-colors hover:underline">
-                          Apagar
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Avatar Me */}
-                  {isMe && showAvatar && (
-                    <div className="w-8 h-8 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center shrink-0 shadow-sm mt-1">
-                      <span className="text-[10px] font-bold text-blue-600">me</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })
+            allMessages.map((msg) => (
+              editingId === msg.id ? null : (
+                <ChatBubble
+                  key={msg.id}
+                  message={msg}
+                  isDisabled={isDisabled}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              )
+            ))
           )}
         </div>
 
-        {/* Input Chat */}
-        {!isDisabled && (
-          <div className="p-4 bg-white border-t border-slate-100 shrink-0 relative z-10 transition-colors focus-within:bg-slate-50/10">
-            <form onSubmit={handleSendMessage} className="flex gap-2 items-end relative bg-slate-50 rounded-2xl border border-slate-200 p-2 focus-within:ring-2 focus-within:ring-blue-500/10 focus-within:border-blue-400 transition-all shadow-sm">
-              <button
-                type="button"
-                className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                title="Anexar arquivo"
-                onClick={() => showToast('Funcionalidade de anexo em breve!', 'info')}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
-              </button>
-
-              <div className="flex-1 py-2">
-                <textarea
-                  value={newMessage}
-                  onChange={(e) => {
-                    setNewMessage(e.target.value);
-                    e.target.style.height = 'auto';
-                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-                  }}
-                  placeholder="Digite sua mensagem..."
-                  className="w-full text-sm bg-transparent border-none focus:ring-0 p-0 outline-none resize-none placeholder:text-slate-400 max-h-[120px]"
-                  rows={1}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage(e);
-                    }
-                  }}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={!newMessage.trim() || isPending}
-                className="p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 transition-all shadow-md shadow-blue-500/20"
-              >
-                {isPending ? (
-                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
-                )}
-              </button>
-            </form>
-            <div className="px-2 mt-2 flex justify-end">
-              <span className="text-[10px] text-slate-400 font-medium">Pressione Enter para enviar</span>
+        {/* Message Input or Finalized Banner */}
+        {isDisabled ? (
+          <div className="p-6 bg-slate-50 border-t border-slate-200 text-center animate-in slide-in-from-bottom-2 duration-500">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-200/50 text-slate-600 text-sm font-medium border border-slate-200">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" /></svg>
+              Este ticket foi finalizado. Não é possível enviar novas mensagens.
             </div>
           </div>
+        ) : (
+          <MessageInput
+            value={newMessage}
+            onChange={setNewMessage}
+            onSubmit={handleSendMessage}
+            isPending={isPending}
+            onAttachClick={() => showToast('Funcionalidade de anexo em breve!', 'info')}
+            disabled={isDisabled}
+          />
         )}
       </div>
 
-      {/* ÁREA 2: ANOTAÇÕES */}
-      <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm transition-all duration-300 hover:shadow-md flex flex-col overflow-hidden">
-        {/* Header Anotações - Padronizado com o de cima */}
-        {/* Header Anotações - Padronizado com o de cima */}
-        <div className="bg-white px-6 py-4 flex items-center justify-between border-b border-slate-100 shadow-sm z-20">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center border border-amber-100/50 shadow-sm text-amber-600">
-              <Icons.Note />
-            </div>
-            <div>
-              <h3 className="text-slate-800 font-semibold text-base tracking-tight">Comentários</h3>
-              <p className="text-slate-400 text-xs font-medium">Notas privadas do ticket</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
-            <span className="text-slate-600 text-[11px] font-semibold uppercase tracking-wide">
-              {clientNotes.length} {clientNotes.length === 1 ? 'NOTA' : 'NOTAS'}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex-1 flex flex-col p-6 bg-slate-50/50 space-y-6 overflow-hidden">
-          {/* Scrollable Notes List */}
-          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3 min-h-0">
-            {clientNotes.map(msg => {
-              const isEditing = editingId === msg.id;
-
-              return (
-                <div key={msg.id} className="group relative bg-white border border-slate-200 rounded-xl p-4 transition-all duration-200 hover:border-amber-200 hover:shadow-md hover:shadow-amber-500/5">
-                  {isEditing ? (
-                    <div className="space-y-3">
-                      <textarea
-                        value={editContent}
-                        onChange={(e) => setEditContent(e.target.value)}
-                        className="w-full p-3 text-sm border border-amber-400 rounded-lg focus:ring-4 focus:ring-amber-500/10 outline-none resize-none bg-white shadow-sm"
-                        rows={3}
-                        autoFocus
-                      />
-                      <div className="flex gap-2 justify-end">
-                        <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
-                        <button onClick={() => handleSaveEdit(msg.id)} className="px-3 py-1.5 text-xs font-medium bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors shadow-sm">Salvar</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{formatDateTime(msg.createdAt)}</span>
-                        </div>
-
-                        {!isDisabled && (
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute top-3 right-3 bg-white p-1 rounded-lg border border-slate-100 shadow-sm">
-                            <button onClick={() => handleEdit(msg)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" title="Editar">
-                              <Icons.Edit />
-                            </button>
-                            <div className="w-px h-4 bg-slate-100 my-auto"></div>
-                            <button onClick={() => handleDelete(msg.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Apagar">
-                              <Icons.Trash />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap font-normal">{msg.content}</p>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-
-            {clientNotes.length === 0 && !isPending && (
-              <div className="py-10 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300">
-                  <Icons.Note />
-                </div>
-                <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Nenhuma nota registrada</p>
-                <p className="text-[10px] text-slate-400 mt-1">Use o campo abaixo para adicionar anotações privadas.</p>
-              </div>
-            )}
-          </div>
-
-          {!isDisabled && (
-            <form onSubmit={handleSubmitNote} className="flex gap-2 items-end relative bg-white rounded-2xl border border-slate-200 p-2 focus-within:ring-2 focus-within:ring-amber-500/10 focus-within:border-amber-400 transition-all shadow-sm shrink-0">
-              <div className="flex-1 py-1 px-1">
-                <textarea
-                  value={newComment}
-                  onChange={(e) => {
-                    setNewComment(e.target.value);
-                    e.target.style.height = 'auto';
-                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-                  }}
-                  className="w-full text-sm bg-transparent border-none focus:ring-0 p-2 outline-none resize-none placeholder:text-slate-400 max-h-[120px]"
-                  placeholder="Adicionar uma nota rápida..."
-                  rows={1}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmitNote(e);
-                    }
-                  }}
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={!newComment.trim() || isPending}
-                className="p-2.5 bg-amber-500 text-white rounded-xl hover:bg-amber-600 active:scale-95 transition-all shadow-md shadow-amber-500/20 disabled:opacity-50 disabled:shadow-none disabled:active:scale-100 flex items-center justify-center h-[42px] w-[42px]"
-              >
-                {isPending ? (
-                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                ) : (
-                  <Icons.Plus />
-                )}
-              </button>
-            </form>
-          )}
-        </div>
-      </div>
+      {/* ÁREA 2: NOTAS — using NotesList component */}
+      <NotesList
+        notes={clientNotes}
+        isDisabled={isDisabled}
+        isPending={isPending}
+        editingId={editingId}
+        editContent={editContent}
+        onEditContentChange={setEditContent}
+        onEdit={handleEdit}
+        onSaveEdit={handleSaveEdit}
+        onCancelEdit={() => setEditingId(null)}
+        onDelete={handleDelete}
+        newNoteValue={newComment}
+        onNewNoteChange={setNewComment}
+        onSubmitNote={handleSubmitNote}
+        isNotePublic={isNotePublic}
+        onTogglePublic={() => setIsNotePublic(!isNotePublic)}
+      />
     </div>
   );
 }

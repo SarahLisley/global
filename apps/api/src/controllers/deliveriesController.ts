@@ -28,6 +28,7 @@ export async function searchDeliveries(params: {
   dateTo?: string;
   nf?: string | number;
   pedido?: string | number;
+  status?: string;
   page: number;
   pageSize: number;
 }) {
@@ -45,6 +46,22 @@ export async function searchDeliveries(params: {
     START_ROW: startRow,
     END_ROW: endRow,
   };
+
+  let statusWhere = '';
+  if (params.status && params.status !== 'todos') {
+    if (params.status === 'entregue') {
+      statusWhere = 'AND L.DATA_HORA_EFETIVA IS NOT NULL';
+    } else if (params.status === 'pendente') {
+      // Pendente = Não entregue e não devolvido (aproximação)
+      statusWhere = "AND L.DATA_HORA_EFETIVA IS NULL AND NOT (LOWER(L.OCORRENCIA) LIKE '%devol%')";
+    } else if (params.status === 'devolvido') {
+      statusWhere = "AND LOWER(L.OCORRENCIA) LIKE '%devol%'";
+    } else if (params.status === 'em_transito') {
+      statusWhere = "AND L.DATA_HORA_EFETIVA IS NULL AND (LOWER(L.OCORRENCIA) LIKE '%transit%' OR LOWER(L.OCORRENCIA) LIKE '%trânsito%')";
+    } else if (params.status === 'aguardando') {
+      statusWhere = "AND L.DATA_HORA_EFETIVA IS NULL AND LOWER(L.OCORRENCIA) LIKE '%coleta%'";
+    }
+  }
 
   const rows = await select<any>(
     `
@@ -77,6 +94,7 @@ export async function searchDeliveries(params: {
         AND (:PEDIDO IS NULL OR L.NUMPED = :PEDIDO)
         AND (:DATE_FROM IS NULL OR TRUNC(NVL(N.DTFAT, L.DATA_HORA)) >= TO_DATE(:DATE_FROM, 'YYYY-MM-DD'))
         AND (:DATE_TO   IS NULL OR TRUNC(NVL(N.DTFAT, L.DATA_HORA)) <= TO_DATE(:DATE_TO, 'YYYY-MM-DD'))
+        ${statusWhere}
     ),
     filt AS (
       SELECT b.*
@@ -109,6 +127,7 @@ export async function searchDeliveries(params: {
         AND (:PEDIDO IS NULL OR L.NUMPED = :PEDIDO)
         AND (:DATE_FROM IS NULL OR TRUNC(NVL(N.DTFAT, L.DATA_HORA)) >= TO_DATE(:DATE_FROM, 'YYYY-MM-DD'))
         AND (:DATE_TO   IS NULL OR TRUNC(NVL(N.DTFAT, L.DATA_HORA)) <= TO_DATE(:DATE_TO, 'YYYY-MM-DD'))
+        ${statusWhere}
     )
     SELECT COUNT(*) AS TOTAL
     FROM base

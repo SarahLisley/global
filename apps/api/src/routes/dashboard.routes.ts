@@ -8,6 +8,7 @@ import { getSACSeries, createTicket } from '../controllers/sacController';
 import { getDeliveryTimeline, searchDeliveries } from '../controllers/deliveriesController';
 import { select, insertReturning, execute } from '../db/query';
 import { getTitulos } from '../controllers/financeiroController';
+import { downloadBoleto } from '../controllers/boletosController';
 
 function normalizeStatus(status: any, dtFinaliza: any): 'pendente' | 'em_andamento' | 'finalizado' {
   if (dtFinaliza != null) return 'finalizado';
@@ -194,7 +195,7 @@ export default async function dashboardRoutes(app: FastifyInstance) {
           where.push("LOWER(TRIM(NVL(BRSACC.STATUS,''))) IN ('aberto','inicial')");
           where.push('BRSACC.DTFINALIZA IS NULL');
         } else if (q.status === 'em_andamento') {
-          where.push("LOWER(TRIM(NVL(BRSACC.STATUS,''))) IN ('em andamento','andamento','aguardando')");
+          // Traz todos os não finalizados (Abertos + Em Andamento)
           where.push('BRSACC.DTFINALIZA IS NULL');
         }
       }
@@ -330,7 +331,8 @@ export default async function dashboardRoutes(app: FastifyInstance) {
           CONTEUDO,
           ANEXO_FILENAME,
           ANEXO_PATH,
-          DTCRIACAO
+          DTCRIACAO,
+          NVL(PUBLICO, 'N') AS PUBLICO
         FROM ${OWNER}.BRSACC_COMMENTS 
         WHERE NUMTICKET = :NUMTICKET 
         ORDER BY DTCRIACAO ASC`,
@@ -352,6 +354,7 @@ export default async function dashboardRoutes(app: FastifyInstance) {
           authorType: c.TIPO_AUTOR === 'S' ? 'suporte' : 'cliente',
           type: (c.TIPO_MSG === 'N' ? 'note' : 'message') as 'note' | 'message',
           content,
+          isPublic: c.PUBLICO === 'S',
           attachment: c.ANEXO_PATH ? {
             filename: c.ANEXO_FILENAME,
             url: `/uploads/${c.ANEXO_PATH}`
@@ -395,6 +398,41 @@ export default async function dashboardRoutes(app: FastifyInstance) {
     }
   });
 
+  app.put('/sac/tickets/:id/close', async (req, reply) => {
+    try {
+      const auth = req.headers.authorization;
+      if (!auth?.startsWith('Bearer ')) return reply.status(401).send({ error: 'Token ausente' });
+      const t = auth.slice(7);
+      const v = verifyToken(t, env.JWT_SECRET);
+      if (!v.ok) return reply.status(401).send({ error: v.error });
+      const codcli = Number(v.payload?.codcli);
+      if (!codcli) return reply.status(400).send({ error: 'CODCLI inválido no token' });
+
+      const id = String((req.params as any)?.id ?? '').trim();
+      if (!/^\d+$/.test(id)) return reply.status(400).send({ error: 'ID inválido' });
+      const numTicket = Number(id);
+
+      const rows = await execute(
+        `UPDATE ${OWNER}.BRSACC 
+         SET STATUS = 'Finalizado', DTFINALIZA = SYSDATE 
+         WHERE NUMTICKET = :NUMTICKET AND CODCLI = :CODCLI AND DTFINALIZA IS NULL`,
+        { NUMTICKET: numTicket, CODCLI: codcli }
+      );
+
+      if (rows === 0) {
+        // Verifica se o ticket existe mas já está fechado ou é de outro cliente
+        const check = await select(`SELECT NUMTICKET, DTFINALIZA FROM ${OWNER}.BRSACC WHERE NUMTICKET = :ID`, { ID: numTicket });
+        if (check.length === 0) return reply.status(404).send({ error: 'Ticket não encontrado' });
+        if (check[0].DTFINALIZA) return reply.status(400).send({ error: 'Ticket já está finalizado' });
+        return reply.status(403).send({ error: 'Sem permissão' });
+      }
+
+      return reply.send({ ok: true });
+    } catch (err) {
+      return reply.status(500).send({ error: (err as Error).message });
+    }
+  });
+
   // ---------- Comentários de Tickets ----------
 
   app.get('/sac/tickets/:id/comments', async (req, reply) => {
@@ -421,7 +459,8 @@ export default async function dashboardRoutes(app: FastifyInstance) {
           CONTEUDO,
           ANEXO_FILENAME,
           ANEXO_PATH,
-          DTCRIACAO
+          DTCRIACAO,
+          NVL(PUBLICO, 'N') AS PUBLICO
         FROM ${OWNER}.BRSACC_COMMENTS 
         WHERE NUMTICKET = :NUMTICKET 
         ORDER BY DTCRIACAO ASC`,
@@ -442,9 +481,10 @@ export default async function dashboardRoutes(app: FastifyInstance) {
         return {
           id: String(r.ID),
           author: String(r.AUTOR ?? 'Sistema'),
-          authorType: r.TIPO_AUTOR === 'S' ? 'suporte' : 'cliente',
+          authorType: r.TIPO_AUTOR === 'S' ? 'suporte' : (r.TIPO_AUTOR === 'W' ? 'winthor' : 'cliente'),
           type: (r.TIPO_MSG === 'N' ? 'note' : 'message') as 'note' | 'message',
           content,
+          isPublic: r.PUBLICO === 'S',
           attachment: r.ANEXO_PATH ? {
             filename: r.ANEXO_FILENAME,
             url: `/uploads/${r.ANEXO_PATH}`
@@ -474,26 +514,28 @@ export default async function dashboardRoutes(app: FastifyInstance) {
       if (!/^\d+$/.test(id)) return reply.status(400).send({ error: 'ID inválido' });
       const numTicket = Number(id);
 
-      const body = (req.body ?? {}) as { content?: string; type?: 'message' | 'note' };
+      const body = (req.body ?? {}) as { content?: string; type?: 'message' | 'note'; isPublic?: boolean };
       if (!body.content || !String(body.content).trim()) {
         return reply.status(400).send({ error: 'Conteúdo do comentário é obrigatório' });
       }
 
       const content = String(body.content).trim().slice(0, 1000);
       const msgType = body.type === 'note' ? 'N' : 'M'; // M=Message (Interact), N=Note (Anotação)
+      const publico = body.isPublic ? 'S' : 'N'; // S=Público, N=Privado
 
-      console.log('[POST /sac/tickets/:id/comments] Inserting comment:', { numTicket, codcli, userName, contentLength: content.length, msgType });
+      console.log('[POST /sac/tickets/:id/comments] Inserting comment:', { numTicket, codcli, userName, contentLength: content.length, msgType, publico });
 
       // Insere comentário no banco
       const newId = await insertReturning<number>(
-        `INSERT INTO ${OWNER}.BRSACC_COMMENTS (NUMTICKET, CODCLI, AUTOR, TIPO_AUTOR, TIPO_MSG, CONTEUDO, DTCRIACAO)
-         VALUES (:NUMTICKET, :CODCLI, :AUTOR, 'C', :TIPO_MSG, :CONTEUDO, SYSTIMESTAMP)`,
+        `INSERT INTO ${OWNER}.BRSACC_COMMENTS (NUMTICKET, CODCLI, AUTOR, TIPO_AUTOR, TIPO_MSG, CONTEUDO, DTCRIACAO, PUBLICO)
+         VALUES (:NUMTICKET, :CODCLI, :AUTOR, 'C', :TIPO_MSG, :CONTEUDO, SYSTIMESTAMP, :PUBLICO)`,
         {
           NUMTICKET: numTicket,
           CODCLI: codcli,
           AUTOR: userName,
           TIPO_MSG: msgType,
           CONTEUDO: content,
+          PUBLICO: publico,
         },
         'ID'
       );
@@ -506,12 +548,46 @@ export default async function dashboardRoutes(app: FastifyInstance) {
         authorType: 'cliente' as const,
         type: (msgType === 'N' ? 'note' : 'message') as 'note' | 'message',
         content,
+        isPublic: publico === 'S',
         createdAt: new Date().toISOString(),
       };
 
       app.log.info({ numTicket, codcli, commentId: newId, msgType }, 'Comment created');
 
       return reply.send({ ok: true, comment: newComment });
+    } catch (err) {
+      return reply.status(500).send({ error: (err as Error).message });
+    }
+  });
+
+  // Rota de Simulação (DEV ONLY) - Winthor
+  app.post('/sac/tickets/:id/simulate-winthor', async (req, reply) => {
+    try {
+      const auth = req.headers.authorization;
+      if (!auth?.startsWith('Bearer ')) return reply.status(401).send({ error: 'Token ausente' });
+      // Valida token apenas para garantir que é um usuário logado chamando
+      const id = String((req.params as any)?.id ?? '').trim();
+      const numTicket = Number(id);
+
+      const newId = await insertReturning<number>(
+        `INSERT INTO ${OWNER}.BRSACC_COMMENTS (NUMTICKET, CODCLI, AUTOR, TIPO_AUTOR, TIPO_MSG, CONTEUDO, DTCRIACAO, PUBLICO)
+             VALUES (:NUMTICKET, 0, 'Winthor ERP', 'W', 'M', 'O pedido foi sincronizado com sucesso no ERP.', SYSTIMESTAMP, 'S')`,
+        { NUMTICKET: numTicket },
+        'ID'
+      );
+
+      return reply.send({
+        ok: true,
+        comment: {
+          id: String(newId),
+          author: 'Winthor ERP',
+          authorType: 'winthor',
+          type: 'message',
+          content: 'O pedido foi sincronizado com sucesso no ERP.',
+          isPublic: true,
+          createdAt: new Date().toISOString()
+        }
+      });
     } catch (err) {
       return reply.status(500).send({ error: (err as Error).message });
     }
@@ -615,7 +691,7 @@ export default async function dashboardRoutes(app: FastifyInstance) {
       const codcli = Number(v.payload?.codcli);
       if (!codcli) return reply.status(400).send({ error: 'CODCLI inválido no token' });
 
-      const q = req.query as { dtInicial?: string; dtFinal?: string; pedido?: string | number; nf?: string | number; page?: string | number; pageSize?: string | number };
+      const q = req.query as { dtInicial?: string; dtFinal?: string; pedido?: string | number; nf?: string | number; status?: string; page?: string | number; pageSize?: string | number };
       const page = Math.max(1, Number(q.page ?? 1));
       const pageSize = Math.max(1, Math.min(100, Number(q.pageSize ?? 10)));
 
@@ -625,6 +701,7 @@ export default async function dashboardRoutes(app: FastifyInstance) {
         dateTo: q.dtFinal,
         nf: q.nf,
         pedido: q.pedido,
+        status: q.status,
         page,
         pageSize,
       });
@@ -683,6 +760,30 @@ export default async function dashboardRoutes(app: FastifyInstance) {
       return reply.status(500).send({ error: (err as Error).message });
     }
   });
+  app.get('/financeiro/boletos/:id', async (req, reply) => {
+    try {
+      const auth = req.headers.authorization;
+      if (!auth?.startsWith('Bearer ')) return reply.status(401).send({ error: 'Token ausente' });
+      const t = auth.slice(7);
+      const v = verifyToken(t, env.JWT_SECRET);
+      if (!v.ok) return reply.status(401).send({ error: v.error });
+      const codcli = Number(v.payload?.codcli);
+      if (!codcli) return reply.status(400).send({ error: 'CODCLI inválido no token' });
+
+      const id = String((req.params as any)?.id ?? '');
+
+      const { stream, filename, size, mimeType } = await downloadBoleto({ codcli, id });
+
+      reply.header('Content-Type', mimeType);
+      reply.header('Content-Disposition', `attachment; filename="${filename}"`);
+      reply.header('Content-Length', size);
+
+      return reply.send(stream);
+    } catch (err) {
+      return reply.status(404).send({ error: (err as Error).message });
+    }
+  });
+
   // DEBUG BOLETO ROUTE - REMOVE LATER
   app.get('/debug/boletos', async (req, reply) => {
     try {

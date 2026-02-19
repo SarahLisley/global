@@ -144,7 +144,7 @@ export async function getTitulos(params: {
       status, // mapped status
       dtPgto: r.DTPAG ? new Date(r.DTPAG).toISOString() : undefined,
       vlrPago: r.VPAGO ? Number(r.VPAGO) : undefined,
-      boletoUrl: undefined, // Would need another integration for this
+      boletoUrl: r.NOMEARQUIVO ? `/financeiro/boletos/${r.NUMTRANSVENDA}-${r.PREST}` : undefined,
       linhaDigitavel: r.LINHADIG ? String(r.LINHADIG) : undefined,
       codigoBarras: r.CODBARRA ? String(r.CODBARRA) : undefined,
       nossoNumero: r.NOSSONUMBCO ? String(r.NOSSONUMBCO) : undefined,

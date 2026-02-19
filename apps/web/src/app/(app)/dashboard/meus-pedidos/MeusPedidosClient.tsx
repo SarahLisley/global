@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, Button } from '@pgb/ui';
+import { Card, Button, Badge } from '@pgb/ui'; // Added Badge import if needed, or remove if not used in updated code
 import { useFilters } from '../../../../hooks/useFilters';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -54,8 +54,6 @@ export default function MeusPedidosClient({
   searchParams,
 }: MeusPedidosClientProps) {
 
-
-
   const { filters, setFilter, updateFilters, clearFilters, isNavigationLoading } = useFilters({
     initialFilters: {
       dtInicial: searchParams.dtInicial,
@@ -80,14 +78,15 @@ export default function MeusPedidosClient({
 
   function onPesquisar() {
     setOpen({});
-    updateFilters({ page: '1' }); // useFilters automatically includes current state
+    updateFilters({ page: '1' });
   }
 
   function onLimpar() {
     const hoje = new Date().toISOString().slice(0, 10);
+    const trintaDias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10); // Standardize default date like SAC
     setOpen({});
     clearFilters({
-      dtInicial: hoje,
+      dtInicial: trintaDias,
       dtFinal: hoje,
       pedido: '',
       nf: '',
@@ -109,7 +108,7 @@ export default function MeusPedidosClient({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Pedidos</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Meus Pedidos</h1>
           <p className="text-slate-500 mt-1">Consulte seus pedidos, notas fiscais e status de faturamento.</p>
         </div>
       </div>
@@ -190,7 +189,7 @@ export default function MeusPedidosClient({
                 </svg>
                 Pesquisar
               </Button>
-              <Button type="button" variant="secondary" onClick={onLimpar} className="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-medium px-6 rounded-full flex items-center justify-center gap-2 group outline-none">
+              <Button type="button" onClick={onLimpar} className="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-medium px-6 rounded-full flex items-center justify-center gap-2 group outline-none">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-red-500 group-hover:text-red-600 transition-colors">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
@@ -215,6 +214,7 @@ export default function MeusPedidosClient({
           </div>
         ) : (
           <div className={`overflow-x-auto transition-opacity duration-300 ${isNavigationLoading ? 'opacity-50 pointer-events-none' : ''}`}>
+            {/* Título da Tabela */}
             <div className="px-6 pt-6 pb-2">
               <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500">
@@ -247,7 +247,7 @@ export default function MeusPedidosClient({
                       <td className="px-6 py-4">{p.nroNF || '-'}</td>
                       <td className="px-6 py-4">{p.nroTransVenda || '-'}</td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 border border-slate-200">
                           {p.posicao || 'Normal'}
                         </span>
                       </td>
@@ -255,7 +255,7 @@ export default function MeusPedidosClient({
                       <td className="px-6 py-4">{p.filial || '-'}</td>
                       <td className="px-6 py-4 font-semibold text-slate-900">{fmtBRL.format(p.vlrTotal ?? 0)}</td>
                       <td className="px-6 py-4 text-center">
-                        <span className="bg-slate-100 text-slate-600 py-1 px-2 rounded font-medium text-xs">
+                        <span className="bg-slate-100 text-slate-600 py-1 px-2 rounded font-medium text-xs border border-slate-200">
                           {p.nroItens ?? p.itens?.length ?? 0}
                         </span>
                       </td>
@@ -275,7 +275,7 @@ export default function MeusPedidosClient({
                     </tr>
 
                     {open[p.id] && p.itens && (
-                      <tr className="bg-slate-50/50">
+                      <tr className="bg-slate-50/50 animate-in fade-in slide-in-from-top-1">
                         <td colSpan={9} className="p-0 border-b border-slate-200">
                           <div className="py-4 px-6 bg-slate-50 shadow-inner">
                             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -297,7 +297,7 @@ export default function MeusPedidosClient({
                                 <tbody className="divide-y divide-slate-100">
                                   {p.itens.length > 0 ? p.itens.map((it, idx) => (
                                     <tr key={idx} className="hover:bg-slate-50">
-                                      <td className="px-4 py-2 text-slate-600">{it.codProduto}</td>
+                                      <td className="px-4 py-2 text-slate-600 font-mono text-xs">{it.codProduto}</td>
                                       <td className="px-4 py-2 font-medium text-slate-800">{it.descricao}</td>
                                       <td className="px-4 py-2 text-right text-slate-600">{it.qtd}</td>
                                       <td className="px-4 py-2 text-right text-red-500 font-medium">{it.qtdFalta > 0 ? it.qtdFalta : '-'}</td>
@@ -308,9 +308,9 @@ export default function MeusPedidosClient({
                                     <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">Sem itens registrados para este pedido.</td></tr>
                                   )}
                                 </tbody>
-                                <tfoot className="bg-slate-50">
+                                <tfoot className="bg-slate-50 border-t border-slate-100">
                                   <tr>
-                                    <td colSpan={5} className="px-4 py-2 text-right font-bold text-slate-700">Total do Pedido:</td>
+                                    <td colSpan={5} className="px-4 py-2 text-right font-bold text-slate-700 uppercase text-xs tracking-wider">Total do Pedido:</td>
                                     <td className="px-4 py-2 text-right font-bold text-slate-900">{fmtBRL.format(p.vlrTotal ?? 0)}</td>
                                   </tr>
                                 </tfoot>
@@ -329,16 +329,45 @@ export default function MeusPedidosClient({
 
         {/* Paginação */}
         {initialTotal > 0 && (
-          <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
-            <div className="text-sm text-slate-500">
-              Mostrando página <span className="font-medium text-slate-900">{initialPage}</span> de <span className="font-medium text-slate-900">{totalPages}</span>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-slate-50 border-t border-slate-200">
+            <div className="text-sm text-slate-600 flex items-center gap-2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <path d="M16 10a4 4 0 0 1-8 0"></path>
+              </svg>
+              <span>Mostrando página <span className="font-bold text-slate-900">{initialPage}</span> de <span className="font-bold text-slate-900">{totalPages}</span></span>
             </div>
-            <div className="flex gap-2">
-              <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all" disabled={initialPage <= 1} onClick={() => onPageChange(initialPage - 1)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
+            <div className="flex items-center gap-1">
+              <button className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" disabled={initialPage <= 1} onClick={() => onPageChange(initialPage - 1)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
               </button>
-              <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all" disabled={initialPage >= totalPages} onClick={() => onPageChange(initialPage + 1)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+
+              <div className="flex items-center gap-1 mx-2">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) { pageNum = i + 1; }
+                  else if (initialPage <= 3) { pageNum = i + 1; }
+                  else if (initialPage >= totalPages - 2) { pageNum = totalPages - 4 + i; }
+                  else { pageNum = initialPage - 2 + i; }
+
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => onPageChange(pageNum)}
+                      className={`w-9 h-9 flex items-center justify-center rounded-lg font-medium text-sm transition-colors ${initialPage === pageNum
+                        ? 'bg-blue-600 text-white border border-blue-600'
+                        : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
+                        }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" disabled={initialPage >= totalPages} onClick={() => onPageChange(initialPage + 1)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
               </button>
             </div>
           </div>

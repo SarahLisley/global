@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Badge, Card } from '@pgb/ui';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
 type Order = {
   orderNumber: string;
@@ -131,6 +132,7 @@ export function RecentOrdersTable({
                     <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 text-xs sm:text-sm whitespace-nowrap">Vendedor</th>
                     <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 text-xs sm:text-sm whitespace-nowrap">Valor Total</th>
                     <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 text-xs sm:text-sm whitespace-nowrap">Posição</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 text-xs sm:text-sm whitespace-nowrap">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -140,11 +142,20 @@ export function RecentOrdersTable({
                       <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-600 text-xs sm:text-sm whitespace-nowrap">{o.seller}</td>
                       <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-xs sm:text-sm whitespace-nowrap">{fmt.format(o.total)}</td>
                       <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">{statusBadge(o.status)}</td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                        <Link
+                          href={`/dashboard/meus-pedidos?pedido=${o.orderNumber}`}
+                          className="text-blue-600 hover:text-blue-800 font-medium text-xs sm:text-sm hover:underline inline-flex items-center gap-1"
+                        >
+                          Ver
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+                        </Link>
+                      </td>
                     </tr>
                   ))}
                   {filtered.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-3 sm:px-6 py-8 sm:py-12 text-center">
+                      <td colSpan={5} className="px-3 sm:px-6 py-8 sm:py-12 text-center">
                         <div className="flex flex-col items-center gap-2 text-gray-500">
                           <svg width="40" height="40" className="sm:w-12 sm:h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
                             <circle cx="12" cy="12" r="10" />

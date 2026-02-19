@@ -114,7 +114,7 @@ export default function FinanceiroClient({
                 Período de Vencimento
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:border-blue-500 transition-all">
                   <label htmlFor="dtInicial" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">De</label>
                   <input
                     id="dtInicial"
@@ -124,7 +124,7 @@ export default function FinanceiroClient({
                     onChange={(e) => setFilter('dtInicial', e.target.value)}
                   />
                 </div>
-                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:border-blue-500 transition-all">
                   <label htmlFor="dtFinal" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">Até</label>
                   <input
                     id="dtFinal"
@@ -181,7 +181,7 @@ export default function FinanceiroClient({
                 Filtros
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:border-blue-500 transition-all">
                   <label htmlFor="numped" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">Pedido</label>
                   <input
                     id="numped"
@@ -192,7 +192,7 @@ export default function FinanceiroClient({
                     className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm"
                   />
                 </div>
-                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:border-blue-500 transition-all">
                   <label htmlFor="notaFiscal" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">Nota Fiscal</label>
                   <input
                     id="notaFiscal"
@@ -245,8 +245,10 @@ export default function FinanceiroClient({
             {/* Título da Tabela */}
             <div className="px-6 pt-6 pb-4">
               <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400">
-                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
                 </svg>
                 Títulos Localizados
               </h2>
@@ -273,28 +275,13 @@ export default function FinanceiroClient({
                       <tr key={t.id} className="group hover:bg-slate-50 transition-colors duration-200">
                         <td className="px-6 py-5">
                           <div className="font-semibold text-slate-900 text-[15px]">{t.nroDocto}</div>
-                          <div className="flex flex-col gap-1.5 mt-2">
+                          <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-500">
                             {t.numped && (
-                              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium uppercase tracking-wide">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-400">
-                                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                                  <line x1="12" y1="22.08" x2="12" y2="12" />
-                                </svg>
-                                <span>Ped: {t.numped}</span>
-                              </div>
+                              <span title="Número do Pedido">Ped. {t.numped}</span>
                             )}
+                            {t.numped && t.notaFiscal && <span className="text-slate-300">•</span>}
                             {t.notaFiscal && (
-                              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium uppercase tracking-wide">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-400">
-                                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                  <polyline points="14 2 14 8 20 8" />
-                                  <line x1="16" y1="13" x2="8" y2="13" />
-                                  <line x1="16" y1="17" x2="8" y2="17" />
-                                  <polyline points="10 9 9 9 8 9" />
-                                </svg>
-                                <span>NF: {t.notaFiscal}</span>
-                              </div>
+                              <span title="Nota Fiscal">NF {t.notaFiscal}</span>
                             )}
                           </div>
                         </td>
@@ -341,7 +328,7 @@ export default function FinanceiroClient({
                           <div className="flex flex-col gap-2">
                             {t.boletoUrl ? (
                               <a
-                                href={t.boletoUrl}
+                                href={`/api${t.boletoUrl}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 bg-white hover:bg-slate-50 border border-slate-200 hover:border-blue-200 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
@@ -399,8 +386,13 @@ export default function FinanceiroClient({
             {/* Paginação */}
             {initialTotal > 0 && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-slate-50 border-t border-slate-200">
-                <div className="text-sm text-slate-600">
-                  Mostrando <span className="font-bold text-slate-900">{(initialPage - 1) * pageSize + 1}</span> a <span className="font-bold text-slate-900">{Math.min(initialPage * pageSize, initialTotal)}</span> de <span className="font-bold text-slate-900">{initialTotal}</span> título(s)
+                <div className="text-sm text-slate-600 flex items-center gap-2">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                  </svg>
+                  <span>Mostrando página <span className="font-bold text-slate-900">{initialPage}</span> de <span className="font-bold text-slate-900">{totalPages}</span></span>
                 </div>
                 <div className="flex items-center gap-1">
                   <button

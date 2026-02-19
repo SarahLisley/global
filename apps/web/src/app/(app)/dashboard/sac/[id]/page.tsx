@@ -4,6 +4,7 @@ import { fetchTicketDetail } from '../detailApi';
 import { TicketInfoCard } from './ticket-info-card';
 import { CommentsSection } from './comments-section';
 
+
 function statusBadge(s: 'em_andamento' | 'finalizado') {
   if (s === 'finalizado') return <Badge variant="success">Finalizado</Badge>;
   return <Badge variant="info">Em andamento</Badge>;

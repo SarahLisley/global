@@ -64,24 +64,10 @@ export async function getSACSeries(params: { codcli: number }): Promise<SACSerie
         else pending[idx] += 1;
     }
 
-    // --- MOCK DATA PARA DEMONSTRAÇÃO SE NÃO HOUVER DADOS ---
-    // Se não houver nenhum ticket no dia, gerar dados aleatórios para "parecer" que o sistema está em uso intenso
-    if (rows.length === 0) {
-        console.log('[getSACSeries] Nenhum dado real encontrado para hoje. Gerando mock data.');
-        for (let i = 8; i <= 18; i++) { // Horário comercial das 8h às 18h
-            // Gerar valores aleatórios mas coerentes
-            // Mais resolvidos no fim do dia, mais pendentes no começo
-            const factor = (i - 8) / 10; // 0 no inicio, 1 no fim
+    // --- MOCK REMOVED ---
+    // User requested to remove mocks and show real data only.
+    // If no data, the charts will simply be empty, which is correct behavior.
 
-            // Random base activity
-            const activity = Math.floor(Math.random() * 5) + 2;
-
-            resolved[i] = Math.floor(Math.random() * 5) + Math.floor(activity * factor);
-            inProgress[i] = Math.floor(Math.random() * 4) + 2;
-            pending[i] = Math.floor(Math.random() * 3) + Math.floor(activity * (1 - factor));
-        }
-    }
-    // -------------------------------------------------------
 
     const labels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
     return {
@@ -195,15 +181,25 @@ export async function createTicket(input: CreateTicketInput): Promise<CreateTick
 
 export async function searchTickets(req: FastifyRequest) {
     const q = req.query as any;
+    const status = (q.status as string) || null;
+
     const binds = {
         date_from: q.date_from ?? null,
         date_to: q.date_to ?? null,
         numped: q.numped ?? null,
         numnota: q.numnota ?? null,
         codcli: q.codcli ?? null,
+        status: status, // status bind
     };
 
     req.log.info({ binds: safeLogBinds(binds, { fields: ['codcli'] }) }, 'SAC search binds');
+
+    // Mapeamento de status para filtro SQL
+    // Se status for 'pendente' ou 'em_andamento', queremos tickets ABERTOS (sem data de finalização)
+    // Se status for 'finalizado', queremos tickets FECHADOS (com data de finalização)
+    const statusFilter = status
+        ? (status === 'finalizado' ? "AND DTFINALIZA IS NOT NULL" : "AND DTFINALIZA IS NULL")
+        : "";
 
     const rows = await select<any>(
         `
@@ -215,6 +211,7 @@ export async function searchTickets(req: FastifyRequest) {
       AND (:numped    IS NULL OR NUMPED = :numped)
       AND (:numnota   IS NULL OR NUMNOTA = :numnota)
       AND (:codcli    IS NULL OR CODCLI = :codcli)
+      ${statusFilter}
     FETCH FIRST 200 ROWS ONLY
     `,
         binds

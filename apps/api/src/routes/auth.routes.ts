@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { login, parseBearer, whoamiFromToken, listDevUsers, getUserProfile } from '../controllers/authController';
+import { login, parseBearer, whoamiFromToken, getUserProfile } from '../controllers/authController';
 import { LoginInputSchema } from '@pgb/sdk';
 
 export default async function authRoutes(app: FastifyInstance) {
@@ -42,11 +42,5 @@ export default async function authRoutes(app: FastifyInstance) {
     const res = await getUserProfile(email);
     if (!res.ok) return reply.code(res.status).send({ message: res.message });
     return reply.send(res.profile);
-  });
-
-  app.get('/dev/users', async (_req, reply) => {
-    const res = await listDevUsers(5);
-    if (!res.ok) return reply.code(res.status).send({ message: res.message });
-    return reply.send({ users: res.users });
   });
 }
