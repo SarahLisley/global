@@ -79,14 +79,14 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="w-full max-w-[420px] mx-auto -my-4">
+    <div className="w-full max-w-[400px] mx-auto">
       {/* Header */}
-      <div className="mb-5 text-center animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out fill-mode-both">
-        <BrandLogo className="mx-auto mb-4" width={110} height={38} />
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+      <div className="mb-8 text-center animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out fill-mode-both">
+        <BrandLogo className="mb-6 mx-auto" width={130} height={44} />
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
           Criar Conta
         </h1>
-        <p className="text-slate-500 mt-1 text-sm">
+        <p className="text-slate-500 mt-2 text-sm sm:text-base">
           Preencha os dados abaixo para acessar o sistema.
         </p>
       </div>
@@ -217,7 +217,7 @@ export default function RegisterPage() {
         {/* Submit Button */}
         <Button
           type="submit"
-          className="w-full h-11 !mt-6 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-base font-semibold rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2"
+          className="w-full h-11 !mt-8 md:!mt-10 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-base font-semibold rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2"
           disabled={isPending}
         >
           {isPending ? (
@@ -232,7 +232,7 @@ export default function RegisterPage() {
       </form>
 
       {/* Footer */}
-      <div className="mt-5 text-center pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 ease-out fill-mode-both">
+      <div className="mt-8 text-center pt-6 border-t border-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 ease-out fill-mode-both">
         <p className="text-sm text-slate-600">
           Já tem conta?{' '}
           <Link

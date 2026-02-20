@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { addCommentAction, fetchCommentsAction, editCommentAction, deleteCommentAction, simulateWinthorAction } from '../actions';
+import { addCommentAction, fetchCommentsAction, editCommentAction, deleteCommentAction, simulateWinthorAction, uploadAttachmentAction } from '../actions';
 import { Toast } from './toast';
 import { cn } from '@lib/cn';
 import { ChatBubble, type ChatComment } from './components/ChatBubble';
@@ -30,6 +30,7 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [isNotePublic, setIsNotePublic] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -74,22 +75,48 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
     setIsDragOver(false);
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
-      showToast(`Arquivo "${files[0].name}" pronto para envio (Simulação)`, 'info');
+      const file = files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Arquivo muito grande. Máximo 5MB.', 'error');
+        return;
+      }
+      setSelectedFile(file);
+      showToast(`Arquivo "${file.name}" selecionado`, 'info');
     }
   };
 
   // Chat message send
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || isDisabled) return;
+    if ((!newMessage.trim() && !selectedFile) || isDisabled) return;
+
     setIsPolling(false);
     startTransition(async () => {
-      const res = await addCommentAction(ticketId, newMessage.trim(), 'message');
+      let attachment = undefined;
+
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        const uploadRes = await uploadAttachmentAction(ticketId, formData);
+        if (!uploadRes.ok) {
+          showToast(uploadRes.message ?? 'Erro no upload', 'error');
+          setIsPolling(true);
+          return;
+        }
+        attachment = {
+          filename: uploadRes.data.filename,
+          path: uploadRes.data.path
+        };
+      }
+
+      const res = await addCommentAction(ticketId, newMessage.trim(), 'message', false, attachment);
       if (!res.ok) {
         showToast(res.message ?? 'Erro ao enviar', 'error');
       } else if (res.comment) {
         setComments((prev) => [...prev, res.comment as ChatComment]);
         setNewMessage('');
+        setSelectedFile(null);
         router.refresh();
       }
       setIsPolling(true);
@@ -166,8 +193,8 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
       {/* ÁREA 1: INTERAÇÃO SAC */}
       <div
         className={cn(
-          "bg-white rounded-2xl border transition-all duration-300 flex flex-col h-[600px] overflow-hidden relative shadow-sm",
-          isDragOver ? "border-blue-500 ring-2 ring-blue-500/10" : "border-slate-200/60"
+          "bg-white rounded-2xl border transition-all duration-300 flex flex-col h-[650px] overflow-hidden relative shadow-md shadow-slate-200/50",
+          isDragOver ? "border-blue-500 ring-4 ring-blue-500/5" : "border-slate-200/60"
         )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -185,9 +212,9 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
         )}
 
         {/* Header */}
-        <div className="bg-white px-6 py-4 flex items-center justify-between border-b border-slate-100 sticky top-0 z-20 shadow-sm">
+        <div className="bg-slate-50/80 backdrop-blur-md px-6 py-5 flex items-center justify-between border-b border-slate-200/60 sticky top-0 z-20 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center border border-blue-100/50 shadow-sm text-blue-600">
+            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200 text-white">
               <ChatIcon />
             </div>
             <div>
@@ -223,8 +250,11 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
         {/* Chat Area — using ChatBubble components */}
         <div
           ref={interactionListRef}
-          className="flex-1 overflow-y-auto px-6 py-6 bg-slate-50/50 space-y-8 scroll-smooth"
-          style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '24px 24px' }}
+          className="flex-1 overflow-y-auto px-6 py-8 bg-[#f8fafc] space-y-8 scroll-smooth"
+          style={{
+            backgroundImage: 'radial-gradient(circle, #e2e8f0 1.2px, transparent 1.2px)',
+            backgroundSize: '32px 32px'
+          }}
         >
           {allMessages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-slate-400 select-none opacity-60">
@@ -236,7 +266,38 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
             </div>
           ) : (
             allMessages.map((msg) => (
-              editingId === msg.id ? null : (
+              editingId === msg.id ? (
+                <div key={msg.id} className="flex flex-col items-end gap-2 animate-in fade-in zoom-in duration-300">
+                  <div className="w-full max-w-[75%] bg-white border-2 border-blue-400 rounded-2xl px-5 py-3.5 shadow-xl shadow-blue-500/10 relative">
+                    <textarea
+                      value={editContent}
+                      onChange={(e) => {
+                        setEditContent(e.target.value);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = e.target.scrollHeight + 'px';
+                      }}
+                      className="w-full text-sm bg-transparent border-none focus:ring-0 p-0 outline-none resize-none placeholder:text-slate-400 min-h-[40px]"
+                      autoFocus
+                    />
+                    <div className="absolute -right-1.5 top-3 w-3 h-3 bg-white border-r border-t border-blue-400 rotate-[45deg] rounded-[1px]" />
+                  </div>
+                  <div className="flex gap-2 mr-1">
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-all"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={() => handleSaveEdit(msg.id)}
+                      disabled={isPending || !editContent.trim()}
+                      className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-500/10 disabled:opacity-50"
+                    >
+                      {isPending ? 'Salvando...' : 'Salvar Alteração'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
                 <ChatBubble
                   key={msg.id}
                   message={msg}
@@ -263,7 +324,8 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
             onChange={setNewMessage}
             onSubmit={handleSendMessage}
             isPending={isPending}
-            onAttachClick={() => showToast('Funcionalidade de anexo em breve!', 'info')}
+            selectedFile={selectedFile}
+            onFileSelect={setSelectedFile}
             disabled={isDisabled}
           />
         )}

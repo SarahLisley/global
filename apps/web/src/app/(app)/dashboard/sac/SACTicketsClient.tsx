@@ -51,10 +51,9 @@ export default function SACTicketsClient({
 
   const onClear = () => {
     const hoje = new Date().toISOString().slice(0, 10);
-    const trintaDias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
     clearFilters({
-      dateFrom: trintaDias,
+      dateFrom: hoje,
       dateTo: hoje,
       status: 'todos',
       orderNumber: '',
@@ -128,6 +127,40 @@ export default function SACTicketsClient({
                   />
                 </div>
               </div>
+
+              {/* Status Radio Group */}
+              <div className="flex items-center gap-4 px-1 pt-1">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input
+                    type="radio"
+                    name="status"
+                    checked={filters.status === 'todos'}
+                    onChange={() => setFilter('status', 'todos')}
+                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                  />
+                  <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Todos</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input
+                    type="radio"
+                    name="status"
+                    checked={filters.status === 'em_andamento'}
+                    onChange={() => setFilter('status', 'em_andamento')}
+                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                  />
+                  <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Em Andamento</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input
+                    type="radio"
+                    name="status"
+                    checked={filters.status === 'finalizado'}
+                    onChange={() => setFilter('status', 'finalizado')}
+                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                  />
+                  <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Finalizados</span>
+                </label>
+              </div>
             </div>
 
             <div className="md:col-span-7 space-y-4">
@@ -162,40 +195,7 @@ export default function SACTicketsClient({
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between pt-4 border-t border-slate-200 gap-4">
-            <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
-              <label className="inline-flex items-center gap-2 text-sm cursor-pointer group">
-                <input
-                  type="radio"
-                  name="status"
-                  checked={filters.status === 'todos'}
-                  onChange={() => setFilter('status', 'todos')}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                />
-                <span className="text-slate-600 group-hover:text-slate-900 transition-colors">Todos</span>
-              </label>
-              <label className="inline-flex items-center gap-2 text-sm cursor-pointer group">
-                <input
-                  type="radio"
-                  name="status"
-                  checked={filters.status === 'em_andamento'}
-                  onChange={() => setFilter('status', 'em_andamento')}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                />
-                <span className="text-slate-600 group-hover:text-slate-900 transition-colors">Em Andamento</span>
-              </label>
-              <label className="inline-flex items-center gap-2 text-sm cursor-pointer group">
-                <input
-                  type="radio"
-                  name="status"
-                  checked={filters.status === 'finalizado'}
-                  onChange={() => setFilter('status', 'finalizado')}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                />
-                <span className="text-slate-600 group-hover:text-slate-900 transition-colors">Finalizados</span>
-              </label>
-            </div>
-
+          <div className="flex flex-col sm:flex-row items-center justify-end pt-4 border-t border-slate-200 gap-4">
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <Button
                 onClick={onSearch}
@@ -314,8 +314,12 @@ export default function SACTicketsClient({
             {/* Paginação */}
             {initialTotal > 0 && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-slate-50 border-t border-slate-200">
-                <div className="text-sm text-slate-600">
-                  Mostrando página <span className="font-bold text-slate-900">{initialPage}</span> de <span className="font-bold text-slate-900">{totalPages}</span>
+                <div className="text-sm text-slate-600 flex items-center gap-2">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                  <span>Mostrando página <span className="font-bold text-slate-900">{initialPage}</span> de <span className="font-bold text-slate-900">{totalPages}</span></span>
                 </div>
                 <div className="flex items-center gap-1">
                   <button

@@ -74,8 +74,8 @@ export function RecentOrdersTable({
   };
 
   const totalPages = Math.ceil(total / pageSize);
-  const startItem = (page - 1) * pageSize + 1;
-  const endItem = startItem + orders.length - 1;
+  const startItem = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const endItem = total === 0 ? 0 : Math.min(startItem + orders.length - 1, total);
 
   return (
     <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300">
@@ -177,7 +177,7 @@ export function RecentOrdersTable({
         {/* Footer Responsivo */}
         <div className="mt-3 sm:mt-4 flex items-center justify-between text-xs sm:text-sm text-gray-600">
           <span>
-            Mostrando <span className="font-semibold text-gray-900">{total === 0 ? 0 : startItem}</span> a{' '}
+            Mostrando <span className="font-semibold text-gray-900">{startItem}</span> a{' '}
             <span className="font-semibold text-gray-900">{endItem}</span> de{' '}
             <span className="font-semibold text-gray-900">{total}</span>
           </span>

@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status') || 'em_andamento';
 
-    const res = await fetch(`${API_BASE}/dashboard/admin/sac/tickets?status=${status}`, {
+    const res = await fetch(`${API_BASE}/sac/admin/tickets?status=${status}`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     });

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const params = url.searchParams.toString();
 
-    const res = await fetch(`${API_BASE}/dashboard/entregas?${params}`, {
+    const res = await fetch(`${API_BASE}/entregas?${params}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 

@@ -63,7 +63,7 @@ export default function FinanceiroClient({
     persistence: {
       type: 'cookie',
       keyPrefix: 'financeiro',
-      fields: ['dtInicial', 'dtFinal'],
+      fields: ['dtInicial', 'dtFinal', 'status', 'numped', 'nf'],
     },
   });
 
@@ -169,7 +169,7 @@ export default function FinanceiroClient({
                     onChange={() => setFilter('status', 'unpaid')}
                     className="w-4 h-4 text-red-600 border-slate-300 focus:ring-red-500 cursor-pointer"
                   />
-                  <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Abertos</span>
+                  <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Não Pagos</span>
                 </label>
               </div>
             </div>
@@ -258,7 +258,7 @@ export default function FinanceiroClient({
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
                     <th className="px-6 py-4 font-bold text-slate-800 whitespace-nowrap text-xs uppercase tracking-wider">Documento</th>
-                    <th className="px-6 py-4 font-bold text-slate-800 whitespace-nowrap text-xs uppercase tracking-wider">Parcela</th>
+                    <th className="px-6 py-4 font-bold text-slate-800 whitespace-nowrap text-xs uppercase tracking-wider text-center">Parcela</th>
                     <th className="px-6 py-4 font-bold text-slate-800 whitespace-nowrap text-xs uppercase tracking-wider">Emissão</th>
                     <th className="px-6 py-4 font-bold text-slate-800 whitespace-nowrap text-xs uppercase tracking-wider">Vencimento</th>
                     <th className="px-6 py-4 font-bold text-slate-800 whitespace-nowrap text-xs uppercase tracking-wider">Valor</th>
@@ -285,7 +285,7 @@ export default function FinanceiroClient({
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-5 text-slate-700 font-medium">{t.parcela}</td>
+                        <td className="px-6 py-5 text-slate-700 font-medium text-center">{t.parcela}</td>
                         <td className="px-6 py-5 whitespace-nowrap text-slate-600">{fmtBR.format(new Date(t.dtEmissao))}</td>
                         <td className="px-6 py-5 whitespace-nowrap">
                           <div className={vencido && !t.dtPgto ? "font-medium text-red-600 flex items-center gap-1.5" : "text-slate-600"}>

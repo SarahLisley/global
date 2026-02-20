@@ -14,9 +14,9 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized: Session cookie missing' }, { status: 401 });
   }
 
-  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
-  // Construct backend URL: /dashboard/financeiro/boletos/:id
-  const url = `${backendUrl}/dashboard/financeiro/boletos/${id}`;
+  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
+  // Construct backend URL: /financeiro/boletos/:id
+  const url = `${backendUrl}/financeiro/boletos/${id}`;
 
   try {
     const res = await fetch(url, {

@@ -14,7 +14,7 @@ export async function fetchDocsValidity(): Promise<DocDTO[]> {
   const token = (await cookies()).get('pgb_session')?.value;
   if (!token) throw new Error('Sem token de sessão');
 
-  const res = await fetch(`${API_BASE}/dashboard/docs/validity`, {
+  const res = await fetch(`${API_BASE}/docs/validity`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
   });

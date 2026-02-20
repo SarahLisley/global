@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import FinanceiroClient, { Titulo, Status } from './FinanceiroClient';
 import FinanceiroLoading from './loading';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
 
 async function getTitulos(searchParams: { [key: string]: string | string[] | undefined }) {
   const token = (await cookies()).get('pgb_session')?.value;
@@ -28,7 +28,7 @@ async function getTitulos(searchParams: { [key: string]: string | string[] | und
   if (nf) params.append('nf', nf);
 
   try {
-    const res = await fetch(`${API_BASE}/dashboard/financeiro?${params.toString()}`, {
+    const res = await fetch(`${API_BASE}/financeiro?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store', // Ensure fresh data on every request
     });

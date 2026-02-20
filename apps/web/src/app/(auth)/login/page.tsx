@@ -63,7 +63,7 @@ function LoginContent() {
           Bem-vindo
         </h1>
         <p className="text-slate-500 mt-2 text-sm sm:text-base">
-          Entre com suas credenciais para continuar
+          Entre com suas credenciais para continuar.
         </p>
       </div>
 

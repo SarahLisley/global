@@ -1,0 +1,643 @@
+import type { FastifyInstance } from 'fastify';
+import { getSACSeries, createTicket } from '../controllers/sacController';
+import { select, insertReturning, execute } from '../db/query';
+import { OWNER } from '../utils/env';
+import { extractCodcli, handleAuthError } from '../utils/auth';
+import path from 'path';
+import fs from 'fs';
+
+const SAC_UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads', 'sac');
+
+// Garante que o diretório existe
+if (!fs.existsSync(SAC_UPLOADS_DIR)) {
+  fs.mkdirSync(SAC_UPLOADS_DIR, { recursive: true });
+}
+
+function normalizeStatus(status: any, dtFinaliza: any): 'pendente' | 'em_andamento' | 'finalizado' {
+  if (dtFinaliza != null) return 'finalizado';
+  const s = String(status ?? '').trim().toLowerCase();
+  if (['em andamento', 'andamento', 'aguardando'].includes(s)) return 'em_andamento';
+  if (['aberto', 'inicial'].includes(s)) return 'pendente';
+  return 'em_andamento';
+}
+
+export default async function sacRoutes(app: FastifyInstance) {
+
+  // ────────── Séries (gráfico) ──────────
+
+  app.get('/series', async (req, reply) => {
+    try {
+      const { codcli } = extractCodcli(req);
+      const series = await getSACSeries({ codcli });
+      return reply.send(series);
+    } catch (err) {
+      return handleAuthError(err, reply);
+    }
+  });
+
+  // ────────── Listar tickets ──────────
+
+  app.get('/tickets', async (req, reply) => {
+    try {
+      const { codcli } = extractCodcli(req);
+
+      const q = req.query as {
+        dateFrom?: string;
+        dateTo?: string;
+        status?: 'todos' | 'em_andamento' | 'finalizado' | 'pendente';
+        orderNumber?: string | number;
+        invoiceNumber?: string | number;
+        page?: string | number;
+        pageSize?: string | number;
+      };
+
+      const page = Math.max(1, Number(q.page ?? 1));
+      const pageSize = Math.max(1, Math.min(100, Number(q.pageSize ?? 20)));
+      const offset = (page - 1) * pageSize;
+
+      const binds: Record<string, any> = { CODCLI: codcli };
+      const where: string[] = [
+        'BRSACC.CODCLI = :CODCLI',
+        'BRSACC.NUMTICKET = BRSACC.NUMTICKETPRINC',
+        "NVL(BRSACC.STATUS,'') <> 'Cancelado'",
+      ];
+
+      if (q.dateFrom) {
+        where.push("TRUNC(BRSACC.DTABERTURA) >= TO_DATE(:DATE_FROM, 'YYYY-MM-DD')");
+        binds.DATE_FROM = q.dateFrom;
+      }
+      if (q.dateTo) {
+        where.push("TRUNC(BRSACC.DTABERTURA) <= TO_DATE(:DATE_TO, 'YYYY-MM-DD')");
+        binds.DATE_TO = q.dateTo;
+      }
+      if (q.orderNumber) {
+        where.push('BRSACC.NUMPED = :NUMPED');
+        binds.NUMPED = Number(q.orderNumber);
+      }
+      if (q.invoiceNumber) {
+        where.push('BRSACC.NUMNOTA = :NUMNOTA');
+        binds.NUMNOTA = Number(q.invoiceNumber);
+      }
+      if (q.status && q.status !== 'todos') {
+        if (q.status === 'finalizado') {
+          where.push('BRSACC.DTFINALIZA IS NOT NULL');
+        } else if (q.status === 'pendente') {
+          where.push("LOWER(TRIM(NVL(BRSACC.STATUS,''))) IN ('aberto','inicial')");
+          where.push('BRSACC.DTFINALIZA IS NULL');
+        } else if (q.status === 'em_andamento') {
+          where.push('BRSACC.DTFINALIZA IS NULL');
+        }
+      }
+
+      app.log.info({ codcli, q }, 'SAC tickets query');
+
+      const baseWhere = where.length ? `WHERE ${where.join(' AND ')}` : '';
+      const rows = await select<any>(
+        `
+        SELECT
+          BRSACC.NUMTICKET,
+          BRSACC.DTABERTURA,
+          BRSACC.DTFINALIZA,
+          BRSACC.NUMPED,
+          BRSACC.NUMNOTA,
+          BRSACC.RELATOCLIENTE,
+          BRSACC.STATUS
+        FROM ${OWNER}.BRSACC
+        ${baseWhere}
+        ORDER BY BRSACC.DTABERTURA DESC
+        OFFSET :OFFSET ROWS FETCH NEXT :LIMIT ROWS ONLY
+        `,
+        { ...binds, OFFSET: offset, LIMIT: pageSize }
+      );
+
+      const countRows = await select<{ TOTAL: number }>(
+        `
+        SELECT COUNT(*) AS TOTAL
+        FROM ${OWNER}.BRSACC
+        ${baseWhere}
+        `,
+        binds
+      );
+      const total = Number(countRows?.[0]?.TOTAL ?? 0);
+
+      const list = rows.map((r) => ({
+        id: String(r.NUMTICKET),
+        openedAt: new Date(r.DTABERTURA).toISOString(),
+        closedAt: r.DTFINALIZA ? new Date(r.DTFINALIZA).toISOString() : undefined,
+        orderNumber: r.NUMPED ?? undefined,
+        invoiceNumber: r.NUMNOTA ?? undefined,
+        subject: String(r.RELATOCLIENTE ?? ''),
+        status: normalizeStatus(r.STATUS, r.DTFINALIZA),
+      }));
+
+      app.log.info({ count: rows.length, total }, 'SAC tickets result');
+
+      return reply.send({ ok: true, list, page, pageSize, total });
+    } catch (err) {
+      return handleAuthError(err, reply);
+    }
+  });
+
+  // ────────── Detalhe do ticket ──────────
+
+  app.get('/tickets/:id', async (req, reply) => {
+    try {
+      const { codcli } = extractCodcli(req);
+      const id = String((req.params as any)?.id ?? '').trim();
+      if (!/^\d+$/.test(id)) return reply.status(400).send({ error: 'ID inválido' });
+      const numTicket = Number(id);
+
+      const rows = await select<any>(
+        `
+        SELECT
+          BRSACC.NUMTICKET,
+          BRSACC.DTABERTURA,
+          BRSACC.DTFINALIZA,
+          BRSACC.NUMPED,
+          BRSACC.NUMNOTA,
+          BRSACC.RELATOCLIENTE,
+          BRSACC.STATUS,
+          BRSACC.CODFILIAL
+        FROM ${OWNER}.BRSACC
+        WHERE BRSACC.NUMTICKET = :NUMTICKET
+          AND BRSACC.NUMTICKET = BRSACC.NUMTICKETPRINC
+          AND BRSACC.CODCLI = :CODCLI
+          AND NVL(BRSACC.STATUS,'') <> 'Cancelado'
+        `,
+        { NUMTICKET: numTicket, CODCLI: codcli }
+      );
+
+      if (!rows.length) return reply.status(404).send({ error: 'Ticket não encontrado' });
+      const r = rows[0];
+
+      const ticket = {
+        id: String(r.NUMTICKET),
+        openedAt: new Date(r.DTABERTURA).toISOString(),
+        closedAt: r.DTFINALIZA ? new Date(r.DTFINALIZA).toISOString() : undefined,
+        orderNumber: r.NUMPED ?? undefined,
+        invoiceNumber: r.NUMNOTA ?? undefined,
+        subject: String(r.RELATOCLIENTE ?? ''),
+        status: normalizeStatus(r.STATUS, r.DTFINALIZA),
+        branch: r.CODFILIAL ? String(r.CODFILIAL) : undefined,
+      };
+
+      const history = await select<any>(
+        `
+        SELECT
+          BRSACC.NUMSEQ,
+          BRSACC.DTABERTURA AS DTMOV,
+          BRSACC.DTFINALIZA AS DTMOV_FINAL,
+          BRSACC.RELATOCLIENTE AS DESCRICAO,
+          BRSACC.STATUS
+        FROM ${OWNER}.BRSACC
+        WHERE BRSACC.NUMTICKETPRINC = :NUMTICKET
+          AND BRSACC.CODCLI = :CODCLI
+          AND NVL(BRSACC.STATUS,'') <> 'Cancelado'
+        ORDER BY BRSACC.NUMSEQ ASC
+        `,
+        { NUMTICKET: numTicket, CODCLI: codcli }
+      );
+
+      const timeline = history.map((h) => ({
+        seq: Number(h.NUMSEQ),
+        when: new Date(h.DTMOV ?? h.DTMOV_FINAL ?? r.DTABERTURA).toISOString(),
+        description: String(h.DESCRICAO ?? ''),
+        status: normalizeStatus(h.STATUS, h.DTMOV_FINAL),
+      }));
+
+      // Buscar comentários do ticket
+      const commentRows = await select<any>(
+        `SELECT 
+          ID,
+          AUTOR,
+          TIPO_AUTOR,
+          TIPO_MSG,
+          CONTEUDO,
+          ANEXO_FILENAME,
+          ANEXO_PATH,
+          DTCRIACAO,
+          NVL(PUBLICO, 'N') AS PUBLICO
+        FROM ${OWNER}.BRSACC_COMMENTS 
+        WHERE NUMTICKET = :NUMTICKET 
+        ORDER BY DTCRIACAO ASC`,
+        { NUMTICKET: numTicket }
+      );
+
+      const comments = commentRows.map((c) => {
+        let content = '';
+        if (c.CONTEUDO) {
+          if (typeof c.CONTEUDO === 'string') {
+            content = c.CONTEUDO;
+          } else if (typeof c.CONTEUDO === 'object' && c.CONTEUDO.toString) {
+            content = c.CONTEUDO.toString();
+          }
+        }
+        return {
+          id: String(c.ID),
+          author: String(c.AUTOR ?? 'Sistema'),
+          authorType: c.TIPO_AUTOR === 'S' ? 'suporte' : (c.TIPO_AUTOR === 'W' ? 'winthor' : 'cliente'),
+          type: (c.TIPO_MSG === 'N' ? 'note' : 'message') as 'note' | 'message',
+          content,
+          isPublic: c.PUBLICO === 'S',
+          attachment: c.ANEXO_PATH
+            ? {
+              filename: c.ANEXO_FILENAME,
+              url: `/sac/attachments/${c.ANEXO_PATH}`,
+            }
+            : undefined,
+          createdAt: new Date(c.DTCRIACAO).toISOString(),
+        };
+      });
+
+      return reply.send({ ok: true, ticket, timeline, comments });
+    } catch (err) {
+      return handleAuthError(err, reply);
+    }
+  });
+
+  // ────────── Criar ticket ──────────
+
+  app.post('/tickets', async (req, reply) => {
+    try {
+      const { codcli } = extractCodcli(req);
+      const body = (req.body ?? {}) as {
+        subject?: string;
+        orderNumber?: string | number;
+        invoiceNumber?: string | number;
+        codfilial?: string;
+      };
+      if (!body.subject || !String(body.subject).trim()) {
+        return reply.status(400).send({ error: 'Assunto (subject) é obrigatório' });
+      }
+
+      const created = await createTicket({
+        codcli,
+        subject: String(body.subject),
+        orderNumber: body.orderNumber,
+        invoiceNumber: body.invoiceNumber,
+        codfilial: body.codfilial ?? '1',
+      });
+
+      return reply.send({ ok: true, ticket: created });
+    } catch (err) {
+      return handleAuthError(err, reply);
+    }
+  });
+
+  // ────────── Fechar ticket ──────────
+
+  app.put('/tickets/:id/close', async (req, reply) => {
+    try {
+      const { codcli } = extractCodcli(req);
+      const id = String((req.params as any)?.id ?? '').trim();
+      if (!/^\d+$/.test(id)) return reply.status(400).send({ error: 'ID inválido' });
+      const numTicket = Number(id);
+
+      const rows = await execute(
+        `UPDATE ${OWNER}.BRSACC 
+         SET STATUS = 'Finalizado', DTFINALIZA = SYSDATE 
+         WHERE NUMTICKET = :NUMTICKET AND CODCLI = :CODCLI AND DTFINALIZA IS NULL`,
+        { NUMTICKET: numTicket, CODCLI: codcli }
+      );
+
+      if (rows === 0) {
+        const check = await select(
+          `SELECT NUMTICKET, DTFINALIZA FROM ${OWNER}.BRSACC WHERE NUMTICKET = :ID`,
+          { ID: numTicket }
+        );
+        if (check.length === 0) return reply.status(404).send({ error: 'Ticket não encontrado' });
+        if ((check[0] as any).DTFINALIZA) return reply.status(400).send({ error: 'Ticket já está finalizado' });
+        return reply.status(403).send({ error: 'Sem permissão' });
+      }
+
+      return reply.send({ ok: true });
+    } catch (err) {
+      return handleAuthError(err, reply);
+    }
+  });
+
+  // ────────── Listar comentários ──────────
+
+  app.get('/tickets/:id/comments', async (req, reply) => {
+    try {
+      const { codcli } = extractCodcli(req);
+      const id = String((req.params as any)?.id ?? '').trim();
+      if (!/^\d+$/.test(id)) return reply.status(400).send({ error: 'ID inválido' });
+      const numTicket = Number(id);
+
+      const rows = await select<any>(
+        `SELECT 
+          ID,
+          AUTOR,
+          TIPO_AUTOR,
+          TIPO_MSG,
+          CONTEUDO,
+          ANEXO_FILENAME,
+          ANEXO_PATH,
+          DTCRIACAO,
+          NVL(PUBLICO, 'N') AS PUBLICO
+        FROM ${OWNER}.BRSACC_COMMENTS 
+        WHERE NUMTICKET = :NUMTICKET 
+        ORDER BY DTCRIACAO ASC`,
+        { NUMTICKET: numTicket }
+      );
+
+      const comments = rows.map((r) => {
+        let content = '';
+        if (r.CONTEUDO) {
+          if (typeof r.CONTEUDO === 'string') {
+            content = r.CONTEUDO;
+          } else if (typeof r.CONTEUDO === 'object' && r.CONTEUDO.toString) {
+            content = r.CONTEUDO.toString();
+          }
+        }
+
+        return {
+          id: String(r.ID),
+          author: String(r.AUTOR ?? 'Sistema'),
+          authorType: r.TIPO_AUTOR === 'S' ? 'suporte' : r.TIPO_AUTOR === 'W' ? 'winthor' : 'cliente',
+          type: (r.TIPO_MSG === 'N' ? 'note' : 'message') as 'note' | 'message',
+          content,
+          isPublic: r.PUBLICO === 'S',
+          attachment: r.ANEXO_PATH
+            ? {
+              filename: r.ANEXO_FILENAME,
+              url: `/sac/attachments/${r.ANEXO_PATH}`,
+            }
+            : undefined,
+          createdAt: new Date(r.DTCRIACAO).toISOString(),
+        };
+      });
+
+      return reply.send({ ok: true, comments });
+    } catch (err) {
+      return handleAuthError(err, reply);
+    }
+  });
+
+  // ────────── Criar comentário ──────────
+
+  app.post('/tickets/:id/comments', async (req, reply) => {
+    try {
+      const { codcli, payload } = extractCodcli(req);
+      const userName = String(payload?.name ?? payload?.email ?? 'Cliente');
+      const id = String((req.params as any)?.id ?? '').trim();
+      if (!/^\d+$/.test(id)) return reply.status(400).send({ error: 'ID inválido' });
+      const numTicket = Number(id);
+
+      const body = (req.body ?? {}) as {
+        content?: string;
+        type?: 'message' | 'note';
+        isPublic?: boolean;
+        attachment?: { filename: string; path: string };
+      };
+      if (!body.content || !String(body.content).trim()) {
+        return reply.status(400).send({ error: 'Conteúdo do comentário é obrigatório' });
+      }
+
+      const content = String(body.content).trim().slice(0, 1000);
+      const msgType = body.type === 'note' ? 'N' : 'M';
+      const publico = body.isPublic ? 'S' : 'N';
+
+      console.log('[POST /sac/tickets/:id/comments] Inserting comment:', {
+        numTicket,
+        codcli,
+        userName,
+        contentLength: content.length,
+        msgType,
+        publico,
+      });
+
+      const newId = await insertReturning<number>(
+        `INSERT INTO ${OWNER}.BRSACC_COMMENTS (
+          NUMTICKET, CODCLI, AUTOR, TIPO_AUTOR, TIPO_MSG, CONTEUDO, DTCRIACAO, PUBLICO, ANEXO_FILENAME, ANEXO_PATH
+        )
+         VALUES (
+          :NUMTICKET, :CODCLI, :AUTOR, 'C', :TIPO_MSG, :CONTEUDO, SYSTIMESTAMP, :PUBLICO, :ANEXO_FILENAME, :ANEXO_PATH
+         )`,
+        {
+          NUMTICKET: numTicket,
+          CODCLI: codcli,
+          AUTOR: userName,
+          TIPO_MSG: msgType,
+          CONTEUDO: content,
+          PUBLICO: publico,
+          ANEXO_FILENAME: body.attachment?.filename || null,
+          ANEXO_PATH: body.attachment?.path || null,
+        },
+        'ID'
+      );
+
+      console.log('[POST /sac/tickets/:id/comments] Insert result, newId:', newId);
+
+      const newComment = {
+        id: String(newId ?? Date.now()),
+        author: userName,
+        authorType: 'cliente' as const,
+        type: (msgType === 'N' ? 'note' : 'message') as 'note' | 'message',
+        content,
+        isPublic: publico === 'S',
+        attachment: body.attachment ? {
+          filename: body.attachment.filename,
+          url: `/sac/attachments/${body.attachment.path}`,
+        } : undefined,
+        createdAt: new Date().toISOString(),
+      };
+
+      app.log.info({ numTicket, codcli, commentId: newId, msgType }, 'Comment created');
+
+      return reply.send({ ok: true, comment: newComment });
+    } catch (err) {
+      return handleAuthError(err, reply);
+    }
+  });
+
+  // ────────── Simular Winthor (DEV ONLY) ──────────
+
+  app.post('/tickets/:id/simulate-winthor', async (req, reply) => {
+    try {
+      const auth = req.headers.authorization;
+      if (!auth?.startsWith('Bearer ')) return reply.status(401).send({ error: 'Token ausente' });
+      const id = String((req.params as any)?.id ?? '').trim();
+      const numTicket = Number(id);
+
+      const body = (req.body ?? {}) as { attachment?: { filename: string; path: string } };
+
+      const newId = await insertReturning<number>(
+        `INSERT INTO ${OWNER}.BRSACC_COMMENTS (NUMTICKET, CODCLI, AUTOR, TIPO_AUTOR, TIPO_MSG, CONTEUDO, DTCRIACAO, PUBLICO, ANEXO_FILENAME, ANEXO_PATH)
+             VALUES (:NUMTICKET, 0, 'Winthor ERP', 'W', 'M', 'O pedido foi sincronizado com sucesso no ERP.', SYSTIMESTAMP, 'S', :ANEXO_FILENAME, :ANEXO_PATH)`,
+        {
+          NUMTICKET: numTicket,
+          ANEXO_FILENAME: body.attachment?.filename || null,
+          ANEXO_PATH: body.attachment?.path || null
+        },
+        'ID'
+      );
+
+      return reply.send({
+        ok: true,
+        comment: {
+          id: String(newId),
+          author: 'Winthor ERP',
+          authorType: 'winthor',
+          type: 'message',
+          content: 'O pedido foi sincronizado com sucesso no ERP.',
+          isPublic: true,
+          attachment: body.attachment ? {
+            filename: body.attachment.filename,
+            url: `/sac/attachments/${body.attachment.path}`,
+          } : undefined,
+          createdAt: new Date().toISOString(),
+        },
+      });
+    } catch (err) {
+      return handleAuthError(err, reply);
+    }
+  });
+
+  // ────────── Editar comentário ──────────
+
+  app.put('/tickets/:id/comments/:commentId', async (req, reply) => {
+    try {
+      const { codcli } = extractCodcli(req);
+      const id = String((req.params as any)?.id ?? '').trim();
+      const commentId = String((req.params as any)?.commentId ?? '').trim();
+      if (!/^\d+$/.test(id) || !/^\d+$/.test(commentId)) {
+        return reply.status(400).send({ error: 'ID inválido' });
+      }
+
+      const body = (req.body ?? {}) as { content?: string };
+      if (!body.content || !String(body.content).trim()) {
+        return reply.status(400).send({ error: 'Conteúdo do comentário é obrigatório' });
+      }
+
+      const content = String(body.content).trim().slice(0, 1000);
+
+      const rows = await execute(
+        `UPDATE ${OWNER}.BRSACC_COMMENTS 
+         SET CONTEUDO = :CONTEUDO 
+         WHERE ID = :ID AND CODCLI = :CODCLI AND TIPO_AUTOR = 'C'`,
+        { CONTEUDO: content, ID: Number(commentId), CODCLI: codcli }
+      );
+
+      if (rows === 0) {
+        return reply.status(404).send({ error: 'Comentário não encontrado ou sem permissão' });
+      }
+
+      return reply.send({ ok: true });
+    } catch (err) {
+      return handleAuthError(err, reply);
+    }
+  });
+
+  // ────────── Apagar comentário ──────────
+
+  app.delete('/tickets/:id/comments/:commentId', async (req, reply) => {
+    try {
+      const { codcli } = extractCodcli(req);
+      const id = String((req.params as any)?.id ?? '').trim();
+      const commentId = String((req.params as any)?.commentId ?? '').trim();
+
+      console.log(`[DELETE COMMENT] Request received. Ticket: ${id}, Comment: ${commentId}, CodCli: ${codcli}`);
+
+      if (!/^\d+$/.test(id) || !/^\d+$/.test(commentId)) {
+        console.log('[DELETE COMMENT] Invalid ID format');
+        return reply.status(400).send({ error: 'ID inválido' });
+      }
+
+      const query = `DELETE FROM ${OWNER}.BRSACC_COMMENTS WHERE ID = :ID AND CODCLI = :CODCLI AND TIPO_AUTOR = 'C'`;
+      const binds = { ID: Number(commentId), CODCLI: codcli };
+
+      console.log('[DELETE COMMENT] Executing query:', query, binds);
+
+      const rows = await execute(query, binds);
+
+      console.log('[DELETE COMMENT] Rows affected:', rows);
+
+      if (rows === 0) {
+        const check = await select(
+          `SELECT ID, CODCLI, TIPO_AUTOR FROM ${OWNER}.BRSACC_COMMENTS WHERE ID = :ID`,
+          { ID: Number(commentId) }
+        );
+        console.log('[DELETE COMMENT] Check existence:', check);
+
+        return reply.status(404).send({ error: 'Comentário não encontrado ou sem permissão para apagar' });
+      }
+
+      return reply.send({ ok: true });
+    } catch (err) {
+      console.error('[DELETE COMMENT] Error:', err);
+      return handleAuthError(err, reply);
+    }
+  });
+
+  // ────────── Upload de Anexo ──────────
+
+  app.post('/tickets/:id/attachments', async (req, reply) => {
+    try {
+      const { codcli } = extractCodcli(req);
+      const id = String((req.params as any)?.id ?? '');
+
+      const data = await (req as any).file();
+      if (!data) return reply.status(400).send({ error: 'Nenhum arquivo enviado' });
+
+      const chunks: Buffer[] = [];
+      for await (const chunk of data.file) {
+        chunks.push(chunk);
+      }
+      const buffer = Buffer.concat(chunks);
+
+      // Max 5MB para SAC
+      if (buffer.length > 5 * 1024 * 1024) {
+        return reply.status(400).send({ error: 'Arquivo muito grande. Máximo 5MB.' });
+      }
+
+      const ext = path.extname(data.filename);
+      const random = Math.random().toString(36).substring(2, 8);
+      const filenameOnDisk = `ticket_${id}_${Date.now()}_${random}${ext}`;
+      const filepath = path.join(SAC_UPLOADS_DIR, filenameOnDisk);
+
+      fs.writeFileSync(filepath, buffer);
+
+      return reply.send({
+        ok: true,
+        filename: data.filename,
+        path: filenameOnDisk,
+        url: `/sac/attachments/${filenameOnDisk}`,
+      });
+    } catch (err) {
+      return handleAuthError(err, reply);
+    }
+  });
+
+  // ────────── Servir Anexo ──────────
+
+  app.get('/attachments/:filename', async (req, reply) => {
+    try {
+      const { filename } = req.params as { filename: string };
+      const filepath = path.join(SAC_UPLOADS_DIR, filename);
+
+      if (!fs.existsSync(filepath)) {
+        return reply.status(404).send({ error: 'Arquivo não encontrado' });
+      }
+
+      const stream = fs.createReadStream(filepath);
+      // Tentativa de inferir mime type simples
+      const ext = path.extname(filename).toLowerCase();
+      const mimeMap: Record<string, string> = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.pdf': 'application/pdf',
+        '.txt': 'text/plain',
+      };
+
+      return reply
+        .header('Content-Type', mimeMap[ext] || 'application/octet-stream')
+        .header('Content-Disposition', `inline; filename="${filename}"`)
+        .send(stream);
+    } catch (err) {
+      return reply.status(500).send({ error: 'Erro ao ler arquivo' });
+    }
+  });
+}

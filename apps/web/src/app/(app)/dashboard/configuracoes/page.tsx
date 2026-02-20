@@ -10,10 +10,11 @@ export default async function SettingsPage() {
     const token = cookieStore.get('pgb_session')?.value;
 
     if (token) {
-      const decoded = jwtDecode<{ name?: string; sub?: string; email?: string }>(token);
+      const decoded = jwtDecode<{ name?: string; sub?: string; email?: string; codcli?: number }>(token);
       user = {
         name: decoded.name || decoded.sub || 'Usuário',
         email: decoded.email || decoded.sub || '',
+        codcli: decoded.codcli,
       };
     }
   } catch (error) {

@@ -14,7 +14,7 @@ export async function createTicketAction(form: {
     const token = (await cookies()).get('pgb_session')?.value;
     if (!token) return { ok: false, message: 'Sem sessão' };
 
-    const res = await fetch(`${API_BASE}/dashboard/sac/tickets`, {
+    const res = await fetch(`${API_BASE}/sac/tickets`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -41,18 +41,24 @@ export async function createTicketAction(form: {
   }
 }
 
-export async function addCommentAction(ticketId: string, content: string, type: 'message' | 'note' = 'message', isPublic: boolean = false) {
+export async function addCommentAction(
+  ticketId: string,
+  content: string,
+  type: 'message' | 'note' = 'message',
+  isPublic: boolean = false,
+  attachment?: { filename: string; path: string }
+) {
   try {
     const token = (await cookies()).get('pgb_session')?.value;
     if (!token) return { ok: false, message: 'Sem sessão' };
 
-    const res = await fetch(`${API_BASE}/dashboard/sac/tickets/${encodeURIComponent(ticketId)}/comments`, {
+    const res = await fetch(`${API_BASE}/sac/tickets/${encodeURIComponent(ticketId)}/comments`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ content, type, isPublic }),
+      body: JSON.stringify({ content, type, isPublic, attachment }),
       cache: 'no-store',
     });
 
@@ -74,7 +80,7 @@ export async function fetchCommentsAction(ticketId: string) {
     const token = (await cookies()).get('pgb_session')?.value;
     if (!token) return { ok: false, message: 'Sem sessão', comments: [] };
 
-    const res = await fetch(`${API_BASE}/dashboard/sac/tickets/${encodeURIComponent(ticketId)}/comments`, {
+    const res = await fetch(`${API_BASE}/sac/tickets/${encodeURIComponent(ticketId)}/comments`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     });
@@ -96,7 +102,7 @@ export async function editCommentAction(ticketId: string, commentId: string, con
     const token = (await cookies()).get('pgb_session')?.value;
     if (!token) return { ok: false, message: 'Sem sessão' };
 
-    const res = await fetch(`${API_BASE}/dashboard/sac/tickets/${encodeURIComponent(ticketId)}/comments/${encodeURIComponent(commentId)}`, {
+    const res = await fetch(`${API_BASE}/sac/tickets/${encodeURIComponent(ticketId)}/comments/${encodeURIComponent(commentId)}`, {
       method: 'PUT',
       headers: {
         'content-type': 'application/json',
@@ -123,7 +129,7 @@ export async function deleteCommentAction(ticketId: string, commentId: string) {
     const token = (await cookies()).get('pgb_session')?.value;
     if (!token) return { ok: false, message: 'Sem sessão' };
 
-    const res = await fetch(`${API_BASE}/dashboard/sac/tickets/${encodeURIComponent(ticketId)}/comments/${encodeURIComponent(commentId)}`, {
+    const res = await fetch(`${API_BASE}/sac/tickets/${encodeURIComponent(ticketId)}/comments/${encodeURIComponent(commentId)}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
@@ -146,7 +152,7 @@ export async function closeTicketAction(ticketId: string) {
     const token = (await cookies()).get('pgb_session')?.value;
     if (!token) return { ok: false, message: 'Sem sessão' };
 
-    const res = await fetch(`${API_BASE}/dashboard/sac/tickets/${encodeURIComponent(ticketId)}/close`, {
+    const res = await fetch(`${API_BASE}/sac/tickets/${encodeURIComponent(ticketId)}/close`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
@@ -164,17 +170,18 @@ export async function closeTicketAction(ticketId: string) {
   }
 }
 
-export async function simulateWinthorAction(ticketId: string) {
+export async function simulateWinthorAction(ticketId: string, attachment?: { filename: string; path: string }) {
   try {
     const token = (await cookies()).get('pgb_session')?.value;
     if (!token) return { ok: false, message: 'Sem sessão' };
 
-    const res = await fetch(`${API_BASE}/dashboard/sac/tickets/${encodeURIComponent(ticketId)}/simulate-winthor`, {
+    const res = await fetch(`${API_BASE}/sac/tickets/${encodeURIComponent(ticketId)}/simulate-winthor`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
+      body: JSON.stringify({ attachment }),
       cache: 'no-store',
     });
 
@@ -187,5 +194,30 @@ export async function simulateWinthorAction(ticketId: string) {
     return { ok: true, comment: data.comment };
   } catch (e: any) {
     return { ok: false, message: e.message || 'Erro ao simular' };
+  }
+}
+
+export async function uploadAttachmentAction(ticketId: string, formData: FormData) {
+  try {
+    const token = (await cookies()).get('pgb_session')?.value;
+    if (!token) return { ok: false, message: 'Sem sessão' };
+
+    const res = await fetch(`${API_BASE}/sac/tickets/${encodeURIComponent(ticketId)}/attachments`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { ok: false, message: err?.error || `Falha no upload (${res.status})` };
+    }
+
+    return { ok: true, data: await res.json() };
+  } catch (e: any) {
+    return { ok: false, message: e.message || 'Erro inesperado no upload' };
   }
 }

@@ -10,10 +10,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     const cookieStore = await cookies();
     const token = cookieStore.get('pgb_session')?.value;
     if (token) {
-      const decoded = jwtDecode<{ name?: string; sub?: string; email?: string }>(token);
+      const decoded = jwtDecode<{ name?: string; sub?: string; email?: string; codcli?: number }>(token);
       user = {
         name: decoded.name || decoded.sub || 'Usuário',
         email: decoded.email || decoded.sub || '',
+        codcli: decoded.codcli,
       };
     }
   } catch (error) {

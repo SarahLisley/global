@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import clsx from 'clsx';
 import { Button, Card, FormField, Input } from '@pgb/ui';
 
@@ -8,6 +8,7 @@ interface SettingsClientProps {
   user?: {
     name: string;
     email: string;
+    codcli?: number;
   };
 }
 
@@ -15,6 +16,8 @@ export function SettingsClient({ user }: SettingsClientProps) {
   const [activeTab, setActiveTab] = useState('perfil');
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
@@ -28,13 +31,41 @@ export function SettingsClient({ user }: SettingsClientProps) {
     confirmarSenha: ''
   });
 
-  const handleSave = () => {
+  // Carregar avatar existente
+  useEffect(() => {
+    if (user?.codcli) {
+      fetch(`/api/avatar?codcli=${user.codcli}`)
+        .then(r => { if (r.ok) return r.blob(); throw new Error(); })
+        .then(blob => setAvatarPreview(URL.createObjectURL(blob)))
+        .catch(() => { });
+    }
+  }, [user?.codcli]);
+
+  const handleSave = async () => {
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    setSaveMessage(null);
+    try {
+      // Upload avatar se houver arquivo selecionado
+      if (avatarFile) {
+        const formData = new FormData();
+        formData.append('file', avatarFile);
+        const res = await fetch('/api/avatar', {
+          method: 'POST',
+          body: formData,
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Erro ao salvar avatar');
+        }
+        setAvatarFile(null);
+      }
+      setSaveMessage({ type: 'success', text: 'Configurações salvas com sucesso!' });
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (err: any) {
+      setSaveMessage({ type: 'error', text: err.message || 'Erro ao salvar' });
+    } finally {
       setLoading(false);
-      alert('Configurações salvas com sucesso!');
-    }, 1000);
+    }
   };
 
   const handleImageClick = () => {
@@ -45,6 +76,11 @@ export function SettingsClient({ user }: SettingsClientProps) {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setSaveMessage({ type: 'error', text: 'Imagem muito grande. Máximo 2MB.' });
+        return;
+      }
+      setAvatarFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
@@ -297,11 +333,21 @@ export function SettingsClient({ user }: SettingsClientProps) {
               </div>
             )}
 
-            <div className="mt-10 pt-6 border-t border-gray-100 flex justify-end gap-3 sticky bottom-0 bg-white/95 backdrop-blur-sm p-4 -mx-8 -mb-8 rounded-b-2xl">
-              <Button onClick={handleSave} loading={loading} className="px-8 h-11 bg-[#4a90e2] hover:bg-[#357abd] text-white rounded-full">
-                Salvar Alterações
-              </Button>
-              <Button variant="secondary" className="px-6 h-11">Cancelar</Button>
+            <div className="mt-10 pt-6 border-t border-gray-100 flex items-center justify-between gap-3 sticky bottom-0 bg-white/95 backdrop-blur-sm p-4 -mx-8 -mb-8 rounded-b-2xl">
+              {saveMessage && (
+                <p className={clsx(
+                  'text-sm font-medium',
+                  saveMessage.type === 'success' ? 'text-emerald-600' : 'text-red-600'
+                )}>
+                  {saveMessage.text}
+                </p>
+              )}
+              <div className="flex gap-3 ml-auto">
+                <Button onClick={handleSave} loading={loading} className="px-8 h-11 bg-[#4a90e2] hover:bg-[#357abd] text-white rounded-full">
+                  Salvar Alterações
+                </Button>
+                <Button variant="secondary" className="px-6 h-11">Cancelar</Button>
+              </div>
             </div>
           </div>
         </div>

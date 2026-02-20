@@ -58,11 +58,11 @@ export function NotesList({
   onTogglePublic,
 }: NotesListProps) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm transition-all duration-300 hover:shadow-md flex flex-col overflow-hidden">
+    <div className="bg-white rounded-2xl border border-slate-200/60 shadow-md shadow-slate-200/40 transition-all duration-300 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-white px-6 py-4 flex items-center justify-between border-b border-slate-100 shadow-sm z-20">
+      <div className="bg-slate-50/80 backdrop-blur-md px-6 py-5 flex items-center justify-between border-b border-slate-200/60 shadow-sm z-20">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center border border-amber-100/50 shadow-sm text-amber-600">
+          <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-amber-200 text-white">
             <Icons.Note />
           </div>
           <div>
@@ -77,14 +77,14 @@ export function NotesList({
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col p-6 bg-slate-50/50 space-y-6 overflow-hidden">
+      <div className="flex-1 flex flex-col p-6 bg-[#fcfcfd] space-y-6 overflow-hidden">
         {/* Notes List */}
         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3 min-h-0">
           {notes.map(msg => {
             const isEditing = editingId === msg.id;
 
             return (
-              <div key={msg.id} className="group relative bg-white border border-slate-200 rounded-xl p-4 transition-all duration-200 hover:border-amber-200 hover:shadow-md hover:shadow-amber-500/5">
+              <div key={msg.id} className="group relative bg-white border border-slate-200/80 rounded-xl p-5 transition-all duration-300 hover:border-amber-400/50 hover:shadow-xl hover:shadow-amber-500/5">
                 {isEditing ? (
                   <div className="space-y-3">
                     <textarea
@@ -138,8 +138,8 @@ export function NotesList({
           })}
 
           {notes.length === 0 && !isPending && (
-            <div className="py-10 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-              <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300">
+            <div className="py-12 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/30">
+              <div className="w-14 h-14 bg-white border border-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300 shadow-sm">
                 <Icons.Note />
               </div>
               <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Nenhuma nota registrada</p>

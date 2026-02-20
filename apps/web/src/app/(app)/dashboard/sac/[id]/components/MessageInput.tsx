@@ -9,6 +9,8 @@ interface MessageInputProps {
   isPending: boolean;
   placeholder?: string;
   onAttachClick?: () => void;
+  selectedFile: File | null;
+  onFileSelect?: (file: File | null) => void;
   disabled?: boolean;
 }
 
@@ -19,21 +21,46 @@ export function MessageInput({
   isPending,
   placeholder = 'Digite sua mensagem...',
   onAttachClick,
+  selectedFile,
+  onFileSelect,
   disabled,
 }: MessageInputProps) {
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    onFileSelect?.(file);
+  };
+
+  const handleAttachClick = () => {
+    if (onAttachClick) {
+      onAttachClick();
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
   return (
     <div className="p-4 bg-white border-t border-slate-100 shrink-0 relative z-10 transition-colors focus-within:bg-slate-50/10">
       <form onSubmit={onSubmit} className="flex gap-2 items-end relative bg-slate-50 rounded-2xl border border-slate-200 p-2 focus-within:ring-2 focus-within:ring-blue-500/10 focus-within:border-blue-400 transition-all shadow-sm">
-        {onAttachClick && (
+        {onFileSelect && (
           <button
             type="button"
-            className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+            className={`p-2.5 rounded-xl transition-all ${selectedFile ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
             title="Anexar arquivo"
-            onClick={onAttachClick}
+            onClick={handleAttachClick}
+            disabled={disabled}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
           </button>
         )}
+
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+          accept="image/*,.pdf,.txt"
+        />
 
         <div className="flex-1 py-2">
           <textarea
@@ -55,10 +82,9 @@ export function MessageInput({
             disabled={disabled}
           />
         </div>
-
         <button
           type="submit"
-          disabled={!value.trim() || isPending || disabled}
+          disabled={(!value.trim() && !selectedFile) || isPending || disabled}
           className="p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 transition-all shadow-md shadow-blue-500/20"
         >
           {isPending ? (
@@ -68,6 +94,23 @@ export function MessageInput({
           )}
         </button>
       </form>
+
+      {selectedFile && (
+        <div className="px-2 mt-2 flex items-center gap-2">
+          <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 text-blue-700 rounded-md border border-blue-100 text-[10px] font-medium animate-in fade-in slide-in-from-left-1">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><polyline points="13 2 13 9 20 9" /></svg>
+            <span className="truncate max-w-[200px]">{selectedFile.name}</span>
+            <button
+              type="button"
+              onClick={() => onFileSelect?.(null)}
+              className="hover:text-red-500 transition-colors"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="px-2 mt-2 flex justify-end">
         <span className="text-[10px] text-slate-400 font-medium">Pressione Enter para enviar</span>
       </div>

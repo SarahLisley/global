@@ -14,7 +14,7 @@ export async function GET(
     }
 
     const { id } = await params;
-    const res = await fetch(`${API_BASE}/dashboard/admin/sac/tickets/${id}/comments`, {
+    const res = await fetch(`${API_BASE}/sac/admin/tickets/${id}/comments`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     });
@@ -44,7 +44,7 @@ export async function POST(
     const { id } = await params;
     const body = await req.json();
 
-    const res = await fetch(`${API_BASE}/dashboard/admin/sac/tickets/${id}/comments`, {
+    const res = await fetch(`${API_BASE}/sac/admin/tickets/${id}/comments`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -34,6 +34,8 @@ interface ChatBubbleProps {
 
 export function ChatBubble({ message: msg, isDisabled, onEdit, onDelete }: ChatBubbleProps) {
   const isMe = msg.authorType === 'cliente';
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
+  const attachmentUrl = msg.attachment ? (msg.attachment.url.startsWith('http') ? msg.attachment.url : `${API_BASE}${msg.attachment.url}`) : '';
 
   return (
     <div className={cn(
@@ -71,36 +73,55 @@ export function ChatBubble({ message: msg, isDisabled, onEdit, onDelete }: ChatB
 
         {/* Bubble */}
         <div className={cn(
-          "relative px-5 py-3.5 text-sm shadow-sm transition-all duration-200",
+          "relative px-5 py-3.5 text-sm transition-all duration-300",
           isMe
-            ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm shadow-blue-500/10"
+            ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl rounded-tr-sm shadow-lg shadow-blue-500/20 border border-blue-500/20"
             : msg.authorType === 'winthor'
-              ? "bg-amber-50 text-slate-800 border border-amber-200 rounded-2xl rounded-tl-sm shadow-sm"
-              : "bg-white text-slate-700 border border-slate-200 rounded-2xl rounded-tl-sm shadow-slate-200/50"
+              ? "bg-white text-slate-800 border border-amber-200/60 rounded-2xl rounded-tl-sm shadow-md shadow-amber-200/10"
+              : "bg-white text-slate-700 border border-slate-200/80 rounded-2xl rounded-tl-sm shadow-md shadow-slate-200/40"
         )}>
-          <p className="whitespace-pre-wrap break-words leading-relaxed">
+          {/* Decorative quote for support */}
+          {!isMe && (
+            <div className="absolute -left-1.5 top-3 w-3 h-3 bg-white border-l border-t border-inherit rotate-[-45deg] rounded-[1px]" />
+          )}
+          {isMe && (
+            <div className="absolute -right-1.5 top-3 w-3 h-3 bg-blue-700 border-r border-t border-blue-700/50 rotate-[45deg] rounded-[1px]" />
+          )}
+
+          <p className="whitespace-pre-wrap break-words leading-relaxed font-light">
             {msg.content}
           </p>
+
           {msg.attachment && (
-            <a href={msg.attachment.url} target="_blank" className={cn(
-              "flex items-center gap-2 mt-3 p-2 rounded-lg text-xs transition-colors border",
+            <a href={attachmentUrl} target="_blank" rel="noopener noreferrer" className={cn(
+              "flex items-center gap-3 mt-4 p-3 rounded-xl text-xs transition-all border duration-200 group/file",
               isMe
-                ? "bg-white/10 hover:bg-white/20 text-white border-white/10"
-                : "bg-slate-50 hover:bg-slate-100 text-blue-600 border-slate-100"
+                ? "bg-white/10 hover:bg-white/20 text-white border-white/20 shadow-inner"
+                : "bg-slate-50 hover:bg-blue-50 text-blue-600 border-slate-100 hover:border-blue-100 shadow-sm"
             )}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
-              <span className="truncate max-w-[200px] font-medium">{msg.attachment.filename}</span>
+              <div className={cn(
+                "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                isMe ? "bg-white/20" : "bg-blue-100/50 group-hover/file:bg-blue-100"
+              )}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="truncate max-w-[180px] font-semibold">{msg.attachment.filename}</span>
+                <span className={cn("text-[10px] opacity-70", isMe ? "text-white" : "text-slate-500")}>Clique para abrir arquivo</span>
+              </div>
             </a>
           )}
         </div>
 
         {/* Actions */}
         {isMe && !isDisabled && (
-          <div className="flex items-center gap-3 mt-1 px-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
-            <button onClick={() => onEdit(msg)} className="text-[10px] text-slate-400 hover:text-blue-600 font-medium flex items-center gap-1 transition-colors hover:underline">
+          <div className="flex items-center gap-4 mt-2 px-1 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0">
+            <button onClick={() => onEdit(msg)} className="text-[10px] text-slate-400 hover:text-blue-600 font-bold uppercase tracking-wider flex items-center gap-1 transition-colors">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
               Editar
             </button>
-            <button onClick={() => onDelete(msg.id)} className="text-[10px] text-slate-400 hover:text-red-500 font-medium flex items-center gap-1 transition-colors hover:underline">
+            <button onClick={() => onDelete(msg.id)} className="text-[10px] text-slate-400 hover:text-red-500 font-bold uppercase tracking-wider flex items-center gap-1 transition-colors">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
               Apagar
             </button>
           </div>

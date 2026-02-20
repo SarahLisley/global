@@ -13,7 +13,7 @@ export async function fetchRecentOrders(page = 1, pageSize = 10): Promise<{ orde
   const token = (await cookies()).get('pgb_session')?.value;
   if (!token) throw new Error('Sem token de sessão');
 
-  const res = await fetch(`${API_BASE}/dashboard/orders/recent?page=${page}&pageSize=${pageSize}`, {
+  const res = await fetch(`${API_BASE}/orders/recent?page=${page}&pageSize=${pageSize}`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
   });

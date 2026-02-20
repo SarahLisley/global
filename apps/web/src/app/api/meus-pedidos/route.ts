@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Forward params to backend
-    const backendUrl = new URL(`${API_BASE}/dashboard/orders`);
+    const backendUrl = new URL(`${API_BASE}/orders`);
     searchParams.forEach((value, key) => {
       backendUrl.searchParams.append(key, value);
     });

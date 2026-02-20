@@ -25,20 +25,14 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   if (!res.ok) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-2 text-sm text-slate-600">
-          <Link href="/dashboard" className="hover:underline hover:text-slate-900 transition-colors">Dashboard</Link>
-          <span className="text-slate-400">/</span>
-          <Link href="/dashboard/sac" className="hover:underline hover:text-slate-900 transition-colors">SAC</Link>
-          <span className="text-slate-400">/</span>
-          <span className="text-slate-900">Ticket #{id}</span>
-        </div>
+
 
         <Card className="p-6">
           <div className="flex flex-col items-center justify-center py-12">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-500 mb-4">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="15" y1="9" x2="9" y2="15"/>
-              <line x1="9" y1="9" x2="15" y2="15"/>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="15" y1="9" x2="9" y2="15" />
+              <line x1="9" y1="9" x2="15" y2="15" />
             </svg>
             <h2 className="text-lg font-bold text-gray-900 mb-2">Erro ao Carregar Ticket</h2>
             <p className="text-sm text-red-600 mb-6">{res.message || 'Não foi possível carregar as informações do ticket'}</p>
@@ -56,14 +50,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-600">
-        <Link href="/dashboard" className="hover:underline hover:text-slate-900 transition-colors">Dashboard</Link>
-        <span className="text-slate-400">/</span>
-        <Link href="/dashboard/sac" className="hover:underline hover:text-slate-900 transition-colors">SAC</Link>
-        <span className="text-slate-400">/</span>
-        <span className="text-slate-900 font-medium">Ticket #{ticket.id}</span>
-      </div>
+
 
       {/* Header com Status e Ações */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -75,15 +62,15 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-slate-600">
             <div className="flex items-center gap-1.5">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
               </svg>
               <span>Aberto em {formatDateTime(ticket.openedAt)}</span>
             </div>
             <div className="hidden sm:block w-1 h-1 rounded-full bg-slate-300" />
             <div className="flex items-center gap-1.5">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
               </svg>
               <span>Atualizado {formatDateTime(lastUpdate)}</span>
             </div>
@@ -92,8 +79,8 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         <Link href="/dashboard/sac">
           <Button variant="secondary" className="w-full sm:w-auto">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2">
-              <line x1="19" y1="12" x2="5" y2="12"/>
-              <polyline points="12 19 5 12 12 5"/>
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
             </svg>
             Voltar
           </Button>
@@ -104,11 +91,11 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
       <Card className="p-5 sm:p-6 hover:shadow-lg transition-shadow duration-300">
         <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-            <polyline points="10 9 9 9 8 9"/>
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
           </svg>
           Detalhes do Ticket
         </h2>
@@ -149,8 +136,8 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
       <Card className="p-5 sm:p-6">
         <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 3v18h18"/>
-            <path d="m19 9-5 5-4-4-3 3"/>
+            <path d="M3 3v18h18" />
+            <path d="m19 9-5 5-4-4-3 3" />
           </svg>
           Histórico de Movimentações
         </h2>
@@ -158,9 +145,9 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         {timeline.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-300 mb-3">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
             <p className="text-sm text-slate-500 font-medium">Nenhuma movimentação registrada</p>
             <p className="text-xs text-slate-400 mt-1">As atualizações aparecerão aqui</p>
@@ -175,10 +162,9 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
                 <div key={item.seq} className="flex items-start gap-4 relative">
                   {/* Ponto da timeline */}
                   <div className="relative z-10 flex-shrink-0">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md ${
-                      item.status === 'finalizado' ? 'bg-emerald-500' :
-                      item.status === 'em_andamento' ? 'bg-blue-500' : 'bg-amber-500'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md ${item.status === 'finalizado' ? 'bg-emerald-500' :
+                        item.status === 'em_andamento' ? 'bg-blue-500' : 'bg-amber-500'
+                      }`}>
                       <span className="text-white text-xs font-bold">{index + 1}</span>
                     </div>
                   </div>
@@ -207,7 +193,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         <div className="flex items-start gap-4">
           <div className="p-3 rounded-lg bg-blue-100 text-blue-600 flex-shrink-0">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 0 2 2z"/>
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 0 2 2z" />
             </svg>
           </div>
           <div className="flex-1">

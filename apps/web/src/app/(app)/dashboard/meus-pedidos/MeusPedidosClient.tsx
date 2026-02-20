@@ -83,10 +83,9 @@ export default function MeusPedidosClient({
 
   function onLimpar() {
     const hoje = new Date().toISOString().slice(0, 10);
-    const trintaDias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10); // Standardize default date like SAC
     setOpen({});
     clearFilters({
-      dtInicial: trintaDias,
+      dtInicial: hoje,
       dtFinal: hoje,
       pedido: '',
       nf: '',
@@ -235,7 +234,7 @@ export default function MeusPedidosClient({
                   <th className="px-6 py-3 font-semibold text-slate-700 whitespace-nowrap">Data</th>
                   <th className="px-6 py-3 font-semibold text-slate-700 whitespace-nowrap">Filial</th>
                   <th className="px-6 py-3 font-semibold text-slate-700 whitespace-nowrap">Vlr. Total</th>
-                  <th className="px-6 py-3 font-semibold text-slate-700 whitespace-nowrap">Itens</th>
+                  <th className="px-6 py-3 font-semibold text-slate-700 whitespace-nowrap text-center">Itens</th>
                   <th className="px-6 py-3 font-semibold text-slate-700 whitespace-nowrap w-24">Ações</th>
                 </tr>
               </thead>
@@ -288,9 +287,9 @@ export default function MeusPedidosClient({
                                   <tr className="bg-slate-50/80 border-b border-slate-100">
                                     <th className="px-4 py-2 text-left font-medium text-slate-600">Cod. Produto</th>
                                     <th className="px-4 py-2 text-left font-medium text-slate-800">Descrição</th>
-                                    <th className="px-4 py-2 text-right font-medium text-slate-600">Qtd</th>
-                                    <th className="px-4 py-2 text-right font-medium text-slate-600">Qtd Falta</th>
-                                    <th className="px-4 py-2 text-right font-medium text-slate-600">P. Venda Unit.</th>
+                                    <th className="px-4 py-2 text-center font-medium text-slate-600">Qtd</th>
+                                    <th className="px-4 py-2 text-center font-medium text-slate-600">Qtd Falta</th>
+                                    <th className="px-4 py-2 text-center font-medium text-slate-600">P. Venda Unit.</th>
                                     <th className="px-4 py-2 text-right font-medium text-slate-800">P. Venda Total</th>
                                   </tr>
                                 </thead>
@@ -299,9 +298,9 @@ export default function MeusPedidosClient({
                                     <tr key={idx} className="hover:bg-slate-50">
                                       <td className="px-4 py-2 text-slate-600 font-mono text-xs">{it.codProduto}</td>
                                       <td className="px-4 py-2 font-medium text-slate-800">{it.descricao}</td>
-                                      <td className="px-4 py-2 text-right text-slate-600">{it.qtd}</td>
-                                      <td className="px-4 py-2 text-right text-red-500 font-medium">{it.qtdFalta > 0 ? it.qtdFalta : '-'}</td>
-                                      <td className="px-4 py-2 text-right text-slate-600">{fmtBRL.format(it.pvUnit)}</td>
+                                      <td className="px-4 py-2 text-center text-slate-600">{it.qtd}</td>
+                                      <td className="px-4 py-2 text-center text-red-500 font-medium">{it.qtdFalta > 0 ? it.qtdFalta : '-'}</td>
+                                      <td className="px-4 py-2 text-center text-slate-600">{fmtBRL.format(it.pvUnit)}</td>
                                       <td className="px-4 py-2 text-right font-medium text-slate-800">{fmtBRL.format(it.pvTotal)}</td>
                                     </tr>
                                   )) : (

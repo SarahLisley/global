@@ -3,7 +3,7 @@
 import clsx from 'clsx';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { logoutAction } from '../../actions/logoutAction';
 
@@ -24,6 +24,7 @@ interface TopbarProps {
   initialUser?: {
     name: string;
     email: string;
+    codcli?: number;
   };
 }
 
@@ -38,16 +39,42 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
-  const [userName, setUserName] = useState(initialUser?.name || 'Usuário');
-  const [userEmail, setUserEmail] = useState(initialUser?.email || 'usuario@exemplo.com');
+  const [userName] = useState(initialUser?.name || 'Usuário');
+  const [userEmail] = useState(initialUser?.email || 'usuario@exemplo.com');
+  const codcli = initialUser?.codcli;
 
-  /* Removed client-side cookie logic as it's now handled server-side in layout.tsx */
+  // Notificações reais
+  const [notifications, setNotifications] = useState<{ id: string; type: string; title: string; description: string; timestamp: string; read: boolean }[]>([]);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  const [notifications, setNotifications] = useState<{ id: number; title: string; description: string; time: string; read: boolean }[]>([]);
-  const isLoaded = true;
+  useEffect(() => {
+    // Carregar notificações
+    fetch('/api/notifications')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.notifications) {
+          const readIds: string[] = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+          setNotifications(data.notifications.map((n: any) => ({ ...n, read: readIds.includes(n.id) })));
+        }
+      })
+      .catch(() => { });
+
+    // Carregar avatar
+    if (codcli) {
+      fetch(`/api/avatar?codcli=${codcli}`)
+        .then(r => { if (r.ok) return r.blob(); throw new Error(); })
+        .then(blob => setAvatarUrl(URL.createObjectURL(blob)))
+        .catch(() => { });
+    }
+  }, [codcli]);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   const markAllAsRead = () => {
+    const allIds = notifications.map(n => n.id);
+    localStorage.setItem('readNotifications', JSON.stringify(allIds));
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    window.dispatchEvent(new Event('storage'));
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -188,7 +215,7 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
-                {isLoaded && notifications.some(n => !n.read) && (
+                {unreadCount > 0 && (
                   <span className="absolute top-1 right-1 w-2 h-2 bg-[#ff6b35] rounded-full ring-2 ring-white animate-pulse" />
                 )}
               </button>
@@ -247,7 +274,7 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
                                   {notification.description}
                                 </p>
                                 <p className="text-[10px] text-gray-400 mt-1.5">
-                                  {notification.time}
+                                  {notification.timestamp ? new Date(notification.timestamp).toLocaleDateString('pt-BR') : ''}
                                 </p>
                               </div>
                             </div>
@@ -300,10 +327,14 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
                 className="flex items-center gap-2 focus:outline-none"
               >
                 <div className={clsx(
-                  'w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-[#4a90e2] to-[#2563eb] flex items-center justify-center text-white text-sm sm:text-base font-bold shadow-lg ring-2 ring-blue-100 transition-transform hover:scale-105',
+                  'w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-[#4a90e2] to-[#2563eb] flex items-center justify-center text-white text-sm sm:text-base font-bold shadow-lg ring-2 ring-blue-100 transition-transform hover:scale-105 overflow-hidden',
                   isSearchOpen && 'hidden sm:flex'
                 )}>
-                  {userName.charAt(0).toUpperCase()}
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    userName.charAt(0).toUpperCase()
+                  )}
                 </div>
               </button>
 

@@ -15,7 +15,7 @@ export async function POST(
 
     const { id } = await params;
 
-    const res = await fetch(`${API_BASE}/dashboard/admin/sac/tickets/${id}/close`, {
+    const res = await fetch(`${API_BASE}/sac/admin/tickets/${id}/close`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',

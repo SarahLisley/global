@@ -30,7 +30,7 @@ export async function fetchSacSeries(): Promise<SacSeriesData> {
   }
 
   try {
-    const res = await fetch(`${API_BASE}/dashboard/sac/series`, {
+    const res = await fetch(`${API_BASE}/sac/series`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     });
@@ -124,7 +124,7 @@ export async function fetchTickets(params: TicketListParams): Promise<TicketList
   if (params.invoiceNumber) query.append('invoiceNumber', params.invoiceNumber);
 
   try {
-    const res = await fetch(`${API_BASE}/dashboard/sac/tickets?${query.toString()}`, {
+    const res = await fetch(`${API_BASE}/sac/tickets?${query.toString()}`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     });
@@ -158,7 +158,7 @@ export async function fetchPendingTickets(): Promise<PendingTicket[]> {
   if (!token) return [];
 
   try {
-    const res = await fetch(`${API_BASE}/dashboard/sac/tickets?status=em_andamento&pageSize=5`, {
+    const res = await fetch(`${API_BASE}/sac/tickets?status=em_andamento&pageSize=5`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     });

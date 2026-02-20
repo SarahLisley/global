@@ -89,10 +89,9 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
 
   function onLimpar() {
     const hoje = new Date().toISOString().slice(0, 10);
-    const trintaDias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10); // Standardize default
     setOpen({});
     clearFilters({
-      dtInicial: trintaDias,
+      dtInicial: hoje,
       dtFinal: hoje,
       pedido: '',
       nf: '',

@@ -12,7 +12,7 @@ export async function GET(req: Request) {
     const numTrans = pathname.split('/').pop() || '';
     if (!numTrans) return NextResponse.json({ error: 'numTrans ausente' }, { status: 400 });
 
-    const res = await fetch(`${API_BASE}/dashboard/entregas/${encodeURIComponent(numTrans)}`, {
+    const res = await fetch(`${API_BASE}/entregas/${encodeURIComponent(numTrans)}`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     });

@@ -65,7 +65,7 @@ export async function getRecentOrders(params: { codcli: number; page?: number; p
     SELECT COUNT(*) AS TOTAL
       FROM ${OWNER}.PCPEDC
        WHERE CODCLI = :CODCLI
-       AND TRUNC(DATA) >= TRUNC(SYSDATE) - 365
+       AND TRUNC(DATA) >= TRUNC(SYSDATE) - 30
     `,
     { CODCLI: params.codcli }
   );

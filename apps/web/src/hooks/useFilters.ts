@@ -95,18 +95,9 @@ export function useFilters<T extends Record<string, string>>({
     (defaultValues: T) => {
       setFilters(defaultValues);
       updateURL(defaultValues);
-
-      if (persistence) {
-        if (persistence.type === 'cookie' && persistence.keyPrefix) {
-          persistence.fields.forEach((field) => {
-            document.cookie = `${persistence.keyPrefix}_${String(field)}=; path=/; max-age=0; samesite=lax`;
-          });
-        } else if (persistence.type === 'localStorage' && persistence.storageKey) {
-          localStorage.removeItem(persistence.storageKey);
-        }
-      }
+      saveToPersistence(defaultValues);
     },
-    [persistence, updateURL]
+    [updateURL, saveToPersistence]
   );
 
   return {

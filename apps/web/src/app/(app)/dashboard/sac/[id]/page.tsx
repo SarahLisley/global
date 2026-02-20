@@ -27,13 +27,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   if (!res.ok) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-2 text-sm text-slate-600">
-          <Link href="/dashboard" className="hover:underline hover:text-slate-900 transition-colors">Dashboard</Link>
-          <span className="text-slate-400">/</span>
-          <Link href="/dashboard/sac" className="hover:underline hover:text-slate-900 transition-colors">SAC</Link>
-          <span className="text-slate-400">/</span>
-          <span className="text-slate-900">Ticket #{id}</span>
-        </div>
+
 
         <Card className="p-6">
           <div className="flex flex-col items-center justify-center py-12">
@@ -64,14 +58,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-600">
-        <Link href="/dashboard" className="hover:underline hover:text-slate-900 transition-colors">Dashboard</Link>
-        <span className="text-slate-400">/</span>
-        <Link href="/dashboard/sac" className="hover:underline hover:text-slate-900 transition-colors">SAC</Link>
-        <span className="text-slate-400">/</span>
-        <span className="text-slate-900 font-medium">Ticket #{ticket.id}</span>
-      </div>
+
 
       {/* Header com Status e Ações */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">

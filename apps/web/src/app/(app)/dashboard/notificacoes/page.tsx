@@ -5,67 +5,100 @@ import clsx from 'clsx';
 import {
   ShoppingCart,
   RefreshCw,
-  UserPlus,
-  HardDrive,
   AlertTriangle,
   Bell,
   CheckCheck,
   Clock,
   Sparkles,
+  FileText,
+  CreditCard,
+  Loader2,
 } from 'lucide-react';
 
-/* ─── Icon map per notification type ─── */
-const iconMap: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
-  venda: { icon: ShoppingCart, color: 'text-emerald-600', bg: 'bg-emerald-100' },
-  sistema: { icon: RefreshCw, color: 'text-blue-600', bg: 'bg-blue-100' },
-  cliente: { icon: UserPlus, color: 'text-violet-600', bg: 'bg-violet-100' },
-  backup: { icon: HardDrive, color: 'text-slate-600', bg: 'bg-slate-100' },
-  estoque: { icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-100' },
+// Mapa de ícones por tipo de notificação
+const typeConfig: Record<string, { icon: any; color: string; bg: string }> = {
+  sac: { icon: FileText, color: 'text-blue-600', bg: 'bg-blue-100' },
+  boleto: { icon: CreditCard, color: 'text-red-600', bg: 'bg-red-100' },
+  pedido: { icon: ShoppingCart, color: 'text-emerald-600', bg: 'bg-emerald-100' },
   default: { icon: Bell, color: 'text-slate-500', bg: 'bg-slate-100' },
 };
 
-function getIconConfig(title: string) {
-  if (title.toLowerCase().includes('venda')) return iconMap.venda;
-  if (title.toLowerCase().includes('sistema') || title.toLowerCase().includes('atualização')) return iconMap.sistema;
-  if (title.toLowerCase().includes('cliente')) return iconMap.cliente;
-  if (title.toLowerCase().includes('backup')) return iconMap.backup;
-  if (title.toLowerCase().includes('estoque')) return iconMap.estoque;
-  return iconMap.default;
+function formatTime(timestamp: string): string {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMin < 1) return 'Agora';
+  if (diffMin < 60) return `Há ${diffMin} min`;
+  if (diffHours < 24) return `Há ${diffHours}h`;
+  if (diffDays === 1) return 'Ontem';
+  if (diffDays < 7) return `Há ${diffDays} dias`;
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 }
 
-export default function NotificationsPage() {
-  const initialNotifications = [
-    { id: 1, title: 'Nova venda realizada', description: 'Pedido #1234 aprovado', time: 'Há 5 min', read: false },
-    { id: 2, title: 'Atualização do sistema', description: 'Versão 2.4.0 lançada', time: 'Há 1 hora', read: false },
-    { id: 3, title: 'Novo cliente', description: 'Roberto Silva se cadastrou', time: 'Há 2 horas', read: true },
-    { id: 4, title: 'Backup concluído', description: 'Backup diário realizado com sucesso', time: 'Ontem', read: true },
-    { id: 5, title: 'Alerta de estoque', description: 'Produto X está com estoque baixo', time: 'Ontem', read: true },
-  ];
+type Notification = {
+  id: string;
+  type: 'sac' | 'boleto' | 'pedido';
+  title: string;
+  description: string;
+  timestamp: string;
+  read: boolean;
+};
 
-  const [notifications, setNotifications] = useState(initialNotifications);
+export default function NotificationsPage() {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('notifications');
-    if (saved) {
-      setNotifications(JSON.parse(saved));
-    }
+    fetchNotifications();
   }, []);
+
+  async function fetchNotifications() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/notifications');
+      if (!res.ok) throw new Error('Erro ao carregar notificações');
+      const data = await res.json();
+
+      // Carregar status de leitura do localStorage
+      const readIds: string[] = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+
+      const mapped: Notification[] = (data.notifications || []).map((n: any) => ({
+        ...n,
+        read: readIds.includes(n.id),
+      }));
+
+      setNotifications(mapped);
+    } catch (err: any) {
+      setError(err.message || 'Erro desconhecido');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const markAllAsRead = () => {
-    const updated = notifications.map(n => ({ ...n, read: true }));
-    setNotifications(updated);
-    localStorage.setItem('notifications', JSON.stringify(updated));
+    const allIds = notifications.map(n => n.id);
+    localStorage.setItem('readNotifications', JSON.stringify(allIds));
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     window.dispatchEvent(new Event('storage'));
   };
 
-  const markAsRead = (id: number) => {
-    const updated = notifications.map(n =>
-      n.id === id ? { ...n, read: true } : n
+  const markAsRead = (id: string) => {
+    const readIds: string[] = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+    if (!readIds.includes(id)) {
+      readIds.push(id);
+      localStorage.setItem('readNotifications', JSON.stringify(readIds));
+    }
+    setNotifications(prev =>
+      prev.map(n => (n.id === id ? { ...n, read: true } : n))
     );
-    setNotifications(updated);
-    localStorage.setItem('notifications', JSON.stringify(updated));
     window.dispatchEvent(new Event('storage'));
   };
 
@@ -87,108 +120,143 @@ export default function NotificationsPage() {
               )}
             </div>
             <p className="text-sm text-slate-500 mt-0.5">
-              Visualize todo o histórico de notificações do sistema.
+              Acompanhe eventos recentes de tickets, boletos e pedidos.
             </p>
           </div>
         </div>
 
-        {unreadCount > 0 && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={markAllAsRead}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 hover:border-blue-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-blue-500/10 active:translate-y-0"
+            onClick={fetchNotifications}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all duration-200"
           >
-            <CheckCheck className="w-4 h-4" />
-            Marcar todas como lidas
+            <RefreshCw className="w-4 h-4" />
+            Atualizar
           </button>
-        )}
+          {unreadCount > 0 && (
+            <button
+              onClick={markAllAsRead}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 hover:border-blue-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-blue-500/10 active:translate-y-0"
+            >
+              <CheckCheck className="w-4 h-4" />
+              Marcar todas como lidas
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Notification List */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        {notifications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4">
-            <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
-              <Sparkles className="w-8 h-8 text-slate-400" />
-            </div>
-            <p className="text-base font-medium text-slate-700">Tudo em dia!</p>
-            <p className="text-sm text-slate-500 mt-1">Nenhuma notificação no momento.</p>
+      {/* Loading state */}
+      {loading && (
+        <div className="flex flex-col items-center justify-center py-16">
+          <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-3" />
+          <p className="text-sm text-slate-500">Carregando notificações...</p>
+        </div>
+      )}
+
+      {/* Error state */}
+      {error && !loading && (
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-500" />
           </div>
-        ) : (
-          <div className="divide-y divide-slate-100/80">
-            {notifications.map((notification, index) => {
-              const iconCfg = getIconConfig(notification.title);
-              const IconComponent = iconCfg.icon;
+          <p className="text-base font-medium text-slate-700">{error}</p>
+          <button
+            onClick={fetchNotifications}
+            className="mt-3 text-sm text-blue-600 hover:underline font-medium"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
 
-              return (
-                <div
-                  key={notification.id}
-                  onClick={() => !notification.read && markAsRead(notification.id)}
-                  className={clsx(
-                    'group relative p-5 transition-all duration-200 cursor-pointer',
-                    !notification.read
-                      ? 'bg-gradient-to-r from-blue-50/60 to-transparent hover:from-blue-50 hover:to-blue-50/30'
-                      : 'hover:bg-slate-50/80',
-                  )}
-                  style={{
-                    animationDelay: `${index * 50}ms`,
-                  }}
-                >
-                  {/* Unread indicator bar */}
-                  {!notification.read && (
-                    <div className="absolute left-0 top-3 bottom-3 w-1 rounded-r-full bg-gradient-to-b from-orange-500 to-orange-400" />
-                  )}
+      {/* Notification List */}
+      {!loading && !error && (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          {notifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+              <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+                <Sparkles className="w-8 h-8 text-slate-400" />
+              </div>
+              <p className="text-base font-medium text-slate-700">Tudo em dia!</p>
+              <p className="text-sm text-slate-500 mt-1">Nenhuma notificação no momento.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100/80">
+              {notifications.map((notification, index) => {
+                const cfg = typeConfig[notification.type] || typeConfig.default;
+                const IconComponent = cfg.icon;
 
-                  <div className="flex items-start gap-4">
-                    {/* Icon */}
-                    <div
-                      className={clsx(
-                        'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105',
-                        iconCfg.bg,
-                      )}
-                    >
-                      <IconComponent className={clsx('w-5 h-5', iconCfg.color)} />
-                    </div>
+                return (
+                  <div
+                    key={notification.id}
+                    onClick={() => !notification.read && markAsRead(notification.id)}
+                    className={clsx(
+                      'group relative p-5 transition-all duration-200 cursor-pointer',
+                      !notification.read
+                        ? 'bg-gradient-to-r from-blue-50/60 to-transparent hover:from-blue-50 hover:to-blue-50/30'
+                        : 'hover:bg-slate-50/80',
+                    )}
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    {/* Unread indicator bar */}
+                    {!notification.read && (
+                      <div className="absolute left-0 top-3 bottom-3 w-1 rounded-r-full bg-gradient-to-b from-orange-500 to-orange-400" />
+                    )}
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p
-                            className={clsx(
-                              'text-sm font-semibold truncate transition-colors',
-                              !notification.read ? 'text-slate-900' : 'text-slate-700',
-                            )}
-                          >
-                            {notification.title}
-                          </p>
-                          <p className="text-sm text-slate-500 mt-0.5 line-clamp-2">
-                            {notification.description}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
-                          <Clock className="w-3.5 h-3.5 text-slate-400" />
-                          <span className="text-xs text-slate-400 whitespace-nowrap font-medium">
-                            {notification.time}
-                          </span>
+                    <div className="flex items-start gap-4">
+                      {/* Icon */}
+                      <div
+                        className={clsx(
+                          'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105',
+                          cfg.bg,
+                        )}
+                      >
+                        <IconComponent className={clsx('w-5 h-5', cfg.color)} />
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p
+                              className={clsx(
+                                'text-sm font-semibold truncate transition-colors',
+                                !notification.read ? 'text-slate-900' : 'text-slate-700',
+                              )}
+                            >
+                              {notification.title}
+                            </p>
+                            <p className="text-sm text-slate-500 mt-0.5 line-clamp-2">
+                              {notification.description}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                            <Clock className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="text-xs text-slate-400 whitespace-nowrap font-medium">
+                              {formatTime(notification.timestamp)}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Summary footer */}
-      <div className="flex items-center justify-center gap-2 text-xs text-slate-400 pt-2">
-        <Bell className="w-3.5 h-3.5" />
-        <span>
-          {notifications.length} notificação{notifications.length !== 1 ? 'ões' : ''} ·{' '}
-          {unreadCount} não lida{unreadCount !== 1 ? 's' : ''}
-        </span>
-      </div>
+      {!loading && !error && notifications.length > 0 && (
+        <div className="flex items-center justify-center gap-2 text-xs text-slate-400 pt-2">
+          <Bell className="w-3.5 h-3.5" />
+          <span>
+            {notifications.length} notificação{notifications.length !== 1 ? 'ões' : ''} ·{' '}
+            {unreadCount} não lida{unreadCount !== 1 ? 's' : ''}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

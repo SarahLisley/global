@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const params = url.searchParams.toString();
 
-    const res = await fetch(`${API_BASE}/dashboard/sac/tickets?${params}`, {
+    const res = await fetch(`${API_BASE}/sac/tickets?${params}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 

@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import EntregasClient, { Entrega } from './EntregasClient';
 import EntregasLoading from './loading';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
 
 async function getEntregas(searchParams: { [key: string]: string | string[] | undefined }) {
   const token = (await cookies()).get('pgb_session')?.value;
@@ -29,7 +29,7 @@ async function getEntregas(searchParams: { [key: string]: string | string[] | un
   if (status && status !== 'todos' && status !== 'all') params.append('status', status);
 
   try {
-    const res = await fetch(`${API_BASE}/dashboard/entregas?${params.toString()}`, {
+    const res = await fetch(`${API_BASE}/entregas?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store', // Ensure fresh data on every request
     });

@@ -38,7 +38,7 @@ export async function fetchSacSeries(): Promise<SACSeries> {
     if (!token) {
       return emptySeries('sem sessão');
     }
-    const res = await fetch(`${API_BASE}/dashboard/sac/series`, {
+    const res = await fetch(`${API_BASE}/sac/series`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     });

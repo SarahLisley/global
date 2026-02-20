@@ -7,7 +7,7 @@ export async function fetchTicketDetail(id: string) {
   try {
     const token = (await cookies()).get('pgb_session')?.value;
     if (!token) return { ok: false, message: 'Sem sessão' };
-    const res = await fetch(`${API_BASE}/dashboard/sac/tickets/${encodeURIComponent(id)}`, {
+    const res = await fetch(`${API_BASE}/sac/tickets/${encodeURIComponent(id)}`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     });

@@ -9,6 +9,7 @@ interface DashboardScaffoldProps {
   user?: {
     name: string;
     email: string;
+    codcli?: number;
   };
 }
 

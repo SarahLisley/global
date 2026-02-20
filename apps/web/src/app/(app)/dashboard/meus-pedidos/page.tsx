@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import MeusPedidosClient, { Pedido } from './MeusPedidosClient';
 import MeusPedidosLoading from './loading';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
 
 async function getPedidos(searchParams: { [key: string]: string | string[] | undefined }) {
   const token = (await cookies()).get('pgb_session')?.value;
@@ -26,7 +26,7 @@ async function getPedidos(searchParams: { [key: string]: string | string[] | und
   if (nf) params.append('nf', nf);
 
   try {
-    const res = await fetch(`${API_BASE}/dashboard/orders?${params.toString()}`, {
+    const res = await fetch(`${API_BASE}/orders?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     });
