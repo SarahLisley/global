@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { select } from '../db/query';
+import { select, execute } from '../db/query';
 import { OWNER } from '../utils/env';
 import { extractCodcli, handleAuthError } from '../utils/auth';
 
@@ -9,6 +9,7 @@ type Notification = {
   title: string;
   description: string;
   timestamp: string;
+  read: boolean;
   meta?: Record<string, any>;
 };
 
@@ -19,6 +20,13 @@ export default async function notificationsRoutes(app: FastifyInstance) {
     try {
       const { codcli } = extractCodcli(req);
       const notifications: Notification[] = [];
+
+      // Buscar IDs de notificações já lidas no banco
+      const readRows = await select<{ NOTIF_ID: string }>(
+        `SELECT NOTIF_ID FROM ${OWNER}.BRSACC_NOTIF_READ WHERE CODCLI = :CODCLI`,
+        { CODCLI: codcli }
+      );
+      const readIds = new Set(readRows.map(r => r.NOTIF_ID));
 
       // 1. Tickets SAC com atividade recente (últimos 7 dias)
       try {
@@ -43,8 +51,9 @@ export default async function notificationsRoutes(app: FastifyInstance) {
 
         sacRows.forEach((r: any) => {
           const isClosed = !!r.DTFINALIZA;
+          const nid = `sac-${r.NUMTICKET}`;
           notifications.push({
-            id: `sac-${r.NUMTICKET}`,
+            id: nid,
             type: 'sac',
             title: isClosed ? 'Ticket SAC finalizado' : 'Ticket SAC em andamento',
             description: r.RELATOCLIENTE
@@ -53,6 +62,7 @@ export default async function notificationsRoutes(app: FastifyInstance) {
             timestamp: (r.DTFINALIZA || r.DTABERTURA)
               ? new Date(r.DTFINALIZA || r.DTABERTURA).toISOString()
               : new Date().toISOString(),
+            read: readIds.has(nid),
             meta: { ticketId: r.NUMTICKET, status: isClosed ? 'finalizado' : 'em_andamento' },
           });
         });
@@ -95,12 +105,14 @@ export default async function notificationsRoutes(app: FastifyInstance) {
             desc = `Boleto R$ ${Number(r.VALOR).toFixed(2)} vence em ${diffDays} dia(s)`;
           }
 
+          const nid = `boleto-${r.NUMTRANSVENDA}-${r.PREST}`;
           notifications.push({
-            id: `boleto-${r.NUMTRANSVENDA}-${r.PREST}`,
+            id: nid,
             type: 'boleto',
             title: isOverdue ? 'Boleto vencido' : 'Boleto próximo do vencimento',
             description: desc,
             timestamp: venc.toISOString(),
+            read: readIds.has(nid),
             meta: { valor: Number(r.VALOR), vencimento: venc.toISOString(), overdue: isOverdue },
           });
         });
@@ -127,12 +139,14 @@ export default async function notificationsRoutes(app: FastifyInstance) {
         `, { CODCLI: codcli });
 
         pedidoRows.forEach((r: any) => {
+          const nid = `pedido-${r.NUMPED}`;
           notifications.push({
-            id: `pedido-${r.NUMPED}`,
+            id: nid,
             type: 'pedido',
             title: 'Pedido faturado',
             description: `Pedido #${r.NUMPED} — NF ${r.NUMNOTA || 'N/A'} — R$ ${Number(r.VLTOTAL ?? 0).toFixed(2)}`,
             timestamp: r.DTFAT ? new Date(r.DTFAT).toISOString() : new Date().toISOString(),
+            read: readIds.has(nid),
             meta: { numped: r.NUMPED, numnota: r.NUMNOTA, valor: Number(r.VLTOTAL ?? 0) },
           });
         });
@@ -144,6 +158,34 @@ export default async function notificationsRoutes(app: FastifyInstance) {
       notifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
       return reply.send({ notifications, total: notifications.length });
+    } catch (err: any) {
+      return handleAuthError(err, reply);
+    }
+  });
+
+  // POST /read — marca uma ou mais notificações como lidas no banco
+  app.post('/read', async (req, reply) => {
+    try {
+      const { codcli } = extractCodcli(req);
+      const { ids } = req.body as { ids: string[] };
+
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return reply.status(400).send({ error: 'IDs de notificação são obrigatórios' });
+      }
+
+      // Inserir ignorando duplicatas (o UNIQUE_NOTIF_READ do plano impede duas vezes a mesma)
+      for (const nid of ids) {
+        try {
+          await execute(
+            `INSERT INTO ${OWNER}.BRSACC_NOTIF_READ (CODCLI, NOTIF_ID) VALUES (:CODCLI, :NID)`,
+            { CODCLI: codcli, NID: nid.substring(0, 100) }
+          );
+        } catch (e) {
+          // Ignora erro de PK violada (já lida)
+        }
+      }
+
+      return reply.send({ ok: true });
     } catch (err: any) {
       return handleAuthError(err, reply);
     }

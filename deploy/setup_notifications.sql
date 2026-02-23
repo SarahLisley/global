@@ -1,0 +1,10 @@
+-- Execute este script no banco de dados Oracle da Bravo para habilitar a sincronização de notificações.
+CREATE TABLE BRSACC_NOTIF_READ (
+  ID NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  CODCLI NUMBER NOT NULL,
+  NOTIF_ID VARCHAR2(100) NOT NULL,
+  READ_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT UNIQUE_NOTIF_READ UNIQUE (CODCLI, NOTIF_ID)
+);
+-- Index para performance na busca de notificações lidas por cliente
+CREATE INDEX IDX_NOTIF_READ_CODCLI ON BRSACC_NOTIF_READ(CODCLI);

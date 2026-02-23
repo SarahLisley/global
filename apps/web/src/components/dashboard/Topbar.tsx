@@ -28,7 +28,7 @@ interface TopbarProps {
   };
 }
 
-import { HelpModal } from './HelpModal';
+
 
 export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
   const pathname = usePathname();
@@ -37,7 +37,7 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
 
   const [userName] = useState(initialUser?.name || 'Usuário');
   const [userEmail] = useState(initialUser?.email || 'usuario@exemplo.com');
@@ -53,8 +53,7 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data?.notifications) {
-          const readIds: string[] = JSON.parse(localStorage.getItem('readNotifications') || '[]');
-          setNotifications(data.notifications.map((n: any) => ({ ...n, read: readIds.includes(n.id) })));
+          setNotifications(data.notifications);
         }
       })
       .catch(() => { });
@@ -70,11 +69,23 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const markAllAsRead = () => {
-    const allIds = notifications.map(n => n.id);
-    localStorage.setItem('readNotifications', JSON.stringify(allIds));
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    window.dispatchEvent(new Event('storage'));
+  const markAllAsRead = async () => {
+    const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
+    if (unreadIds.length === 0) return;
+
+    try {
+      const res = await fetch('/api/notifications/read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: unreadIds }),
+      });
+
+      if (res.ok) {
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      }
+    } catch (e) {
+      console.error('Falha ao marcar notificações como lidas:', e);
+    }
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -103,7 +114,7 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
 
   return (
     <header className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm backdrop-blur-sm bg-white/95">
-      <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
+
       <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
         <div className="flex items-center justify-between gap-3">
           {/* Botão Menu Mobile */}
@@ -298,12 +309,11 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
 
             {/* Ajuda - Desktop apenas */}
             <button
-              onClick={() => setIsHelpOpen(true)}
+              onClick={() => router.push('/dashboard/sac')}
               className={clsx(
                 'p-2 sm:p-2.5 text-gray-600 hover:text-[#4a90e2] hover:bg-blue-50 rounded-xl transition-all duration-200',
                 'hidden md:block',
-                isSearchOpen && 'md:hidden lg:block',
-                isHelpOpen && 'text-[#4a90e2] bg-blue-50'
+                isSearchOpen && 'md:hidden lg:block'
               )}
               title="Ajuda e Suporte"
             >
