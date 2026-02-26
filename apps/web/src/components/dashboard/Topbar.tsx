@@ -90,7 +90,10 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implementar busca global
+    if (searchQuery.trim()) {
+      router.push(`/dashboard/busca?q=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchOpen(false);
+    }
   };
 
   const toggleSearch = () => {

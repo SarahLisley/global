@@ -67,8 +67,20 @@ export default function SACTicketsClient({
   };
 
   const statusBadge = (s: Ticket['status']) => {
-    if (s === 'finalizado') return <Badge variant="success">Finalizado</Badge>;
-    return <Badge variant="info">Em andamento</Badge>;
+    if (s === 'finalizado') {
+      return (
+        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-100 px-2.5 py-1 rounded-md w-fit border border-slate-200">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+          Finalizado
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-100 px-2.5 py-1 rounded-md w-fit border border-slate-200 whitespace-nowrap">
+        <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+        Em andamento
+      </div>
+    );
   };
 
   const copyToClipboard = (text: string) => {

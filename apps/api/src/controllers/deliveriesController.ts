@@ -51,14 +51,12 @@ export async function searchDeliveries(params: {
   if (params.status && params.status !== 'todos') {
     if (params.status === 'entregue') {
       statusWhere = 'AND L.DATA_HORA_EFETIVA IS NOT NULL';
-    } else if (params.status === 'pendente') {
-      // Pendente = Não entregue e não devolvido (aproximação)
-      statusWhere = "AND L.DATA_HORA_EFETIVA IS NULL AND NOT (LOWER(L.OCORRENCIA) LIKE '%devol%')";
-    } else if (params.status === 'devolvido') {
-      statusWhere = "AND LOWER(L.OCORRENCIA) LIKE '%devol%'";
-    } else if (params.status === 'em_transito') {
+    } else if (params.status === 'agendado') {
+      // Agendado = Não entregue, não está em trânsito nem aguardando coleta (aproximação)
+      statusWhere = "AND L.DATA_HORA_EFETIVA IS NULL AND NOT (LOWER(L.OCORRENCIA) LIKE '%transit%' OR LOWER(L.OCORRENCIA) LIKE '%trânsito%') AND NOT LOWER(L.OCORRENCIA) LIKE '%coleta%'";
+    } else if (params.status === 'em trânsito') {
       statusWhere = "AND L.DATA_HORA_EFETIVA IS NULL AND (LOWER(L.OCORRENCIA) LIKE '%transit%' OR LOWER(L.OCORRENCIA) LIKE '%trânsito%')";
-    } else if (params.status === 'aguardando') {
+    } else if (params.status === 'aguardando coleta') {
       statusWhere = "AND L.DATA_HORA_EFETIVA IS NULL AND LOWER(L.OCORRENCIA) LIKE '%coleta%'";
     }
   }

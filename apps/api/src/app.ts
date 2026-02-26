@@ -11,6 +11,7 @@ import financeiroRoutes from './routes/financeiro.routes';
 import docsRoutes from './routes/docs.routes';
 import notificationsRoutes from './routes/notifications.routes';
 import avatarRoutes from './routes/avatar.routes';
+import searchRoutes from './routes/search.routes';
 
 export function buildApp() {
   const app = Fastify({ logger: true });
@@ -43,6 +44,8 @@ export function buildApp() {
   app.register(docsRoutes, { prefix: '/docs' });
   app.register(notificationsRoutes, { prefix: '/notifications' });
   app.register(avatarRoutes, { prefix: '/avatar' });
+
+  app.register(searchRoutes, { prefix: '/search' });
 
   app.setErrorHandler((err, _req, reply) => {
     app.log.error({ err }, 'Unhandled error');

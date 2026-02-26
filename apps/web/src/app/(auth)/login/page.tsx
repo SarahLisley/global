@@ -58,7 +58,7 @@ function LoginContent() {
     <div className="w-full max-w-[400px] mx-auto">
       {/* Header */}
       <div className="mb-8 text-center animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out fill-mode-both">
-        <BrandLogo className="mb-6 mx-auto" width={130} height={44} />
+        <BrandLogo className="mb-6 mx-auto" width={220} height={75} />
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
           Bem-vindo
         </h1>

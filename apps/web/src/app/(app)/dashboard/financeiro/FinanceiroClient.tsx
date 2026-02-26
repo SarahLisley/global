@@ -309,17 +309,17 @@ export default function FinanceiroClient({
                         <td className="px-6 py-5">
                           {t.dtPgto ? (
                             <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-100 px-2.5 py-1 rounded-md w-fit border border-slate-200">
-                              <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                               Pago
                             </div>
                           ) : vencido ? (
-                            <div className="flex items-center gap-1.5 text-xs text-red-600 font-medium bg-red-50 px-2.5 py-1 rounded-md w-fit border border-red-100">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-100 px-2.5 py-1 rounded-md w-fit border border-slate-200">
                               <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
                               Vencido
                             </div>
                           ) : (
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-50 px-2.5 py-1 rounded-md w-fit border border-slate-200">
-                              <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-100 px-2.5 py-1 rounded-md w-fit border border-slate-200">
+                              <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                               A Vencer
                             </div>
                           )}

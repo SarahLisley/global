@@ -179,53 +179,23 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
                 </div>
               </div>
 
-              {/* Status Radio Group */}
-              <div className="pt-2"> {/* Added spacing container for radio group */}
-                <div className="flex flex-wrap items-center gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      type="radio"
-                      name="status"
-                      value="todos"
-                      checked={filters.status === 'todos'}
-                      onChange={() => setFilter('status', 'todos')}
-                      className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer"
-                    />
-                    <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Todos</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      type="radio"
-                      name="status"
-                      value="entregue"
-                      checked={filters.status === 'entregue'}
-                      onChange={() => setFilter('status', 'entregue')}
-                      className="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500 cursor-pointer"
-                    />
-                    <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Entregues</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      type="radio"
-                      name="status"
-                      value="pendente"
-                      checked={filters.status === 'pendente'}
-                      onChange={() => setFilter('status', 'pendente')}
-                      className="w-4 h-4 text-amber-500 border-slate-300 focus:ring-amber-500 cursor-pointer"
-                    />
-                    <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Pendentes</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      type="radio"
-                      name="status"
-                      value="devolvido"
-                      checked={filters.status === 'devolvido'}
-                      onChange={() => setFilter('status', 'devolvido')}
-                      className="w-4 h-4 text-red-600 border-slate-300 focus:ring-red-500 cursor-pointer"
-                    />
-                    <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">Devoluções</span>
-                  </label>
+              {/* Status Select */}
+              <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:border-blue-500 transition-all relative mt-2">
+                <label htmlFor="status" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">Status</label>
+                <select
+                  id="status"
+                  className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 bg-transparent focus:ring-0 focus:outline-none text-sm cursor-pointer appearance-none"
+                  value={filters.status}
+                  onChange={(e) => setFilter('status', e.target.value)}
+                >
+                  <option value="todos">Todos</option>
+                  <option value="agendado">Agendado</option>
+                  <option value="em trânsito">Em trânsito</option>
+                  <option value="aguardando coleta">Aguardando coleta</option>
+                  <option value="entregue">Entregue</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 pt-3 text-slate-500">
+                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
                 </div>
               </div>
             </div>
@@ -395,17 +365,17 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
                           Entregue
                         </div>
                       ) : e.status === 'Em trânsito' ? (
-                        <div className="flex items-center gap-1.5 text-xs text-blue-600 font-medium bg-blue-50 px-2.5 py-1 rounded-md w-fit border border-blue-100 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-100 px-2.5 py-1 rounded-md w-fit border border-slate-200 whitespace-nowrap">
                           <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                           Em trânsito
                         </div>
                       ) : e.status === 'Aguardando coleta' ? (
-                        <div className="flex items-center gap-1.5 text-xs text-amber-600 font-medium bg-amber-50 px-2.5 py-1 rounded-md w-fit border border-amber-100">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-100 px-2.5 py-1 rounded-md w-fit border border-slate-200">
                           <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                           Aguardando
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-50 px-2.5 py-1 rounded-md w-fit border border-slate-200">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-100 px-2.5 py-1 rounded-md w-fit border border-slate-200">
                           <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
                           Agendado
                         </div>

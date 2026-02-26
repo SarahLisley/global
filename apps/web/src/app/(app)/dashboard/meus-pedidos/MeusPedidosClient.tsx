@@ -246,9 +246,15 @@ export default function MeusPedidosClient({
                       <td className="px-6 py-4">{p.nroNF || '-'}</td>
                       <td className="px-6 py-4">{p.nroTransVenda || '-'}</td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 border border-slate-200">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-100 px-2.5 py-1 rounded-md w-fit border border-slate-200">
+                          <div className={`w-1.5 h-1.5 rounded-full ${p.posicao === 'Faturado' || p.posicao === 'F'
+                            ? 'bg-emerald-500'
+                            : p.posicao === 'Cancelado' || p.posicao === 'C'
+                              ? 'bg-red-500'
+                              : 'bg-blue-500'
+                            }`}></div>
                           {p.posicao || 'Normal'}
-                        </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">{new Date(p.data).toLocaleDateString('pt-BR')}</td>
                       <td className="px-6 py-4">{p.filial || '-'}</td>
