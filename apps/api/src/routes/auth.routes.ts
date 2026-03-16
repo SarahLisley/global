@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { login, parseBearer, whoamiFromToken, getUserProfile } from '../controllers/authController';
+import { login, parseBearer, whoamiFromToken, getUserProfile, forgotPassword, resetPassword } from '../controllers/authController';
 import { LoginInputSchema } from '@pgb/sdk';
 
 export default async function authRoutes(app: FastifyInstance) {
@@ -18,6 +18,22 @@ export default async function authRoutes(app: FastifyInstance) {
 
     if (!res.ok) return reply.code(res.status).send({ message: res.message });
     return reply.send(res.session);
+  });
+
+  app.post('/forgot-password', async (req, reply) => {
+    const { email } = req.body as { email?: string };
+    if (!email) return reply.code(400).send({ message: 'E-mail é obrigatório' });
+    const res = await forgotPassword(email);
+    if (!res.ok) return reply.code(res.status).send({ message: res.message });
+    return reply.send({ ok: true, message: res.message, token: res.token });
+  });
+
+  app.post('/reset-password', async (req, reply) => {
+    const { token, password } = req.body as { token?: string, password?: string };
+    if (!token || !password) return reply.code(400).send({ message: 'Token e nova senha são obrigatórios' });
+    const res = await resetPassword(token, password);
+    if (!res.ok) return reply.code(res.status).send({ message: res.message });
+    return reply.send({ ok: true, message: res.message });
   });
 
   app.post('/register', async (_req, reply) => {

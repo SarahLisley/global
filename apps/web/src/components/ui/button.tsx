@@ -6,12 +6,14 @@ import clsx from 'clsx';
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   full?: boolean;
   variant?: 'primary' | 'ghost' | 'outline';
+  asChild?: boolean;
 };
 
-export function Button({ className, full, variant = 'primary', ...props }: Props) {
+export function Button({ className, full, variant = 'primary', asChild, ...props }: Props) {
+  const Comp = asChild ? 'span' : 'button'; // Simple fallback or use Slot if available
   if (variant === 'ghost') {
     return (
-      <button
+      <Comp
         className={clsx(
           'rounded-lg px-5 py-2.5 text-sm font-medium text-slate-700',
           'hover:bg-slate-100 active:bg-slate-200',
@@ -28,7 +30,7 @@ export function Button({ className, full, variant = 'primary', ...props }: Props
 
   if (variant === 'outline') {
     return (
-      <button
+      <Comp
         className={clsx(
           'rounded-lg px-5 py-2.5 text-sm font-medium',
           'border border-slate-200 bg-white text-slate-700',
@@ -45,7 +47,7 @@ export function Button({ className, full, variant = 'primary', ...props }: Props
   }
 
   return (
-    <button
+    <Comp
       className={clsx(
         'btn-gradient',
         'px-8 py-3.5 rounded-lg',

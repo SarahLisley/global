@@ -16,6 +16,13 @@ const envSchema = z.object({
   DB_POOL_MAX: z.coerce.number().int().min(1).default(4),
   DB_POOL_TIMEOUT_SEC: z.coerce.number().int().min(10).default(60),
   DASHBOARD_SOURCE: z.enum(['official','pgb']).default('pgb'),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().optional(),
+  SMTP_SECURE: z.string().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
+  FRONTEND_URL: z.string().default('http://localhost:3200'),
 });
 
 const _env = envSchema.safeParse(process.env);

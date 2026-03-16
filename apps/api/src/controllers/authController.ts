@@ -1,4 +1,4 @@
-import { select } from '../db/query';
+import { select, execute } from '../db/query';
 import { signToken, verifyToken } from '../utils/token';
 import { env, OWNER } from '../utils/env';
 
@@ -141,3 +141,65 @@ export async function listDevUsers(limit = 5) {
   );
   return { ok: true as const, status: 200, users };
 }
+
+export async function forgotPassword(email: string) {
+  try {
+    const emailClean = email.trim();
+    console.log(`[FORGOT_PASSWORD] Iniciando recuperação para: ${emailClean}`);
+
+    console.log(`[FORGOT_PASSWORD] Buscando no banco BRLOGINWEB...`);
+    const rows = await select<{ EMAIL: string; NOME: string }>(
+      `SELECT EMAIL, NOME FROM ${OWNER}.BRLOGINWEB WHERE UPPER(TRIM(EMAIL)) = UPPER(TRIM(:email)) FETCH FIRST 1 ROWS ONLY`,
+      { email: emailClean }
+    );
+
+    if (rows.length === 0) {
+      console.log(`[FORGOT_PASSWORD] E-mail não encontrado no banco de dados.`);
+      return { ok: true, status: 200, message: 'Se o e-mail existir, você receberá um link de recuperação.' };
+    }
+
+    const user = rows[0];
+    console.log(`[FORGOT_PASSWORD] E-mail encontrado. Gerando token para: ${user.EMAIL}`);
+
+    const { createPasswordResetToken } = await import('../utils/verificationStore');
+    const token = await createPasswordResetToken(user.EMAIL, user.NOME);
+
+    const isDev = process.env.NODE_ENV !== 'production';
+
+    return {
+      ok: true,
+      status: 200,
+      message: 'Se o e-mail existir, você receberá um link de recuperação.',
+      token: isDev ? token : undefined
+    };
+  } catch (err: any) {
+    console.error('ForgotPassword Error:', err);
+    return { ok: false, status: 500, message: `Erro: ${err.message}` };
+  }
+}
+
+export async function resetPassword(token: string, newPassword: string) {
+  try {
+    const { verifyPasswordResetToken } = await import('../utils/verificationStore');
+    const result = verifyPasswordResetToken(token);
+
+    if (!result.ok) {
+      const messages: Record<string, string> = {
+        not_found: 'Link inválido ou expirado.',
+        expired: 'Link expirado. Solicite nova recuperação.',
+        too_many_attempts: 'Muitas tentativas inválidas. Solicite nova recuperação.'
+      };
+      return { ok: false, status: 400, message: messages[result.reason] as string };
+    }
+
+    await execute(
+      `UPDATE ${OWNER}.BRLOGINWEB SET SENHA = TRIM(:senha) WHERE UPPER(TRIM(EMAIL)) = UPPER(TRIM(:email))`,
+      { senha: newPassword, email: result.email }
+    );
+
+    return { ok: true, status: 200, message: 'Senha atualizada com sucesso. Você já pode fazer login.' };
+  } catch (err: any) {
+    console.error('ResetPassword Error:', err);
+    return { ok: false, status: 500, message: `Erro: ${err.message}` };
+  }
+}

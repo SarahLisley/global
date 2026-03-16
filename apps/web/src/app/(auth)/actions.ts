@@ -120,3 +120,23 @@ export async function forgotPasswordAction(form: { email: string }) {
     return { ok: false, message: e?.message ?? 'Erro inesperado' };
   }
 }
+
+export async function resetPasswordAction(form: { token: string; password?: string }) {
+  try {
+    const res = await fetch(`${API_BASE}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(form),
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { ok: false, message: err?.message ?? `Falha ao redefinir senha (${res.status})` };
+    }
+
+    return { ok: true, message: 'Senha redefinida com sucesso!' };
+  } catch (e: any) {
+    return { ok: false, message: e?.message ?? 'Erro inesperado' };
+  }
+}
