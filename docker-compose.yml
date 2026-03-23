@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  pgb-api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: pgb-api
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+    environment:
+      - NODE_ENV=production
+      - PORT=4001
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_CONNECTION_STRING=${DB_CONNECTION_STRING}
+      - OWNER=${OWNER}
+      - JWT_SECRET=${JWT_SECRET:-secret_dev_key_super_segura}
+      - CORS_ORIGIN=http://localhost:3200
+    networks:
+      - pgb-network
+
+  pgb-web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        - NEXT_PUBLIC_API_BASE_URL=http://localhost:4001
+    container_name: pgb-web
+    restart: unless-stopped
+    ports:
+      - "3200:3200"
+    environment:
+      - NODE_ENV=production
+      - PORT=3200
+    depends_on:
+      - pgb-api
+    networks:
+      - pgb-network
+
+networks:
+  pgb-network:
+    driver: bridge

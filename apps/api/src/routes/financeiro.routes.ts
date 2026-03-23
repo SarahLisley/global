@@ -1,8 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { getTitulos } from '../controllers/financeiroController';
 import { downloadBoleto } from '../controllers/boletosController';
-import { select } from '../db/query';
-import { OWNER } from '../utils/env';
 import { extractCodcli, handleAuthError } from '../utils/auth';
 
 export default async function financeiroRoutes(app: FastifyInstance) {
@@ -45,28 +43,4 @@ export default async function financeiroRoutes(app: FastifyInstance) {
     }
   });
 
-  // DEBUG BOLETO ROUTE - REMOVE LATER
-  app.get('/debug/boletos', async (_req, reply) => {
-    try {
-      const rows = await select(
-        `SELECT 
-          NUMTRANSVENDA, 
-          PREST, 
-          DUPLIC, 
-          LINHADIG, 
-          CODBARRA, 
-          NOSSONUMBCO, 
-          NOMEARQUIVO, 
-          PASTAARQUIVOBOLETO,
-          DTVENC,
-          VALOR
-        FROM ${OWNER}.PCPREST 
-        WHERE ROWNUM <= 10
-        ORDER BY DTVENC DESC`
-      );
-      return reply.send(rows);
-    } catch (e) {
-      return reply.status(500).send(e);
-    }
-  });
 }

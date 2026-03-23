@@ -31,7 +31,7 @@ export const Input = forwardRef<HTMLInputElement, Props>(function Input(
     <button
       type="button"
       onClick={() => setShowPassword(!showPassword)}
-      className="focus:outline-none hover:text-slate-900 hover:bg-slate-200/50 p-1.5 rounded-full transition-all"
+      className="focus:outline-none hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-200/50 dark:hover:bg-zinc-800 p-1.5 rounded-full transition-all"
       tabIndex={-1} // Não focar no tab
     >
       {showPassword ? (
@@ -55,12 +55,12 @@ export const Input = forwardRef<HTMLInputElement, Props>(function Input(
   return (
     <div className={cn('relative flex items-center w-full', wrapperClassName)}>
       {leftIcon && (
-        <span className="absolute left-3 text-slate-500 pointer-events-none z-10 flex items-center justify-center">
+        <span className="absolute left-3 text-slate-500 dark:text-zinc-400 pointer-events-none z-10 flex items-center justify-center">
           {leftIcon}
         </span>
       )}
       {finalRightIcon && (
-        <span className={`absolute right-3 text-slate-500 z-10 flex items-center justify-center ${withPasswordToggle ? '' : 'pointer-events-none'}`}>
+        <span className={`absolute right-3 text-slate-500 dark:text-zinc-400 z-10 flex items-center justify-center ${withPasswordToggle ? '' : 'pointer-events-none'}`}>
           {finalRightIcon}
         </span>
       )}
@@ -68,7 +68,7 @@ export const Input = forwardRef<HTMLInputElement, Props>(function Input(
         ref={ref}
         type={inputType}
         className={cn(
-          'w-full relative transition-all duration-200 rounded-lg bg-white border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500',
+          'w-full relative transition-all duration-200 rounded-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 px-4 py-3 text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 dark:focus:border-blue-500/50',
           leftIcon && 'pl-10',
           finalRightIcon && 'pr-10',
           className

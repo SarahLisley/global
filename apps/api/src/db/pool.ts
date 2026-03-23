@@ -51,10 +51,13 @@ export async function closePool() {
   pool = null;
 }
 
-process.on('SIGINT', async () => {
+async function gracefulShutdown() {
   try {
     await closePool();
   } finally {
     process.exit(0);
   }
-});
+}
+
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);

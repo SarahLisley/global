@@ -87,7 +87,8 @@ export async function getTitulos(params: {
       P.LINHADIG,
       P.CODBARRA,
       P.PASTAARQUIVOBOLETO,
-      P.NOMEARQUIVO
+      P.NOMEARQUIVO,
+      COUNT(*) OVER() AS TOTAL_COUNT
     FROM ${OWNER}.PCPREST P
     LEFT JOIN ${OWNER}.PCNFSAID NF ON NF.NUMTRANSVENDA = P.NUMTRANSVENDA
     WHERE ${where.join(' AND ')}
@@ -96,29 +97,7 @@ export async function getTitulos(params: {
   `;
 
   const rows = await select<any>(query, binds);
-
-  // Get total count
-  const countQuery = `
-    SELECT COUNT(*) as TOTAL
-    FROM ${OWNER}.PCPREST P
-    LEFT JOIN ${OWNER}.PCNFSAID NF ON NF.NUMTRANSVENDA = P.NUMTRANSVENDA
-    WHERE ${where.join(' AND ')}
-  `;
-  const countBinds = { ...binds };
-  delete countBinds.OFFSET;
-  delete countBinds.LIMIT;
-  const countRes = await select<{ TOTAL: number }>(countQuery, countBinds);
-
-  // DEBUG: Inspect boleto columns
-  if (rows.length > 0) {
-    console.log('DEBUG: BOLETO INFO:', rows.map((r: any) => ({
-      id: r.NUMTRANSVENDA,
-      nossoNum: r.NOSSONUMBCO,
-      linhaDig: r.LINHADIG,
-      arquivo: r.NOMEARQUIVO,
-      pasta: r.PASTAARQUIVOBOLETO
-    })).slice(0, 3));
-  }
+  const total = Number(rows[0]?.TOTAL_COUNT ?? 0);
 
   const titulos = rows.map((r) => {
     const isPaid = !!r.DTPAG;
@@ -164,7 +143,7 @@ export async function getTitulos(params: {
 
   return {
     titulos,
-    total: Number(countRes[0]?.TOTAL ?? 0),
+    total,
     page: params.page || 1,
     pageSize: params.pageSize || 10
   };

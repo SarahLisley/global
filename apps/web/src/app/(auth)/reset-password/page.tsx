@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { Button } from '@components/ui/button';
 import { Input } from '@components/ui/input';
@@ -9,18 +12,30 @@ import { Label } from '@components/ui/label';
 import { BrandLogo } from '@/components/brand-logo';
 import { KeyRound, Eye, EyeOff, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
 import { resetPasswordAction } from '../actions';
-import { Suspense } from 'react';
+
+const schema = z.object({
+  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres.'),
+  confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "As senhas não coincidem.",
+  path: ["confirmPassword"]
+});
+
+type FormData = z.infer<typeof schema>;
 
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
 
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: { password: '', confirmPassword: '' }
+  });
 
   useEffect(() => {
     if (!token) {
@@ -28,23 +43,12 @@ function ResetPasswordForm() {
     }
   }, [token]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  const onSubmit = (data: FormData) => {
     if (!token) return;
-
-    if (password.length < 6) {
-      setMessage({ type: 'error', text: 'A senha deve ter pelo menos 6 caracteres.' });
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setMessage({ type: 'error', text: 'As senhas não coincidem.' });
-      return;
-    }
 
     setMessage(null);
     startTransition(async () => {
-      const res = await resetPasswordAction({ token, password });
+      const res = await resetPasswordAction({ token, password: data.password });
       if (res.ok) {
         setMessage({ type: 'success', text: res.message });
         setTimeout(() => router.push('/login'), 3000);
@@ -52,7 +56,7 @@ function ResetPasswordForm() {
         setMessage({ type: 'error', text: res.message });
       }
     });
-  }
+  };
 
   if (message?.type === 'success') {
     return (
@@ -86,7 +90,7 @@ function ResetPasswordForm() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="password">Nova Senha</Label>
@@ -96,11 +100,9 @@ function ResetPasswordForm() {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
-                required
                 className="pl-10 pr-10 bg-zinc-900/50 border-zinc-800 focus:border-blue-500/50 focus:ring-blue-500/20"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 disabled={isPending || !token}
+                {...register('password')}
               />
               <button
                 type="button"
@@ -111,6 +113,12 @@ function ResetPasswordForm() {
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+            {errors.password && (
+              <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" />
+                {errors.password.message}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -121,13 +129,17 @@ function ResetPasswordForm() {
                 id="confirmPassword"
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
-                required
                 className="pl-10 pr-10 bg-zinc-900/50 border-zinc-800 focus:border-blue-500/50 focus:ring-blue-500/20"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={isPending || !token}
+                {...register('confirmPassword')}
               />
             </div>
+            {errors.confirmPassword && (
+              <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" />
+                {errors.confirmPassword.message}
+              </p>
+            )}
           </div>
         </div>
 

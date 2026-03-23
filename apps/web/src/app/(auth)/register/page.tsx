@@ -83,10 +83,10 @@ export default function RegisterPage() {
       {/* Header */}
       <div className="mb-6 sm:mb-8 text-center animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out fill-mode-both">
         <BrandLogo className="mb-4 sm:mb-6 mx-auto" width={180} height={60} />
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
           Criar Conta
         </h1>
-        <p className="text-slate-500 mt-2 text-sm sm:text-base">
+        <p className="text-slate-500 dark:text-zinc-400 mt-2 text-sm sm:text-base">
           Preencha os dados abaixo para acessar o sistema.
         </p>
       </div>
@@ -95,7 +95,7 @@ export default function RegisterPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 ease-out fill-mode-both">
         {/* CNPJ */}
         <div className="space-y-1">
-          <label htmlFor="cnpj" className="text-sm font-semibold text-slate-700">CNPJ</label>
+          <label htmlFor="cnpj" className="text-sm font-semibold text-slate-700 dark:text-zinc-300">CNPJ</label>
           <Controller
             name="cnpj"
             control={control}
@@ -107,8 +107,8 @@ export default function RegisterPage() {
                 disabled={isPending}
                 value={field.value}
                 onChange={(e) => field.onChange(maskCNPJ(e.target.value))}
-                className="h-10 bg-white border-slate-200 rounded-xl pl-11 text-sm transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                leftIcon={<Building2 className="w-5 h-5 text-slate-400" />}
+                className="h-10 bg-white dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 rounded-xl pl-11 text-sm text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                leftIcon={<Building2 className="w-5 h-5 text-slate-400 dark:text-zinc-500" />}
               />
             )}
           />
@@ -122,13 +122,13 @@ export default function RegisterPage() {
 
         {/* Nome */}
         <div className="space-y-1">
-          <label htmlFor="name" className="text-sm font-semibold text-slate-700">Nome completo</label>
+          <label htmlFor="name" className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Nome completo</label>
           <Input
             id="name"
             placeholder="Ex.: Maria Souza"
             disabled={isPending}
-            className="h-10 bg-white border-slate-200 rounded-xl pl-11 text-sm transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
-            leftIcon={<User className="w-5 h-5 text-slate-400" />}
+            className="h-10 bg-white dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 rounded-xl pl-11 text-sm text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            leftIcon={<User className="w-5 h-5 text-slate-400 dark:text-zinc-500" />}
             {...register('name')}
           />
           {errors.name && (
@@ -141,14 +141,14 @@ export default function RegisterPage() {
 
         {/* E-mail */}
         <div className="space-y-1">
-          <label htmlFor="email" className="text-sm font-semibold text-slate-700">E-mail</label>
+          <label htmlFor="email" className="text-sm font-semibold text-slate-700 dark:text-zinc-300">E-mail</label>
           <Input
             id="email"
             type="email"
             placeholder="seu@email.com.br"
             disabled={isPending}
-            className="h-10 bg-white border-slate-200 rounded-xl pl-11 text-sm transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
-            leftIcon={<Mail className="w-5 h-5 text-slate-400" />}
+            className="h-10 bg-white dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 rounded-xl pl-11 text-sm text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            leftIcon={<Mail className="w-5 h-5 text-slate-400 dark:text-zinc-500" />}
             {...register('email')}
           />
           {errors.email && (
@@ -161,15 +161,15 @@ export default function RegisterPage() {
 
         {/* Senha */}
         <div className="space-y-1">
-          <label htmlFor="password" className="text-sm font-semibold text-slate-700">Senha</label>
+          <label htmlFor="password" className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Senha</label>
           <Input
             id="password"
             type="password"
             withPasswordToggle
             placeholder="••••••••"
             disabled={isPending}
-            className="h-10 bg-white border-slate-200 rounded-xl pl-11 text-sm transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
-            leftIcon={<LockKeyhole className="w-5 h-5 text-slate-400" />}
+            className="h-10 bg-white dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 rounded-xl pl-11 text-sm text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            leftIcon={<LockKeyhole className="w-5 h-5 text-slate-400 dark:text-zinc-500" />}
             {...register('password')}
           />
           {errors.password && (
@@ -182,15 +182,15 @@ export default function RegisterPage() {
 
         {/* Confirmar senha */}
         <div className="space-y-1">
-          <label htmlFor="confirm" className="text-sm font-semibold text-slate-700">Confirmar senha</label>
+          <label htmlFor="confirm" className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Confirmar senha</label>
           <Input
             id="confirm"
             type="password"
             withPasswordToggle
             placeholder="••••••••"
             disabled={isPending}
-            className="h-10 bg-white border-slate-200 rounded-xl pl-11 text-sm transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
-            leftIcon={<ShieldCheck className="w-5 h-5 text-slate-400" />}
+            className="h-10 bg-white dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 rounded-xl pl-11 text-sm text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            leftIcon={<ShieldCheck className="w-5 h-5 text-slate-400 dark:text-zinc-500" />}
             {...register('confirm')}
           />
           {errors.confirm && (
@@ -232,11 +232,11 @@ export default function RegisterPage() {
       </form>
 
       {/* Footer */}
-      <div className="mt-8 text-center pt-6 border-t border-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 ease-out fill-mode-both">
-        <p className="text-sm text-slate-600">
+      <div className="mt-8 text-center pt-6 border-t border-slate-100 dark:border-zinc-800 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 ease-out fill-mode-both">
+        <p className="text-sm text-slate-600 dark:text-zinc-400">
           Já tem conta?{' '}
           <Link
-            className="font-semibold text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+            className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline transition-colors"
             href="/login"
           >
             Entrar

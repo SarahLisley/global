@@ -21,6 +21,33 @@ function normalizeStatus(status: any, dtFinaliza: any): 'pendente' | 'em_andamen
   return 'em_andamento';
 }
 
+/** Mapeia uma linha de BRSACC_COMMENTS para o formato de resposta da API */
+function mapCommentRow(c: any) {
+  let content = '';
+  if (c.CONTEUDO) {
+    if (typeof c.CONTEUDO === 'string') {
+      content = c.CONTEUDO;
+    } else if (typeof c.CONTEUDO === 'object' && c.CONTEUDO.toString) {
+      content = c.CONTEUDO.toString();
+    }
+  }
+  return {
+    id: String(c.ID),
+    author: String(c.AUTOR ?? 'Sistema'),
+    authorType: c.TIPO_AUTOR === 'S' ? 'suporte' : (c.TIPO_AUTOR === 'W' ? 'winthor' : 'cliente'),
+    type: (c.TIPO_MSG === 'N' ? 'note' : 'message') as 'note' | 'message',
+    content,
+    isPublic: c.PUBLICO === 'S',
+    attachment: c.ANEXO_PATH
+      ? {
+        filename: c.ANEXO_FILENAME,
+        url: `/sac/attachments/${c.ANEXO_PATH}`,
+      }
+      : undefined,
+    createdAt: new Date(c.DTCRIACAO).toISOString(),
+  };
+}
+
 export default async function sacRoutes(app: FastifyInstance) {
 
   // ────────── Séries (gráfico) ──────────
@@ -223,31 +250,7 @@ export default async function sacRoutes(app: FastifyInstance) {
         { NUMTICKET: numTicket }
       );
 
-      const comments = commentRows.map((c) => {
-        let content = '';
-        if (c.CONTEUDO) {
-          if (typeof c.CONTEUDO === 'string') {
-            content = c.CONTEUDO;
-          } else if (typeof c.CONTEUDO === 'object' && c.CONTEUDO.toString) {
-            content = c.CONTEUDO.toString();
-          }
-        }
-        return {
-          id: String(c.ID),
-          author: String(c.AUTOR ?? 'Sistema'),
-          authorType: c.TIPO_AUTOR === 'S' ? 'suporte' : (c.TIPO_AUTOR === 'W' ? 'winthor' : 'cliente'),
-          type: (c.TIPO_MSG === 'N' ? 'note' : 'message') as 'note' | 'message',
-          content,
-          isPublic: c.PUBLICO === 'S',
-          attachment: c.ANEXO_PATH
-            ? {
-              filename: c.ANEXO_FILENAME,
-              url: `/sac/attachments/${c.ANEXO_PATH}`,
-            }
-            : undefined,
-          createdAt: new Date(c.DTCRIACAO).toISOString(),
-        };
-      });
+      const comments = commentRows.map(mapCommentRow);
 
       return reply.send({ ok: true, ticket, timeline, comments });
     } catch (err) {
@@ -342,32 +345,7 @@ export default async function sacRoutes(app: FastifyInstance) {
         { NUMTICKET: numTicket }
       );
 
-      const comments = rows.map((r) => {
-        let content = '';
-        if (r.CONTEUDO) {
-          if (typeof r.CONTEUDO === 'string') {
-            content = r.CONTEUDO;
-          } else if (typeof r.CONTEUDO === 'object' && r.CONTEUDO.toString) {
-            content = r.CONTEUDO.toString();
-          }
-        }
-
-        return {
-          id: String(r.ID),
-          author: String(r.AUTOR ?? 'Sistema'),
-          authorType: r.TIPO_AUTOR === 'S' ? 'suporte' : r.TIPO_AUTOR === 'W' ? 'winthor' : 'cliente',
-          type: (r.TIPO_MSG === 'N' ? 'note' : 'message') as 'note' | 'message',
-          content,
-          isPublic: r.PUBLICO === 'S',
-          attachment: r.ANEXO_PATH
-            ? {
-              filename: r.ANEXO_FILENAME,
-              url: `/sac/attachments/${r.ANEXO_PATH}`,
-            }
-            : undefined,
-          createdAt: new Date(r.DTCRIACAO).toISOString(),
-        };
-      });
+      const comments = rows.map(mapCommentRow);
 
       return reply.send({ ok: true, comments });
     } catch (err) {
@@ -399,14 +377,7 @@ export default async function sacRoutes(app: FastifyInstance) {
       const msgType = body.type === 'note' ? 'N' : 'M';
       const publico = body.isPublic ? 'S' : 'N';
 
-      console.log('[POST /sac/tickets/:id/comments] Inserting comment:', {
-        numTicket,
-        codcli,
-        userName,
-        contentLength: content.length,
-        msgType,
-        publico,
-      });
+      app.log.info({ numTicket, codcli, userName, contentLength: content.length, msgType, publico }, 'Creating comment');
 
       const newId = await insertReturning<number>(
         `INSERT INTO ${OWNER}.BRSACC_COMMENTS (
@@ -428,7 +399,7 @@ export default async function sacRoutes(app: FastifyInstance) {
         'ID'
       );
 
-      console.log('[POST /sac/tickets/:id/comments] Insert result, newId:', newId);
+
 
       const newComment = {
         id: String(newId ?? Date.now()),
@@ -455,9 +426,12 @@ export default async function sacRoutes(app: FastifyInstance) {
   // ────────── Simular Winthor (DEV ONLY) ──────────
 
   app.post('/tickets/:id/simulate-winthor', async (req, reply) => {
+    // DEV ONLY — bloqueia em produção
+    if (process.env.NODE_ENV === 'production') {
+      return reply.status(404).send({ error: 'Not found' });
+    }
     try {
-      const auth = req.headers.authorization;
-      if (!auth?.startsWith('Bearer ')) return reply.status(401).send({ error: 'Token ausente' });
+      const { codcli } = extractCodcli(req);
       const id = String((req.params as any)?.id ?? '').trim();
       const numTicket = Number(id);
 
@@ -538,35 +512,32 @@ export default async function sacRoutes(app: FastifyInstance) {
       const id = String((req.params as any)?.id ?? '').trim();
       const commentId = String((req.params as any)?.commentId ?? '').trim();
 
-      console.log(`[DELETE COMMENT] Request received. Ticket: ${id}, Comment: ${commentId}, CodCli: ${codcli}`);
-
       if (!/^\d+$/.test(id) || !/^\d+$/.test(commentId)) {
-        console.log('[DELETE COMMENT] Invalid ID format');
         return reply.status(400).send({ error: 'ID inválido' });
       }
 
       const query = `DELETE FROM ${OWNER}.BRSACC_COMMENTS WHERE ID = :ID AND CODCLI = :CODCLI AND TIPO_AUTOR = 'C'`;
       const binds = { ID: Number(commentId), CODCLI: codcli };
 
-      console.log('[DELETE COMMENT] Executing query:', query, binds);
+      app.log.info({ query, binds }, 'Deleting comment');
 
       const rows = await execute(query, binds);
 
-      console.log('[DELETE COMMENT] Rows affected:', rows);
+      app.log.info({ rowsAffected: rows }, 'Delete result');
 
       if (rows === 0) {
         const check = await select(
           `SELECT ID, CODCLI, TIPO_AUTOR FROM ${OWNER}.BRSACC_COMMENTS WHERE ID = :ID`,
           { ID: Number(commentId) }
         );
-        console.log('[DELETE COMMENT] Check existence:', check);
+        app.log.warn({ check }, 'Comment not found or no permission');
 
         return reply.status(404).send({ error: 'Comentário não encontrado ou sem permissão para apagar' });
       }
 
       return reply.send({ ok: true });
     } catch (err) {
-      console.error('[DELETE COMMENT] Error:', err);
+      app.log.error({ err }, 'Delete comment error');
       return handleAuthError(err, reply);
     }
   });
@@ -614,14 +585,19 @@ export default async function sacRoutes(app: FastifyInstance) {
 
   app.get('/attachments/:filename', async (req, reply) => {
     try {
-      const { filename } = req.params as { filename: string };
-      const filepath = path.join(SAC_UPLOADS_DIR, filename);
+      const filename = (req.params as { filename: string }).filename;
 
-      if (!fs.existsSync(filepath)) {
+      // Proteção contra path traversal
+      const resolved = path.resolve(SAC_UPLOADS_DIR, filename);
+      if (!resolved.startsWith(SAC_UPLOADS_DIR)) {
+        return reply.status(400).send({ error: 'Caminho inválido' });
+      }
+
+      if (!fs.existsSync(resolved)) {
         return reply.status(404).send({ error: 'Arquivo não encontrado' });
       }
 
-      const stream = fs.createReadStream(filepath);
+      const stream = fs.createReadStream(resolved);
       // Tentativa de inferir mime type simples
       const ext = path.extname(filename).toLowerCase();
       const mimeMap: Record<string, string> = {

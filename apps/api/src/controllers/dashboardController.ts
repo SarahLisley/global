@@ -1,22 +1,12 @@
 import { select } from '../db/query';
 import { OWNER } from '../utils/env';
+import type { DashboardSummary } from '@pgb/sdk';
 
 type KPIs = {
   codcli: number;
   ordersLast30d: { totalAmount: number; totalOrders: number };
   receivablesOpen: { totalAmount: number };
   deliveries: { doneLast30d: number; doneToday: number };
-};
-
-export type DashboardSummary = {
-  usuarios_total: number;
-  usuarios_clientes: number;
-  usuarios_outros: number;
-  nf_total_hoje: number;
-  nf_erros_hoje: number;
-  nf_sucesso_hoje: number;
-  nf_ultimos7d: number;
-  atualizado_em: string;
 };
 
 async function resolveCodcli(params: { email?: string; codcli?: string | number }): Promise<number> {
@@ -109,9 +99,14 @@ export async function getDashboardKpis(params: { email?: string; codcli?: string
   };
 }
 
-export async function getDashboardSummary(): Promise<DashboardSummary> {
-  /* MOCK REMOVED - Using Real DB */
+let summaryCache: { data: DashboardSummary | null; expires: number } = { data: null, expires: 0 };
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
 
+export async function getDashboardSummary(): Promise<DashboardSummary> {
+  const now = Date.now();
+  if (summaryCache.data && now < summaryCache.expires) {
+    return summaryCache.data;
+  }
   const [u] = await select<{ TOTAL: number; CLIENTES: number }>(
     `
     SELECT
@@ -154,11 +149,11 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     nf_erros_hoje = n?.ERROS_HOJE ?? 0;
     nf_sucesso_hoje = n?.SUCESSO_HOJE ?? 0;
     nf_ultimos7d = n?.ULT7D ?? 0;
-  } catch (e) {
-    console.error('BRLOGNFENTI summary failed:', e);
+  } catch (_) {
+    // BRLOGNFENTI may not exist in all environments — silently ignore
   }
 
-  return {
+  const result: DashboardSummary = {
     usuarios_total,
     usuarios_clientes,
     usuarios_outros,
@@ -168,4 +163,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     nf_ultimos7d,
     atualizado_em: new Date().toISOString(),
   };
+
+  summaryCache = { data: result, expires: Date.now() + CACHE_TTL_MS };
+  return result;
 }

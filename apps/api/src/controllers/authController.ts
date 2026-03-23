@@ -1,6 +1,9 @@
 import { select, execute } from '../db/query';
 import { signToken, verifyToken } from '../utils/token';
 import { env, OWNER } from '../utils/env';
+import bcrypt from 'bcrypt';
+
+const BCRYPT_ROUNDS = 12;
 
 type DbUser = {
   EMAIL: string;
@@ -37,8 +40,31 @@ export async function login(email: string, password: string) {
     const user = rows[0];
     if (!user) return { ok: false, status: 401, message: 'Usuário não encontrado' as const };
 
-    const ok = (password ?? '') === (user.SENHA ?? '').trim();
-    if (!ok) return { ok: false, status: 401, message: 'Senha inválida' as const };
+    const storedPassword = (user.SENHA ?? '').trim();
+    const isHashed = storedPassword.startsWith('$2b$') || storedPassword.startsWith('$2a$');
+
+    let passwordMatch = false;
+    if (isHashed) {
+      // Senha já hasheada — comparação segura
+      passwordMatch = await bcrypt.compare(password ?? '', storedPassword);
+    } else {
+      // Senha legada (texto puro) — comparação direta + lazy migration
+      passwordMatch = (password ?? '') === storedPassword;
+      if (passwordMatch) {
+        // Migração lazy: hashear a senha no banco automaticamente
+        try {
+          const hashed = await bcrypt.hash(storedPassword, BCRYPT_ROUNDS);
+          await execute(
+            `UPDATE ${OWNER}.BRLOGINWEB SET SENHA = :senha WHERE UPPER(TRIM(EMAIL)) = UPPER(TRIM(:email))`,
+            { senha: hashed, email }
+          );
+        } catch (hashErr) {
+          // Não bloquear login se falhar o hash
+          console.warn('[AUTH] Lazy hash migration failed:', (hashErr as Error).message);
+        }
+      }
+    }
+    if (!passwordMatch) return { ok: false, status: 401, message: 'Senha inválida' as const };
 
     const cgc = user.CGC ?? '';
     const codcli = user.CODCLI ?? null;
@@ -131,9 +157,9 @@ export async function listDevUsers(limit = 5) {
   if (process.env.EXPOSE_DEV_DEBUG !== '1') {
     return { ok: false as const, status: 404, message: 'Indisponível' };
   }
-  const users = await select<{ EMAIL: string; SENHA: string; CGC: string }>(
+  const users = await select<{ EMAIL: string; CGC: string }>(
     `
-    SELECT EMAIL, SENHA, CGC
+    SELECT EMAIL, CGC
     FROM ${OWNER}.BRLOGINWEB
     FETCH FIRST :limit ROWS ONLY
     `,
@@ -145,21 +171,16 @@ export async function listDevUsers(limit = 5) {
 export async function forgotPassword(email: string) {
   try {
     const emailClean = email.trim();
-    console.log(`[FORGOT_PASSWORD] Iniciando recuperação para: ${emailClean}`);
-
-    console.log(`[FORGOT_PASSWORD] Buscando no banco BRLOGINWEB...`);
     const rows = await select<{ EMAIL: string; NOME: string }>(
       `SELECT EMAIL, NOME FROM ${OWNER}.BRLOGINWEB WHERE UPPER(TRIM(EMAIL)) = UPPER(TRIM(:email)) FETCH FIRST 1 ROWS ONLY`,
       { email: emailClean }
     );
 
     if (rows.length === 0) {
-      console.log(`[FORGOT_PASSWORD] E-mail não encontrado no banco de dados.`);
       return { ok: true, status: 200, message: 'Se o e-mail existir, você receberá um link de recuperação.' };
     }
 
     const user = rows[0];
-    console.log(`[FORGOT_PASSWORD] E-mail encontrado. Gerando token para: ${user.EMAIL}`);
 
     const { createPasswordResetToken } = await import('../utils/verificationStore');
     const token = await createPasswordResetToken(user.EMAIL, user.NOME);
@@ -192,9 +213,10 @@ export async function resetPassword(token: string, newPassword: string) {
       return { ok: false, status: 400, message: messages[result.reason] as string };
     }
 
+    const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
     await execute(
-      `UPDATE ${OWNER}.BRLOGINWEB SET SENHA = TRIM(:senha) WHERE UPPER(TRIM(EMAIL)) = UPPER(TRIM(:email))`,
-      { senha: newPassword, email: result.email }
+      `UPDATE ${OWNER}.BRLOGINWEB SET SENHA = :senha WHERE UPPER(TRIM(EMAIL)) = UPPER(TRIM(:email))`,
+      { senha: hashedPassword, email: result.email }
     );
 
     return { ok: true, status: 200, message: 'Senha atualizada com sucesso. Você já pode fazer login.' };

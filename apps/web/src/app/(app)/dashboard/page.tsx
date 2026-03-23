@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { LineAreaChart } from '../../../components/charts/LineAreaChart';
 import { RecentOrdersTable } from '../../../components/dashboard/RecentOrdersTable';
 import { DocsValidity } from '../../../components/dashboard/DocsValidity';
+import { ErrorBoundary } from '../../../components/ErrorBoundary';
 import { fetchKpis, mapKpisToCards } from './dashboardApi';
 import { fetchRecentOrders } from './ordersApi';
 import { fetchDocsValidity } from './docsApi';
@@ -126,11 +127,11 @@ async function KpiSection() {
               {icons[index % icons.length]}
             </div>
             <div className="flex-1 min-w-0" title={String(k.value)}>
-              <div className="text-xs sm:text-sm font-medium text-slate-500 mb-0.5">{k.label}</div>
-              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">{k.value}</div>
+              <div className="text-xs sm:text-sm font-medium text-slate-500 dark:text-zinc-400 mb-0.5">{k.label}</div>
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-zinc-100 truncate">{k.value}</div>
             </div>
           </div>
-          <div className="absolute bottom-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-tl from-gray-100 to-transparent opacity-50 rounded-tl-full" />
+          <div className="absolute bottom-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-tl from-gray-100 dark:from-zinc-800/50 to-transparent opacity-50 rounded-tl-full" />
         </Card>
       ))}
     </section>
@@ -146,8 +147,8 @@ async function SacChartSection() {
   return (
     <Card className="p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300">
       <div className="mb-3 sm:mb-4">
-        <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">SAC - Séries (Hoje)</h2>
-        <p className="text-xs sm:text-sm text-gray-500 truncate">Distribuição por hora</p>
+        <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-zinc-100 truncate">SAC - Séries (Hoje)</h2>
+        <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400 truncate">Distribuição por hora</p>
         {hasNoSession && (
           <p className="mt-2 text-xs sm:text-sm text-amber-600">
             Não foi possível carregar as séries do SAC ({sacSeries.datasets[0].label.replace('Resolvidos ', '').replace(/\(|\)/g, '')}). Exibindo dados vazios.
@@ -166,24 +167,24 @@ async function PendingTicketsSection() {
     <Card className="flex flex-col p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300 relative overflow-hidden">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">SAC - Próximas ações</h2>
-          <p className="text-xs sm:text-sm text-gray-500 truncate">Tickets pendentes</p>
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-zinc-100 truncate">SAC - Próximas ações</h2>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400 truncate">Tickets pendentes</p>
         </div>
-        <Link href="/dashboard/sac?status=em_andamento" className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline">
+        <Link href="/dashboard/sac?status=em_andamento" className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline">
           Ver todos →
         </Link>
       </div>
 
       {pendingTickets.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center py-8 sm:py-10 border-2 border-dashed border-gray-100 rounded-xl bg-gray-50/50">
-          <div className="p-3 bg-white rounded-full shadow-sm mb-3 ring-1 ring-gray-100">
+        <div className="flex-1 flex flex-col items-center justify-center py-8 sm:py-10 border-2 border-dashed border-gray-100 dark:border-zinc-800 rounded-xl bg-gray-50/50 dark:bg-zinc-900/50">
+          <div className="p-3 bg-white dark:bg-zinc-800 rounded-full shadow-sm mb-3 ring-1 ring-gray-100 dark:ring-zinc-700">
             <svg width="24" height="24" className="text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
           </div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-1">Tudo em dia!</h3>
-          <p className="text-xs text-gray-500 text-center">Nenhum ticket pendente no momento.</p>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-zinc-100 mb-1">Tudo em dia!</h3>
+          <p className="text-xs text-gray-500 dark:text-zinc-400 text-center">Nenhum ticket pendente no momento.</p>
         </div>
       ) : (
         <div className="flex-1 space-y-2">
@@ -191,16 +192,16 @@ async function PendingTicketsSection() {
             <Link
               key={ticket.id}
               href={`/dashboard/sac/${ticket.id}`}
-              className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-blue-200 hover:bg-blue-50/50 transition-all group"
+              className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 dark:border-zinc-800 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-all group"
             >
               <div className={`w-2 h-2 rounded-full shrink-0 ${ticket.status === 'pendente' ? 'bg-amber-500' : 'bg-blue-500'}`} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate group-hover:text-blue-700">{ticket.subject}</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-sm font-medium text-gray-900 dark:text-zinc-100 truncate group-hover:text-blue-700 dark:group-hover:text-blue-400">{ticket.subject}</p>
+                <p className="text-xs text-gray-500 dark:text-zinc-400">
                   #{ticket.id} • {new Date(ticket.openedAt).toLocaleDateString('pt-BR')}
                 </p>
               </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-300 group-hover:text-blue-500 transition-colors shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-300 dark:text-zinc-600 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors shrink-0">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
             </Link>
@@ -230,30 +231,40 @@ export default async function DashboardPage(props: { searchParams: Promise<{ [ke
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <Suspense fallback={<KpiSkeleton />}>
-        <KpiSection />
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense fallback={<KpiSkeleton />}>
+          <KpiSection />
+        </Suspense>
+      </ErrorBoundary>
 
       <section className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-        <Suspense fallback={<ChartSkeleton />}>
-          <SacChartSection />
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={<ChartSkeleton />}>
+            <SacChartSection />
+          </Suspense>
+        </ErrorBoundary>
 
-        <Suspense fallback={<TicketsSkeleton />}>
-          <PendingTicketsSection />
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={<TicketsSkeleton />}>
+            <PendingTicketsSection />
+          </Suspense>
+        </ErrorBoundary>
       </section>
 
       <section>
-        <Suspense fallback={<TableSkeleton />}>
-          <RecentOrdersSection page={page} pageSize={pageSize} />
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={<TableSkeleton />}>
+            <RecentOrdersSection page={page} pageSize={pageSize} />
+          </Suspense>
+        </ErrorBoundary>
       </section>
 
       <section>
-        <Suspense fallback={<DocsSkeleton />}>
-          <DocsSection />
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={<DocsSkeleton />}>
+            <DocsSection />
+          </Suspense>
+        </ErrorBoundary>
       </section>
     </div>
   );

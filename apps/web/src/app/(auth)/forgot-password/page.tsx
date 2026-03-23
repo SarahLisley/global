@@ -41,10 +41,10 @@ function ForgotPasswordContent() {
       {/* Header */}
       <div className="mb-6 sm:mb-8 text-center animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out fill-mode-both">
         <BrandLogo className="mb-4 sm:mb-6 mx-auto" width={180} height={60} />
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
           Recuperar Senha
         </h1>
-        <p className="text-slate-500 mt-2 text-sm sm:text-base">
+        <p className="text-slate-500 dark:text-zinc-400 mt-2 text-sm sm:text-base">
           Informe seu e-mail para receber as instruções de recuperação.
         </p>
       </div>
@@ -88,7 +88,7 @@ function ForgotPasswordContent() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 ease-out fill-mode-both">
         {/* Email Field */}
         <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-slate-700" htmlFor="email">
+          <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300" htmlFor="email">
             E-mail
           </label>
           <Input
@@ -98,8 +98,8 @@ function ForgotPasswordContent() {
             autoFocus
             autoComplete="email"
             disabled={isPending}
-            className="h-11 bg-white border-slate-200 rounded-xl pl-11 text-sm transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
-            leftIcon={<Mail className="w-5 h-5 text-slate-400" />}
+            className="h-11 bg-white dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 rounded-xl pl-11 text-sm text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            leftIcon={<Mail className="w-5 h-5 text-slate-400 dark:text-zinc-500" />}
             {...register('email')}
           />
           {errors.email && (
@@ -130,10 +130,10 @@ function ForgotPasswordContent() {
       </form>
 
       {/* Footer */}
-      <div className="mt-8 text-center pt-6 border-t border-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 ease-out fill-mode-both">
+      <div className="mt-8 text-center pt-6 border-t border-slate-100 dark:border-zinc-800 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 ease-out fill-mode-both">
         <Link
           href="/login"
-          className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors gap-2"
+          className="inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline transition-colors gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
           Voltar para o Login

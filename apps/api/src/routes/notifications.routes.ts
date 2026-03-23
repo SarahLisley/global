@@ -22,10 +22,15 @@ export default async function notificationsRoutes(app: FastifyInstance) {
       const notifications: Notification[] = [];
 
       // Buscar IDs de notificações já lidas no banco
-      const readRows = await select<{ NOTIF_ID: string }>(
-        `SELECT NOTIF_ID FROM ${OWNER}.BRSACC_NOTIF_READ WHERE CODCLI = :CODCLI`,
-        { CODCLI: codcli }
-      );
+      let readRows: { NOTIF_ID: string }[] = [];
+      try {
+        readRows = await select<{ NOTIF_ID: string }>(
+          `SELECT NOTIF_ID FROM ${OWNER}.BRSACC_NOTIF_READ WHERE CODCLI = :CODCLI`,
+          { CODCLI: codcli }
+        );
+      } catch (e) {
+        app.log.warn({ err: e }, 'Notifications: BRSACC_NOTIF_READ query failed. Table might not exist.');
+      }
       const readIds = new Set(readRows.map(r => r.NOTIF_ID));
 
       // 1. Tickets SAC com atividade recente (últimos 7 dias)

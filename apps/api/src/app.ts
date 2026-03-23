@@ -1,6 +1,9 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
+import rateLimit from '@fastify/rate-limit';
+import swagger from '@fastify/swagger';
+import swaggerUi from '@fastify/swagger-ui';
 import healthRoutes from './routes/health.routes';
 import authRoutes from './routes/auth.routes';
 import dashboardRoutes from './routes/dashboard.routes';
@@ -21,10 +24,16 @@ export function buildApp() {
     .map(s => s.trim())
     .filter(Boolean);
 
+  // Adiciona FRONTEND_URL se configurado
+  const frontendUrl = process.env.FRONTEND_URL?.trim();
+  if (frontendUrl && !allowed.includes(frontendUrl)) {
+    allowed.push(frontendUrl);
+  }
+
   app.register(cors, {
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
-      const ok = allowed.includes(origin) || origin.endsWith('.vercel.app');
+      const ok = allowed.includes(origin);
       cb(null, ok);
     },
     credentials: true,
@@ -32,6 +41,33 @@ export function buildApp() {
 
   // Upload de arquivos (multipart)
   app.register(multipart, { limits: { fileSize: 2 * 1024 * 1024 } });
+
+  // Rate limiting global (proteção contra abuso)
+  app.register(rateLimit, {
+    max: 100,
+    timeWindow: '1 minute',
+  });
+
+  // Swagger Documentation
+  app.register(swagger, {
+    openapi: {
+      info: {
+        title: 'Portal Global Bravo System API',
+        description: 'Documentação interativa das rotas.',
+        version: '1.0.0'
+      },
+      servers: [{ url: 'http://localhost:4001', description: 'Development Server' }],
+      components: {
+        securitySchemes: {
+          bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }
+        }
+      }
+    }
+  });
+  app.register(swaggerUi, {
+    routePrefix: '/docs',
+    uiConfig: { docExpansion: 'list', deepLinking: false }
+  });
 
   // Rotas
   app.register(healthRoutes, { prefix: '/' });

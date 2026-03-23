@@ -2,8 +2,30 @@ import type { FastifyInstance } from 'fastify';
 import { getConnection } from '../db/pool';
 
 export default async function healthRoutes(app: FastifyInstance) {
-  app.get('/health', async () => ({ ok: true }));
+  // Liveness — sempre responde
+  app.get('/health', async (_req, reply) => {
+    let dbOk = false;
+    try {
+      const conn = await getConnection();
+      try {
+        await conn.execute('SELECT 1 FROM DUAL');
+        dbOk = true;
+      } finally {
+        await conn.close();
+      }
+    } catch { /* db indisponível */ }
 
+    const mem = process.memoryUsage();
+    const status = dbOk ? 200 : 503;
+    return reply.code(status).send({
+      ok: dbOk,
+      uptime: Math.floor(process.uptime()),
+      memoryMB: Math.round(mem.rss / 1024 / 1024),
+      db: dbOk ? 'connected' : 'disconnected',
+    });
+  });
+
+  // Readiness — verifica conexão ao banco em detalhe
   app.get('/health/db', async (_req, reply) => {
     try {
       const conn = await getConnection();

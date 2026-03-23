@@ -15,8 +15,8 @@ export function Button({ className, full, variant = 'primary', asChild, ...props
     return (
       <Comp
         className={clsx(
-          'rounded-lg px-5 py-2.5 text-sm font-medium text-slate-700',
-          'hover:bg-slate-100 active:bg-slate-200',
+          'rounded-lg px-5 py-2.5 text-sm font-medium text-slate-700 dark:text-zinc-300',
+          'hover:bg-slate-100 dark:hover:bg-zinc-800 active:bg-slate-200 dark:active:bg-zinc-800/80',
           'transition-colors duration-200',
           'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent',
           'inline-flex items-center justify-center gap-2',
@@ -33,8 +33,8 @@ export function Button({ className, full, variant = 'primary', asChild, ...props
       <Comp
         className={clsx(
           'rounded-lg px-5 py-2.5 text-sm font-medium',
-          'border border-slate-200 bg-white text-slate-700',
-          'hover:bg-slate-50 active:bg-slate-100',
+          'border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-slate-700 dark:text-zinc-300',
+          'hover:bg-slate-50 dark:hover:bg-zinc-800 active:bg-slate-100 dark:active:bg-zinc-800/80',
           'transition-colors duration-200',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           'inline-flex items-center justify-center gap-2',

@@ -17,7 +17,16 @@ export type RecentOrder = {
   posicao?: string | null;
   dtfat?: string | null;
   status: 'faturado' | 'bloqueado' | 'liberado';
-  itens?: any[];
+  itens?: OrderItem[];
+};
+
+export type OrderItem = {
+  codProduto: string;
+  descricao: string;
+  qtd: number;
+  qtdFalta: number;
+  pvUnit: number;
+  pvTotal: number;
 };
 
 function mapStatus(row: any): 'faturado' | 'bloqueado' | 'liberado' {
@@ -28,50 +37,8 @@ function mapStatus(row: any): 'faturado' | 'bloqueado' | 'liberado' {
   return 'liberado';
 }
 
-export async function getRecentOrders(params: { codcli: number; page?: number; pageSize?: number }) {
-  const page = Math.max(1, params.page ?? 1);
-  const pageSize = Math.max(1, params.pageSize ?? 10);
-  const offset = (page - 1) * pageSize;
-
-  // Query principal com paginação
-  const rows = await select<any>(
-    `
-    SELECT NUMPED,
-           DATA,
-           VLTOTAL,
-           CODCLI,
-           CODUSUR,
-           (SELECT pcusuari.nome FROM ${OWNER}.pcusuari WHERE pcusuari.codusur = pcpedc.codusur) AS VENDEDOR,
-           DTENTREGA,
-           VLATEND,
-           VLDESCONTO,
-           VLFRETE,
-           NUMNOTA,
-           NUMTRANSVENDA,
-           POSICAO,
-           DTFAT
-      FROM ${OWNER}.PCPEDC
-     WHERE CODCLI = :CODCLI
-       AND TRUNC(DATA) >= TRUNC(SYSDATE) - 30
-     ORDER BY DATA DESC
-     OFFSET :OFFSET ROWS FETCH NEXT :LIMIT ROWS ONLY
-    `,
-    { CODCLI: params.codcli, OFFSET: offset, LIMIT: pageSize }
-  );
-
-  // Query de contagem total
-  const countRes = await select<{ TOTAL: number }>(
-    `
-    SELECT COUNT(*) AS TOTAL
-      FROM ${OWNER}.PCPEDC
-       WHERE CODCLI = :CODCLI
-       AND TRUNC(DATA) >= TRUNC(SYSDATE) - 30
-    `,
-    { CODCLI: params.codcli }
-  );
-  const total = Number(countRes?.[0]?.TOTAL ?? 0);
-
-  const mapped: RecentOrder[] = rows.map((r: any) => ({
+function mapOrderRow(r: any): RecentOrder {
+  return {
     orderNumber: String(r.NUMPED),
     date: r.DATA,
     total: Number(r.VLTOTAL ?? 0),
@@ -87,7 +54,44 @@ export async function getRecentOrders(params: { codcli: number; page?: number; p
     posicao: r.POSICAO ?? null,
     dtfat: r.DTFAT ?? null,
     status: mapStatus(r),
-  }));
+  };
+}
+
+export async function getRecentOrders(params: { codcli: number; page?: number; pageSize?: number }) {
+  const page = Math.max(1, params.page ?? 1);
+  const pageSize = Math.max(1, params.pageSize ?? 10);
+  const offset = (page - 1) * pageSize;
+
+  // Query com LEFT JOIN (sem subquery) e COUNT(*) OVER() (sem query extra de contagem)
+  const rows = await select<any>(
+    `
+    SELECT P.NUMPED,
+           P.DATA,
+           P.VLTOTAL,
+           P.CODCLI,
+           P.CODUSUR,
+           U.NOME AS VENDEDOR,
+           P.DTENTREGA,
+           P.VLATEND,
+           P.VLDESCONTO,
+           P.VLFRETE,
+           P.NUMNOTA,
+           P.NUMTRANSVENDA,
+           P.POSICAO,
+           P.DTFAT,
+           COUNT(*) OVER() AS TOTAL_COUNT
+      FROM ${OWNER}.PCPEDC P
+      LEFT JOIN ${OWNER}.PCUSUARI U ON U.CODUSUR = P.CODUSUR
+     WHERE P.CODCLI = :CODCLI
+       AND TRUNC(P.DATA) >= TRUNC(SYSDATE) - 30
+     ORDER BY P.DATA DESC
+     OFFSET :OFFSET ROWS FETCH NEXT :LIMIT ROWS ONLY
+    `,
+    { CODCLI: params.codcli, OFFSET: offset, LIMIT: pageSize }
+  );
+
+  const total = Number(rows[0]?.TOTAL_COUNT ?? 0);
+  const mapped = rows.map(mapOrderRow);
 
   return { orders: mapped, total, page, pageSize };
 }
@@ -106,94 +110,71 @@ export async function searchOrders(params: {
   const offset = (page - 1) * pageSize;
 
   const binds: any = { CODCLI: params.codcli };
-  const where: string[] = ['CODCLI = :CODCLI'];
+  const where: string[] = ['P.CODCLI = :CODCLI'];
 
   if (params.dtInicial) {
-    where.push('DATA >= TO_DATE(:DTINICIAL, \'YYYY-MM-DD\')');
+    where.push('P.DATA >= TO_DATE(:DTINICIAL, \'YYYY-MM-DD\')');
     binds.DTINICIAL = params.dtInicial;
   }
   if (params.dtFinal) {
-    // Adiciona 23:59:59 para pegar o dia todo se for apenas data
-    where.push('DATA <= TO_DATE(:DTFINAL || \' 23:59:59\', \'YYYY-MM-DD HH24:MI:SS\')');
+    where.push('P.DATA <= TO_DATE(:DTFINAL || \' 23:59:59\', \'YYYY-MM-DD HH24:MI:SS\')');
     binds.DTFINAL = params.dtFinal;
   }
   if (params.pedido) {
-    where.push('NUMPED = :NUMPED');
+    where.push('P.NUMPED = :NUMPED');
     binds.NUMPED = params.pedido;
   }
   if (params.nf) {
-    where.push('NUMNOTA = :NUMNOTA');
+    where.push('P.NUMNOTA = :NUMNOTA');
     binds.NUMNOTA = params.nf;
   }
 
   const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
-  // Query principal
+  // Query com LEFT JOIN e COUNT(*) OVER()
   const rows = await select<any>(
     `
-    SELECT NUMPED,
-           DATA,
-           VLTOTAL,
-           CODCLI,
-           CODUSUR,
-           (SELECT pcusuari.nome FROM ${OWNER}.pcusuari WHERE pcusuari.codusur = pcpedc.codusur) AS VENDEDOR,
-           DTENTREGA,
-           VLATEND,
-           VLDESCONTO,
-           VLFRETE,
-           NUMNOTA,
-           NUMTRANSVENDA,
-           POSICAO,
-           DTFAT
-      FROM ${OWNER}.PCPEDC
+    SELECT P.NUMPED,
+           P.DATA,
+           P.VLTOTAL,
+           P.CODCLI,
+           P.CODUSUR,
+           U.NOME AS VENDEDOR,
+           P.DTENTREGA,
+           P.VLATEND,
+           P.VLDESCONTO,
+           P.VLFRETE,
+           P.NUMNOTA,
+           P.NUMTRANSVENDA,
+           P.POSICAO,
+           P.DTFAT,
+           COUNT(*) OVER() AS TOTAL_COUNT
+      FROM ${OWNER}.PCPEDC P
+      LEFT JOIN ${OWNER}.PCUSUARI U ON U.CODUSUR = P.CODUSUR
      ${whereClause}
-     ORDER BY DATA DESC
+     ORDER BY P.DATA DESC
      OFFSET :OFFSET ROWS FETCH NEXT :LIMIT ROWS ONLY
     `,
     { ...binds, OFFSET: offset, LIMIT: pageSize }
   );
 
-  // Contagem
-  const countRes = await select<{ TOTAL: number }>(
-    `
-    SELECT COUNT(*) AS TOTAL
-      FROM ${OWNER}.PCPEDC
-     ${whereClause}
-    `,
-    binds
-  );
-  const total = Number(countRes?.[0]?.TOTAL ?? 0);
-  // console.error('TOTAL COUNT MATCHING FILTERS:', total);
+  const total = Number(rows[0]?.TOTAL_COUNT ?? 0);
 
-  // Mapeamento inicial dos cabeçalhos
+  // Mapeamento dos cabeçalhos
   const mapped: RecentOrder[] = rows.map((r: any) => ({
-    orderNumber: String(r.NUMPED),
-    date: r.DATA,
-    total: Number(r.VLTOTAL ?? 0),
-    codcli: Number(r.CODCLI),
-    sellerCode: Number(r.CODUSUR),
-    seller: String(r.VENDEDOR ?? ''),
-    dtEntrega: r.DTENTREGA ?? null,
-    vlatend: r.VLATEND ?? null,
-    desconto: r.VLDESCONTO ?? null,
-    frete: r.VLFRETE ?? null,
-    numNota: r.NUMNOTA ?? null,
-    numTransVenda: r.NUMTRANSVENDA ?? null,
-    posicao: r.POSICAO ?? null,
-    dtfat: r.DTFAT ?? null,
-    status: mapStatus(r),
-    itens: []
+    ...mapOrderRow(r),
+    itens: [] as OrderItem[],
   }));
 
-  // Buscar itens para os pedidos encontrados
+  // Buscar itens usando bind variables dinâmicos (sem interpolação de strings)
   if (mapped.length > 0) {
     const orderNumbers = mapped.map(o => Number(o.orderNumber));
-
-    // Usando IN clause para buscar itens de todos os pedidos da página de uma vez
-    // Oracle suporta até 1000 elementos no IN, aqui temos pagination size (default 10)
-    // Para segurança, vamos fazer bind array ou string interpolation segura já que são números controlados
-
-    const orderIdsStr = orderNumbers.join(',');
+    const itemBinds: Record<string, number> = {};
+    const placeholders = orderNumbers.map((num, i) => {
+      const key = `ORD_${i}`;
+      itemBinds[key] = num;
+      return `:${key}`;
+    });
 
     try {
       const itemsRows = await select<any>(
@@ -207,14 +188,15 @@ export async function searchOrders(params: {
                I.PVENDA * I.QT AS PVTOTAL
           FROM ${OWNER}.PCPEDI I
           LEFT JOIN ${OWNER}.PCPRODUT P ON P.CODPROD = I.CODPROD
-         WHERE I.NUMPED IN (${orderIdsStr})
+         WHERE I.NUMPED IN (${placeholders.join(',')})
          ORDER BY I.NUMSEQ
-        `
+        `,
+        itemBinds
       );
 
       // Agrupar itens por pedido
-      const itemsMap = new Map<string, any[]>();
-      itemsRows.forEach(item => {
+      const itemsMap = new Map<string, OrderItem[]>();
+      itemsRows.forEach((item: any) => {
         const ped = String(item.NUMPED);
         if (!itemsMap.has(ped)) itemsMap.set(ped, []);
         itemsMap.get(ped)?.push({
@@ -232,9 +214,10 @@ export async function searchOrders(params: {
         order.itens = itemsMap.get(order.orderNumber) || [];
       });
     } catch (error: any) {
-      console.error('Failed to fetch items:', error);
+      // Log will be handled by Fastify's error handler
     }
   }
 
   return { orders: mapped, total, page, pageSize };
 }
+

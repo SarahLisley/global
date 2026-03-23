@@ -80,18 +80,18 @@ export function RecentOrdersTable({
   return (
     <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300">
       {/* Header Responsivo */}
-      <div className="p-4 sm:p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-        <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-0.5 sm:mb-1">Pedidos Recentes</h2>
-        <p className="text-xs sm:text-sm text-gray-500">Últimos 30 Dias</p>
+      <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-gray-50 dark:from-zinc-900 to-white dark:to-zinc-800">
+        <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-zinc-100 mb-0.5 sm:mb-1">Pedidos Recentes</h2>
+        <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400">Últimos 30 Dias</p>
       </div>
 
       <div className="p-4 sm:p-6">
         {/* Filtros Responsivos */}
         <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-2 sm:gap-3">
-            <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">Exibir</label>
+            <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-zinc-300 whitespace-nowrap">Exibir</label>
             <select
-              className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#4a90e2] focus:border-transparent"
+              className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg text-xs sm:text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#4a90e2] focus:border-transparent"
               value={pageSize}
               onChange={(e) => handlePageSizeChange(Number(e.target.value))}
             >
@@ -113,7 +113,7 @@ export function RecentOrdersTable({
               <path d="m21 21-4.35-4.35" />
             </svg>
             <input
-              className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#4a90e2] focus:border-transparent"
+              className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg text-xs sm:text-sm text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#4a90e2] focus:border-transparent"
               placeholder="Buscar..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -124,28 +124,28 @@ export function RecentOrdersTable({
         {/* Tabela com scroll horizontal no mobile */}
         <div className="overflow-x-auto -mx-4 sm:mx-0">
           <div className="inline-block min-w-full align-middle">
-            <div className="overflow-hidden rounded-lg border border-gray-200">
+            <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-zinc-800">
               <table className="min-w-full text-left text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-gray-50 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800">
                   <tr>
-                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 text-xs sm:text-sm whitespace-nowrap">Nro Pedido</th>
-                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 text-xs sm:text-sm whitespace-nowrap">Vendedor</th>
-                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 text-xs sm:text-sm whitespace-nowrap">Valor Total</th>
-                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 text-xs sm:text-sm whitespace-nowrap">Posição</th>
-                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 text-xs sm:text-sm whitespace-nowrap">Ações</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 dark:text-zinc-300 text-xs sm:text-sm whitespace-nowrap">Nro Pedido</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 dark:text-zinc-300 text-xs sm:text-sm whitespace-nowrap">Vendedor</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 dark:text-zinc-300 text-xs sm:text-sm whitespace-nowrap">Valor Total</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 dark:text-zinc-300 text-xs sm:text-sm whitespace-nowrap">Posição</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 dark:text-zinc-300 text-xs sm:text-sm whitespace-nowrap">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
                   {filtered.map((o) => (
-                    <tr key={o.orderNumber} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 font-medium text-gray-900 text-xs sm:text-sm whitespace-nowrap">{o.orderNumber}</td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-600 text-xs sm:text-sm whitespace-nowrap">{o.seller}</td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-xs sm:text-sm whitespace-nowrap">{fmt.format(o.total)}</td>
+                    <tr key={o.orderNumber} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 font-medium text-gray-900 dark:text-zinc-100 text-xs sm:text-sm whitespace-nowrap">{o.orderNumber}</td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-600 dark:text-zinc-400 text-xs sm:text-sm whitespace-nowrap">{o.seller}</td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 dark:text-zinc-100 text-xs sm:text-sm whitespace-nowrap">{fmt.format(o.total)}</td>
                       <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">{statusBadge(o.status)}</td>
                       <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <Link
                           href={`/dashboard/meus-pedidos?pedido=${o.orderNumber}`}
-                          className="text-blue-600 hover:text-blue-800 font-medium text-xs sm:text-sm hover:underline inline-flex items-center gap-1"
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium text-xs sm:text-sm hover:underline inline-flex items-center gap-1"
                         >
                           Ver
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
@@ -156,13 +156,13 @@ export function RecentOrdersTable({
                   {filtered.length === 0 && (
                     <tr>
                       <td colSpan={5} className="px-3 sm:px-6 py-8 sm:py-12 text-center">
-                        <div className="flex flex-col items-center gap-2 text-gray-500">
+                        <div className="flex flex-col items-center gap-2 text-gray-500 dark:text-zinc-500">
                           <svg width="40" height="40" className="sm:w-12 sm:h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
                             <circle cx="12" cy="12" r="10" />
                             <line x1="12" y1="8" x2="12" y2="12" />
                             <line x1="12" y1="16" x2="12.01" y2="16" />
                           </svg>
-                          <p className="font-medium text-sm sm:text-base">Sem resultados</p>
+                          <p className="font-medium text-sm sm:text-base text-gray-900 dark:text-zinc-300">Sem resultados</p>
                           <p className="text-xs sm:text-sm">Tente ajustar os filtros de busca</p>
                         </div>
                       </td>
@@ -175,30 +175,30 @@ export function RecentOrdersTable({
         </div>
 
         {/* Footer Responsivo */}
-        <div className="mt-3 sm:mt-4 flex items-center justify-between text-xs sm:text-sm text-gray-600">
+        <div className="mt-3 sm:mt-4 flex items-center justify-between text-xs sm:text-sm text-gray-600 dark:text-gray-400">
           <span>
-            Mostrando <span className="font-semibold text-gray-900">{startItem}</span> a{' '}
-            <span className="font-semibold text-gray-900">{endItem}</span> de{' '}
-            <span className="font-semibold text-gray-900">{total}</span>
+            Mostrando <span className="font-semibold text-gray-900 dark:text-zinc-100">{startItem}</span> a{' '}
+            <span className="font-semibold text-gray-900 dark:text-zinc-100">{endItem}</span> de{' '}
+            <span className="font-semibold text-gray-900 dark:text-zinc-100">{total}</span>
           </span>
           <div className="flex gap-2">
             <button
               onClick={() => handlePageChange(page - 1)}
               disabled={page <= 1}
-              className="p-1.5 sm:p-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 sm:p-2 border border-gray-200 dark:border-zinc-700 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="Anterior"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600 dark:text-zinc-400">
                 <path d="m15 18-6-6 6-6" />
               </svg>
             </button>
             <button
               onClick={() => handlePageChange(page + 1)}
               disabled={page >= totalPages}
-              className="p-1.5 sm:p-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 sm:p-2 border border-gray-200 dark:border-zinc-700 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="Próxima"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600 dark:text-zinc-400">
                 <path d="m9 18 6-6-6-6" />
               </svg>
             </button>
