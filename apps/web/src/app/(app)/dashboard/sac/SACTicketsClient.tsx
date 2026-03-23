@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Button, Card, Badge } from '@pgb/ui';
 import { useFilters } from '../../../../hooks/useFilters';
 import { Ticket, Status } from './types';
-import { SACCharts } from './SACCharts';
+import { Search } from 'lucide-react';
 
 interface SACTicketsClientProps {
   initialTickets: Ticket[];
@@ -110,7 +110,6 @@ export default function SACTicketsClient({
         </Link>
       </div>
 
-      <SACCharts />
 
       <Card className="p-0 overflow-hidden border-slate-200 shadow-sm">
         <div className="p-6 bg-slate-50/50 border-b border-slate-100 space-y-6">
@@ -179,8 +178,8 @@ export default function SACTicketsClient({
             </div>
 
             <div className="md:col-span-7 space-y-4">
-              <div className="font-semibold text-sm text-slate-700 flex items-center gap-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+              <div className="font-semibold text-sm text-slate-700 flex items-center gap-1.5">
+                <Search size={16} className="text-blue-500" />
                 Identificação
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -215,12 +214,9 @@ export default function SACTicketsClient({
               <Button
                 onClick={onSearch}
                 loading={isNavigationLoading}
-                className="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-medium px-6 rounded-full flex items-center justify-center gap-2 group outline-none focus:outline-none focus:ring-0"
+                className="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-medium px-6 rounded-full flex items-center justify-center gap-1.5 group outline-none focus:outline-none focus:ring-0"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-blue-500 group-hover:text-blue-600 transition-colors">
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
+                <Search size={16} className="text-blue-500" />
                 Pesquisar
               </Button>
               <Button

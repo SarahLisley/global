@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 import { SearchBar } from './SearchBar';
 import { NotificationsDropdown } from './NotificationsDropdown';
@@ -86,7 +87,8 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
   };
 
   const segments = pathname.split('/').filter(Boolean);
-  const currentModule = segments[1];
+  const currentModule = segments[1]; // app/dashboard/[module]
+  const subModules = segments.slice(2);
   const pageTitle = currentModule ? (moduleTitles[currentModule] || 'Dashboard') : 'Início';
 
   const dateStr = new Date().toLocaleDateString('pt-BR', {
@@ -94,7 +96,7 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
   });
 
   return (
-    <header className="sticky top-0 z-30 bg-white dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800 shadow-sm backdrop-blur-sm bg-white/95 dark:bg-zinc-950/95">
+    <header className="sticky top-0 z-30 bg-white dark:bg-zinc-950 border-b border-slate-200 dark:border-zinc-800">
       <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
         <div className="flex items-center justify-between gap-3">
           
@@ -111,17 +113,33 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
             </svg>
           </button>
 
-          {/* Título */}
+          {/* Título e Breadcrumbs */}
           <div className={clsx(
-            'flex flex-col gap-0.5 transition-all duration-300',
+            'flex flex-col gap-0.5 flex-1 min-w-0',
             isSearchOpen ? 'hidden sm:block sm:opacity-0 sm:w-0 sm:overflow-hidden' : 'opacity-100'
           )}>
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight truncate">
+            <div className="flex items-center gap-2 text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">
+              <Link href="/dashboard" className="hover:text-blue-600 transition-colors">Portal Global</Link>
+              {currentModule && (
+                <>
+                  <span className="text-slate-300">/</span>
+                  <span className={clsx(subModules.length === 0 ? "text-blue-500" : "hover:text-blue-500 transition-colors cursor-pointer")}>
+                    {pageTitle}
+                  </span>
+                </>
+              )}
+              {subModules.map((seg, idx) => (
+                <React.Fragment key={idx}>
+                  <span className="text-slate-300">/</span>
+                  <span className={clsx(idx === subModules.length - 1 ? "text-blue-500" : "truncate")}>
+                    {seg.replace(/-/g, ' ')}
+                  </span>
+                </React.Fragment>
+              ))}
+            </div>
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight truncate leading-tight">
               {pageTitle}
             </h1>
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400 capitalize truncate hidden sm:block">
-              {dateStr}
-            </p>
           </div>
 
           <SearchBar 

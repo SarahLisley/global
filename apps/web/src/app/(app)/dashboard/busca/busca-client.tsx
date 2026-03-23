@@ -2,6 +2,7 @@
 
 import { Card, Button } from '@pgb/ui';
 import Link from 'next/link';
+import { Search } from 'lucide-react';
 
 export type SearchResult = {
   id: string; // NUMTRANSVENDA
@@ -23,10 +24,7 @@ export default function BuscaClient({ query, initialResults }: BuscaClientProps)
     return (
       <Card className="p-12 text-center text-slate-500 flex flex-col items-center justify-center">
         <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400">
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.35-4.35" />
-          </svg>
+          <Search size={24} className="text-slate-400" />
         </div>
         <p>Utilize a barra de pesquisa no topo para encontrar Pedidos e Entregas rapidamente.</p>
       </Card>

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Badge, Card } from '@pgb/ui';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Search, ChevronRight, ChevronLeft } from 'lucide-react';
 
 type Order = {
   orderNumber: string;
@@ -99,22 +100,14 @@ export function RecentOrdersTable({
             </select>
           </div>
 
-          <div className="relative flex-1 sm:max-w-xs">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
+          <div className="relative w-full sm:w-64 sm:ml-auto">
+            <Search
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+              size={16}
+            />
             <input
-              className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg text-xs sm:text-sm text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#4a90e2] focus:border-transparent"
-              placeholder="Buscar..."
+              className="w-full pl-8 pr-3 py-1.5 sm:py-2 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg text-xs sm:text-sm text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#4a90e2] focus:border-transparent transition-all"
+              placeholder="Filtrar nesta tabela..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -148,7 +141,7 @@ export function RecentOrdersTable({
                           className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium text-xs sm:text-sm hover:underline inline-flex items-center gap-1"
                         >
                           Ver
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+                          <ChevronRight size={14} />
                         </Link>
                       </td>
                     </tr>
@@ -188,9 +181,7 @@ export function RecentOrdersTable({
               className="p-1.5 sm:p-2 border border-gray-200 dark:border-zinc-700 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="Anterior"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600 dark:text-zinc-400">
-                <path d="m15 18-6-6 6-6" />
-              </svg>
+              <ChevronLeft size={16} />
             </button>
             <button
               onClick={() => handlePageChange(page + 1)}
@@ -198,9 +189,7 @@ export function RecentOrdersTable({
               className="p-1.5 sm:p-2 border border-gray-200 dark:border-zinc-700 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="Próxima"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600 dark:text-zinc-400">
-                <path d="m9 18 6-6-6-6" />
-              </svg>
+              <ChevronRight size={16} />
             </button>
           </div>
         </div>

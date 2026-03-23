@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Card, Button, Badge } from '@pgb/ui';
 import { useFilters } from '../../../../hooks/useFilters';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Search } from 'lucide-react';
 
 export type Status = 'all' | 'unpaid' | 'paid';
 
@@ -222,8 +223,8 @@ export default function FinanceiroClient({
 
             {/* Identificação */}
             <div className="md:col-span-7 space-y-4">
-              <div className="font-semibold text-sm text-slate-700 flex items-center gap-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+              <div className="font-semibold text-sm text-slate-700 flex items-center gap-1.5">
+                <Search size={16} className="text-blue-500" />
                 Filtros
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -255,11 +256,8 @@ export default function FinanceiroClient({
 
           <div className="flex flex-col sm:flex-row items-center justify-end pt-4 border-t border-slate-200 gap-4">
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Button type="button" onClick={onPesquisar} loading={isNavigationLoading} className="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-medium px-6 rounded-full flex items-center justify-center gap-2 group outline-none">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-blue-500 group-hover:text-blue-600 transition-colors">
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
+              <Button type="button" onClick={onPesquisar} loading={isNavigationLoading} className="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-medium px-6 rounded-full flex items-center justify-center gap-1.5 group outline-none">
+                <Search size={16} className="text-blue-500" />
                 Pesquisar
               </Button>
               <Button type="button" variant="secondary" onClick={onLimpar} className="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-medium px-6 rounded-full flex items-center justify-center gap-2 group outline-none">
