@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button, Card, Badge } from '@pgb/ui';
 import { useFilters } from '../../../../hooks/useFilters';
 import { Ticket, Status } from './types';
+import { SACCharts } from './SACCharts';
 
 interface SACTicketsClientProps {
   initialTickets: Ticket[];
@@ -108,6 +109,8 @@ export default function SACTicketsClient({
           </Button>
         </Link>
       </div>
+
+      <SACCharts />
 
       <Card className="p-0 overflow-hidden border-slate-200 shadow-sm">
         <div className="p-6 bg-slate-50/50 border-b border-slate-100 space-y-6">

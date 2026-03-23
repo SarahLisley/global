@@ -3,6 +3,7 @@ import { Card, Badge, Button } from '@pgb/ui';
 import { fetchTicketDetail } from '../detailApi';
 import { TicketInfoCard } from './ticket-info-card';
 import { CommentsSection } from './comments-section';
+import { NPSSurvey } from './NPSSurvey';
 
 
 function statusBadge(s: 'em_andamento' | 'finalizado') {
@@ -104,6 +105,11 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
       {/* Informações Principais do Ticket */}
       <TicketInfoCard ticket={ticket} />
+
+      {/* Pesquisa de Satisfação (NPS) - Apenas se finalizado */}
+      {ticket.status === 'finalizado' && (
+        <NPSSurvey ticketId={ticket.id} />
+      )}
 
       {/* Timeline / Histórico */}
       <Card className="p-0 overflow-hidden border-slate-200 shadow-sm">

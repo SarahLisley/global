@@ -103,6 +103,46 @@ export default function MeusPedidosClient({
 
   const totalPages = Math.max(1, Math.ceil(initialTotal / pageSize));
 
+  const handleExportCSV = () => {
+    if (initialPedidos.length === 0) return;
+
+    // Cabeçalhos do CSV
+    const headers = [
+      'Pedido',
+      'NF',
+      'Trans. Venda',
+      'Posição',
+      'Data',
+      'Filial',
+      'Valor Total'
+    ];
+
+    // Converter dados para linhas de texto separadas por ponto-e-vírgula
+    const rows = initialPedidos.map(p => [
+      p.nroPedido,
+      p.nroNF || '-',
+      p.nroTransVenda || '-',
+      p.posicao || 'Normal',
+      new Date(p.data).toLocaleDateString('pt-BR'),
+      p.filial || '-',
+      (p.vlrTotal ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+    ].join(';'));
+
+    // Adicionar BOM para UTF-8 (necessário para Excel abrir acentos corretamente)
+    const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\n');
+    
+    // Criar blob e link de download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `pedidos_bravo_${new Date().toISOString().slice(0,10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -213,8 +253,7 @@ export default function MeusPedidosClient({
           </div>
         ) : (
           <div className={`overflow-x-auto transition-opacity duration-300 ${isNavigationLoading ? 'opacity-50 pointer-events-none' : ''}`}>
-            {/* Título da Tabela */}
-            <div className="px-6 pt-6 pb-2">
+            <div className="px-6 pt-6 pb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500">
                   <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
@@ -223,6 +262,19 @@ export default function MeusPedidosClient({
                 </svg>
                 Pedidos Localizados
               </h2>
+              
+              <Button 
+                onClick={handleExportCSV}
+                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm text-xs font-bold px-4 py-1.5 rounded-lg flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"
+                disabled={initialPedidos.length === 0 || isNavigationLoading}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Exportar (CSV)
+              </Button>
             </div>
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50 border-b border-slate-200">

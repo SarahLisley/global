@@ -94,6 +94,52 @@ export default function FinanceiroClient({
 
   const totalPages = Math.max(1, Math.ceil(initialTotal / pageSize));
 
+  const handleExportCSV = () => {
+    if (initialTitulos.length === 0) return;
+
+    // Cabeçalhos do CSV
+    const headers = [
+      'Documento',
+      'Parcela',
+      'Emissão',
+      'Vencimento',
+      'Valor',
+      'Cobrança',
+      'Status',
+      'Pagamento',
+      'Valor Pago'
+    ];
+
+    // Converter dados para linhas
+    const rows = initialTitulos.map(t => {
+      const vencido = !t.dtPgto && new Date(t.dtVencimento) < new Date();
+      const statusText = t.dtPgto ? 'Pago' : vencido ? 'Vencido' : 'A Vencer';
+      
+      return [
+        t.nroDocto,
+        t.parcela,
+        new Date(t.dtEmissao).toLocaleDateString('pt-BR'),
+        new Date(t.dtVencimento).toLocaleDateString('pt-BR'),
+        (t.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+        t.cobranca,
+        statusText,
+        t.dtPgto ? new Date(t.dtPgto).toLocaleDateString('pt-BR') : '-',
+        (t.vlrPago ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+      ].join(';');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `financeiro_bravo_${new Date().toISOString().slice(0,10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -242,8 +288,7 @@ export default function FinanceiroClient({
           </div>
         ) : (
           <div className={`transition-opacity duration-300 ${isNavigationLoading ? 'opacity-50 pointer-events-none' : ''}`}>
-            {/* Título da Tabela */}
-            <div className="px-6 pt-6 pb-4">
+            <div className="px-6 pt-6 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500">
                   <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
@@ -252,6 +297,19 @@ export default function FinanceiroClient({
                 </svg>
                 Títulos Localizados
               </h2>
+
+              <Button 
+                onClick={handleExportCSV}
+                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm text-xs font-bold px-4 py-1.5 rounded-lg flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"
+                disabled={initialTitulos.length === 0 || isNavigationLoading}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Exportar (CSV)
+              </Button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-slate-600">

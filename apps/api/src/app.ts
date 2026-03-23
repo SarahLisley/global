@@ -15,6 +15,7 @@ import docsRoutes from './routes/docs.routes';
 import notificationsRoutes from './routes/notifications.routes';
 import avatarRoutes from './routes/avatar.routes';
 import searchRoutes from './routes/search.routes';
+import profileRoutes from './routes/profile.routes';
 
 export function buildApp() {
   const app = Fastify({ logger: true });
@@ -82,6 +83,7 @@ export function buildApp() {
   app.register(avatarRoutes, { prefix: '/avatar' });
 
   app.register(searchRoutes, { prefix: '/search' });
+  app.register(profileRoutes, { prefix: '/profile' });
 
   app.setErrorHandler((err, _req, reply) => {
     app.log.error({ err }, 'Unhandled error');

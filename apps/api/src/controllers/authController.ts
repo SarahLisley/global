@@ -1,6 +1,8 @@
 import { select, execute } from '../db/query';
 import { signToken, verifyToken } from '../utils/token';
 import { env, OWNER } from '../utils/env';
+import { extractCodcli } from '../utils/auth';
+import type { FastifyRequest } from 'fastify';
 import bcrypt from 'bcrypt';
 
 const BCRYPT_ROUNDS = 12;
@@ -223,5 +225,53 @@ export async function resetPassword(token: string, newPassword: string) {
   } catch (err: any) {
     console.error('ResetPassword Error:', err);
     return { ok: false, status: 500, message: `Erro: ${err.message}` };
+  }
+}
+
+export async function updateProfile(email: string, name: string) {
+  try {
+    await execute(
+      `UPDATE ${OWNER}.BRLOGINWEB SET NOME = :nome WHERE UPPER(TRIM(EMAIL)) = UPPER(TRIM(:email))`,
+      { nome: name, email }
+    );
+    return { ok: true, status: 200, message: 'Perfil atualizado com sucesso.' };
+  } catch (err: any) {
+    console.error('UpdateProfile Error:', err);
+    return { ok: false, status: 500, message: `Erro ao atualizar perfil: ${err.message}` };
+  }
+}
+
+export async function updatePassword(email: string, currentPass: string, newPass: string) {
+  try {
+    const rows = await select<{ SENHA: string }>(
+      `SELECT SENHA FROM ${OWNER}.BRLOGINWEB WHERE UPPER(TRIM(EMAIL)) = UPPER(TRIM(:email)) FETCH FIRST 1 ROWS ONLY`,
+      { email }
+    );
+
+    if (rows.length === 0) return { ok: false, status: 404, message: 'Usuário não encontrado.' };
+    const user = rows[0];
+
+    const storedPassword = (user.SENHA ?? '').trim();
+    const isHashed = storedPassword.startsWith('$2b$') || storedPassword.startsWith('$2a$');
+
+    let passwordMatch = false;
+    if (isHashed) {
+      passwordMatch = await bcrypt.compare(currentPass, storedPassword);
+    } else {
+      passwordMatch = currentPass === storedPassword;
+    }
+
+    if (!passwordMatch) return { ok: false, status: 401, message: 'Senha atual incorreta.' };
+
+    const hashedPassword = await bcrypt.hash(newPass, BCRYPT_ROUNDS);
+    await execute(
+      `UPDATE ${OWNER}.BRLOGINWEB SET SENHA = :senha WHERE UPPER(TRIM(EMAIL)) = UPPER(TRIM(:email))`,
+      { senha: hashedPassword, email }
+    );
+
+    return { ok: true, status: 200, message: 'Senha alterada com sucesso.' };
+  } catch (err: any) {
+    console.error('UpdatePassword Error:', err);
+    return { ok: false, status: 500, message: `Erro ao alterar senha: ${err.message}` };
   }
 }
