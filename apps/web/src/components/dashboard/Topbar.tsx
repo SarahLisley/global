@@ -113,10 +113,10 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
             </svg>
           </button>
 
-          {/* Título e Breadcrumbs */}
+          {/* Título e Breadcrumbs (Esquerda) */}
           <div className={clsx(
             'flex flex-col gap-0.5 flex-1 min-w-0',
-            isSearchOpen ? 'hidden sm:block sm:opacity-0 sm:w-0 sm:overflow-hidden' : 'opacity-100'
+            isSearchOpen ? 'hidden lg:flex' : 'flex'
           )}>
             <div className="flex items-center gap-2 text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">
               <Link href="/dashboard" className="hover:text-blue-600 transition-colors">Portal Global</Link>
@@ -128,29 +128,30 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
                   </span>
                 </>
               )}
-              {subModules.map((seg, idx) => (
-                <React.Fragment key={idx}>
-                  <span className="text-slate-300">/</span>
-                  <span className={clsx(idx === subModules.length - 1 ? "text-blue-500" : "truncate")}>
-                    {seg.replace(/-/g, ' ')}
-                  </span>
-                </React.Fragment>
-              ))}
             </div>
             <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight truncate leading-tight">
               {pageTitle}
             </h1>
           </div>
 
-          <SearchBar 
-            isSearchOpen={isSearchOpen} 
-            searchQuery={searchQuery} 
-            setSearchQuery={setSearchQuery} 
-            toggleSearch={toggleSearch} 
-          />
+          {/* SearchBar (Centro) */}
+          <div className={clsx(
+            'flex-[2] flex justify-center',
+            !isSearchOpen && 'hidden sm:flex'
+          )}>
+            <SearchBar 
+              isSearchOpen={isSearchOpen} 
+              searchQuery={searchQuery} 
+              setSearchQuery={setSearchQuery} 
+              toggleSearch={toggleSearch} 
+            />
+          </div>
 
-          {/* Ações */}
-          <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
+          {/* Ações (Direita) */}
+          <div className={clsx(
+            'flex-1 flex justify-end items-center gap-2 sm:gap-3 lg:gap-4',
+            isSearchOpen ? 'hidden lg:flex' : 'flex'
+          )}>
             <NotificationsDropdown 
               notifications={notifications}
               isOpen={isNotificationsOpen}

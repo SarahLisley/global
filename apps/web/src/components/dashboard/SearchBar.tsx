@@ -21,10 +21,10 @@ export function SearchBar({ isSearchOpen, searchQuery, setSearchQuery, toggleSea
   };
 
   return (
-    <div className="flex items-center gap-2 flex-1 justify-end sm:justify-center">
+    <div className="flex items-center gap-2 w-full justify-center">
       <div className={clsx(
         'transition-all duration-300 relative',
-        isSearchOpen ? 'flex-1 max-w-2xl' : 'hidden sm:block sm:w-64 lg:w-96'
+        isSearchOpen ? 'w-full max-w-2xl' : 'hidden sm:block sm:w-64 lg:w-[500px]'
       )}>
         <form onSubmit={handleSearch} className="relative group">
           <Search
