@@ -1,20 +1,21 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PUBLIC_PATHS = ['/login', '/register', '/api/logout', '/images', '/favicon.ico', '/_next', '/public'];
+const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/api/logout', '/images', '/favicon.ico', '/_next', '/public'];
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const host = req.headers.get('host');
 
-  // Redirecionamento Global Condicional para evitar loop
-  if (host !== 'globalh.ddns.net:3200' && !pathname.startsWith('/_next') && !pathname.startsWith('/images') && !pathname.startsWith('/favicon.ico')) {
+  // Redirecionamento Global Condicional — apenas em produção (ignora localhost)
+  const isLocalhost = host?.includes('localhost') || host?.startsWith('127.0.0.1') || host?.startsWith('10.');
+  if (!isLocalhost && host !== 'globalh.ddns.net:3200' && !pathname.startsWith('/_next') && !pathname.startsWith('/images') && !pathname.startsWith('/favicon.ico')) {
     return NextResponse.redirect('http://globalh.ddns.net:3200/login', 301);
   }
 
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) return NextResponse.next();
 
   const hasSession = req.cookies.get('pgb_session')?.value;
-  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register');
+  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register') || pathname.startsWith('/forgot-password') || pathname.startsWith('/reset-password');
 
   if (!hasSession && pathname.startsWith('/dashboard')) {
     const url = req.nextUrl.clone();

@@ -4,6 +4,7 @@ import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
+import websocket from '@fastify/websocket';
 import healthRoutes from './routes/health.routes';
 import authRoutes from './routes/auth.routes';
 import dashboardRoutes from './routes/dashboard.routes';
@@ -16,6 +17,7 @@ import notificationsRoutes from './routes/notifications.routes';
 import avatarRoutes from './routes/avatar.routes';
 import searchRoutes from './routes/search.routes';
 import profileRoutes from './routes/profile.routes';
+import websocketRoutes from './routes/websocket.routes';
 
 export function buildApp() {
   const app = Fastify({ logger: true });
@@ -70,6 +72,9 @@ export function buildApp() {
     uiConfig: { docExpansion: 'list', deepLinking: false }
   });
 
+  // WebSockets
+  app.register(websocket);
+
   // Rotas
   app.register(healthRoutes, { prefix: '/' });
   app.register(authRoutes, { prefix: '/auth' });
@@ -84,6 +89,7 @@ export function buildApp() {
 
   app.register(searchRoutes, { prefix: '/search' });
   app.register(profileRoutes, { prefix: '/profile' });
+  app.register(websocketRoutes, { prefix: '/ws' });
 
   app.setErrorHandler((err, _req, reply) => {
     app.log.error({ err }, 'Unhandled error');

@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { login, parseBearer, whoamiFromToken, getUserProfile, forgotPassword, resetPassword } from '../controllers/authController';
+import { login, parseBearer, whoamiFromToken, getUserProfile, forgotPassword, resetPassword, registerUser, completeRegistration, resendRegistrationCode } from '../controllers/authController';
 import { LoginInputSchema } from '@pgb/sdk';
 import { z } from 'zod';
 
@@ -10,6 +10,22 @@ const ForgotPasswordSchema = z.object({
 const ResetPasswordSchema = z.object({
   token: z.string().min(1, { message: 'Token é obrigatório' }),
   password: z.string().min(6, { message: 'Senha deve ter no mínimo 6 caracteres' }),
+});
+
+const RegisterSchema = z.object({
+  cnpj: z.string().min(11, { message: 'CNPJ inválido' }),
+  name: z.string().min(2, { message: 'Nome deve ter no mínimo 2 caracteres' }),
+  email: z.string().email({ message: 'E-mail inválido' }),
+  password: z.string().min(6, { message: 'Senha deve ter no mínimo 6 caracteres' }),
+});
+
+const VerifyRegisterSchema = z.object({
+  email: z.string().email({ message: 'E-mail inválido' }),
+  code: z.string().length(6, { message: 'Código deve ter 6 dígitos' }),
+});
+
+const ResendCodeSchema = z.object({
+  email: z.string().email({ message: 'E-mail inválido' }),
 });
 
 export default async function authRoutes(app: FastifyInstance) {
@@ -61,8 +77,29 @@ export default async function authRoutes(app: FastifyInstance) {
     return reply.send({ ok: true, message: res.message });
   });
 
-  app.post('/register', async (_req, reply) => {
-    return reply.code(503).send({ message: 'Cadastro indisponível neste ambiente' });
+  app.post('/register', { config: { rateLimit: { max: 3, timeWindow: '1 minute' } } }, async (req, reply) => {
+    const parsed = RegisterSchema.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ message: parsed.error.issues[0]?.message ?? 'Dados inválidos' });
+    const { cnpj, name, email, password } = parsed.data;
+    const res = await registerUser(cnpj, name, email, password);
+    if (!res.ok) return reply.code(res.status).send({ message: res.message });
+    return reply.send({ ok: true, message: res.message, code: res.code });
+  });
+
+  app.post('/verify-register', { config: { rateLimit: { max: 5, timeWindow: '1 minute' } } }, async (req, reply) => {
+    const parsed = VerifyRegisterSchema.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ message: parsed.error.issues[0]?.message ?? 'Dados inválidos' });
+    const res = await completeRegistration(parsed.data.email, parsed.data.code);
+    if (!res.ok) return reply.code(res.status).send({ message: res.message });
+    return reply.send({ ok: true, message: res.message });
+  });
+
+  app.post('/resend-code', { config: { rateLimit: { max: 2, timeWindow: '1 minute' } } }, async (req, reply) => {
+    const parsed = ResendCodeSchema.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ message: parsed.error.issues[0]?.message ?? 'Dados inválidos' });
+    const res = await resendRegistrationCode(parsed.data.email);
+    if (!res.ok) return reply.code(res.status).send({ message: res.message });
+    return reply.send({ ok: true, message: res.message, code: res.code });
   });
 
   app.get('/whoami', async (req, reply) => {

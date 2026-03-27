@@ -3,6 +3,7 @@ import { getSACSeries, createTicket } from '../controllers/sacController';
 import { select, insertReturning, execute } from '../db/query';
 import { OWNER } from '../utils/env';
 import { extractCodcli, handleAuthError } from '../utils/auth';
+import { sendToUser } from '../utils/websocketManager';
 import path from 'path';
 import fs from 'fs';
 
@@ -313,6 +314,11 @@ export default async function sacRoutes(app: FastifyInstance) {
         return reply.status(403).send({ error: 'Sem permissão' });
       }
 
+      sendToUser(codcli, { 
+        type: 'NOTIFICATION', 
+        message: `O Ticket #${numTicket} foi finalizado. Não esqueça de avaliar o nosso atendimento!` 
+      });
+
       return reply.send({ ok: true });
     } catch (err) {
       return handleAuthError(err, reply);
@@ -447,6 +453,11 @@ export default async function sacRoutes(app: FastifyInstance) {
         },
         'ID'
       );
+
+      sendToUser(codcli, { 
+        type: 'NOTIFICATION', 
+        message: `Nova atualização do Winthor (ERP) no ticket #${numTicket}` 
+      });
 
       return reply.send({
         ok: true,

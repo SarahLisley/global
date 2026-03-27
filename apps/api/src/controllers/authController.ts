@@ -228,6 +228,118 @@ export async function resetPassword(token: string, newPassword: string) {
   }
 }
 
+export async function registerUser(cnpj: string, name: string, email: string, password: string) {
+  try {
+    // 1. Validar CNPJ na tabela PCCLIENT
+    const cnpjClean = cnpj.replace(/[.\-\/]/g, '');
+    const clients = await select<{ CODCLI: number; CLIENTE: string; CGCENT: string }>(
+      `SELECT CODCLI, CLIENTE, CGCENT
+       FROM ${OWNER}.PCCLIENT
+       WHERE REPLACE(REPLACE(REPLACE(CGCENT, '/',''), '.',''), '-','') = :cnpj
+       FETCH FIRST 1 ROWS ONLY`,
+      { cnpj: cnpjClean }
+    );
+
+    if (clients.length === 0) {
+      return { ok: false, status: 400, message: 'CNPJ não encontrado na base de clientes. Verifique o número informado.' };
+    }
+
+    // 2. Verificar se e-mail já existe
+    const existing = await select<{ EMAIL: string }>(
+      `SELECT EMAIL FROM ${OWNER}.BRLOGINWEB WHERE UPPER(TRIM(EMAIL)) = UPPER(TRIM(:email)) FETCH FIRST 1 ROWS ONLY`,
+      { email: email.trim() }
+    );
+
+    if (existing.length > 0) {
+      return { ok: false, status: 409, message: 'Este e-mail já está cadastrado. Tente fazer login ou recuperar a senha.' };
+    }
+
+    // 3. Criar registro pendente com código de verificação
+    const { createPendingRegistration } = await import('../utils/verificationStore');
+    const code = await createPendingRegistration({
+      cnpj: cnpjClean,
+      name: name.trim(),
+      email: email.trim(),
+      password,
+    });
+
+    const isDev = process.env.NODE_ENV !== 'production';
+
+    return {
+      ok: true,
+      status: 200,
+      message: 'Código de verificação enviado para seu e-mail.',
+      code: isDev ? code : undefined,
+    };
+  } catch (err: any) {
+    console.error('Register Error:', err);
+    return { ok: false, status: 500, message: `Erro ao cadastrar: ${err.message}` };
+  }
+}
+
+export async function completeRegistration(email: string, code: string) {
+  try {
+    const { verifyCode } = await import('../utils/verificationStore');
+    const result = verifyCode(email, code);
+
+    if (!result.ok) {
+      const messages: Record<string, string> = {
+        not_found: 'Código não encontrado. Solicite um novo cadastro.',
+        expired: 'Código expirado. Solicite um novo cadastro.',
+        invalid_code: 'Código inválido. Tente novamente.',
+        too_many_attempts: 'Muitas tentativas. Solicite um novo cadastro.',
+      };
+      return { ok: false, status: 400, message: messages[result.reason] ?? 'Erro na verificação' };
+    }
+
+    const { cnpj, name, email: userEmail, password } = result.data;
+
+    // Verificar novamente se o e-mail não foi cadastrado no intervalo
+    const existing = await select<{ EMAIL: string }>(
+      `SELECT EMAIL FROM ${OWNER}.BRLOGINWEB WHERE UPPER(TRIM(EMAIL)) = UPPER(TRIM(:email)) FETCH FIRST 1 ROWS ONLY`,
+      { email: userEmail }
+    );
+
+    if (existing.length > 0) {
+      return { ok: false, status: 409, message: 'Este e-mail já foi cadastrado.' };
+    }
+
+    // Hash da senha e inserir no banco
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    await execute(
+      `INSERT INTO ${OWNER}.BRLOGINWEB (EMAIL, SENHA, CGC, NOME, TIPO) VALUES (:email, :senha, :cgc, :nome, 'C')`,
+      { email: userEmail, senha: hashedPassword, cgc: cnpj, nome: name }
+    );
+
+    return { ok: true, status: 200, message: 'Cadastro realizado com sucesso! Faça login para continuar.' };
+  } catch (err: any) {
+    console.error('CompleteRegistration Error:', err);
+    return { ok: false, status: 500, message: `Erro ao completar cadastro: ${err.message}` };
+  }
+}
+
+export async function resendRegistrationCode(email: string) {
+  try {
+    const { resendCode } = await import('../utils/verificationStore');
+    const newCode = await resendCode(email);
+
+    if (!newCode) {
+      return { ok: false, status: 404, message: 'Nenhum cadastro pendente encontrado. Inicie o cadastro novamente.' };
+    }
+
+    const isDev = process.env.NODE_ENV !== 'production';
+    return {
+      ok: true,
+      status: 200,
+      message: 'Novo código enviado para seu e-mail.',
+      code: isDev ? newCode : undefined,
+    };
+  } catch (err: any) {
+    console.error('ResendCode Error:', err);
+    return { ok: false, status: 500, message: `Erro ao reenviar código: ${err.message}` };
+  }
+}
+
 export async function updateProfile(email: string, name: string) {
   try {
     await execute(

@@ -60,18 +60,41 @@ export type RegisterInput = { cnpj?: string; name: string; email: string; passwo
 export async function registerAction(form: RegisterInput) {
   try {
     if (MOCK) {
-      const token = `mock-${Buffer.from(`${form.email}:${Date.now()}`).toString('base64')}`;
-      (await cookies()).set('pgb_session', token, {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-        maxAge: 60 * 60,
-      });
-      return { ok: true, redirectTo: '/dashboard' };
+      return { ok: true, needsVerification: true, message: 'Código enviado (mock)' };
     }
 
+    console.log('[REGISTER] Calling API:', `${API_BASE}/auth/register`, JSON.stringify(form));
     const res = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(form),
+      cache: 'no-store',
+    });
+
+    console.log('[REGISTER] API response status:', res.status);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.log('[REGISTER] API error body:', JSON.stringify(err));
+      return { ok: false, needsVerification: false, message: err?.message ?? `Cadastro indisponível (${res.status})` };
+    }
+
+    const data = await res.json().catch(() => ({}));
+    console.log('[REGISTER] API success body:', JSON.stringify(data));
+    return { ok: true, needsVerification: true, message: 'Código de verificação enviado para seu e-mail.' };
+  } catch (e: any) {
+    console.log('[REGISTER] Error:', e?.message);
+    return { ok: false, needsVerification: false, message: e?.message ?? 'Erro inesperado no cadastro' };
+  }
+}
+
+export async function verifyRegisterAction(form: { email: string; code: string }) {
+  try {
+    if (MOCK) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      return { ok: true, message: 'Cadastro realizado com sucesso!' };
+    }
+
+    const res = await fetch(`${API_BASE}/auth/verify-register`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(form),
@@ -80,12 +103,37 @@ export async function registerAction(form: RegisterInput) {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { ok: false, message: err?.message ?? `Cadastro indisponível (${res.status})` };
+      return { ok: false, message: err?.message ?? `Erro na verificação (${res.status})` };
     }
 
-    return { ok: true, redirectTo: '/dashboard' };
+    return { ok: true, message: 'Cadastro realizado com sucesso!' };
   } catch (e: any) {
-    return { ok: false, message: e?.message ?? 'Erro inesperado no cadastro' };
+    return { ok: false, message: e?.message ?? 'Erro inesperado' };
+  }
+}
+
+export async function resendCodeAction(form: { email: string }) {
+  try {
+    if (MOCK) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      return { ok: true, message: 'Novo código enviado.' };
+    }
+
+    const res = await fetch(`${API_BASE}/auth/resend-code`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(form),
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { ok: false, message: err?.message ?? `Erro ao reenviar (${res.status})` };
+    }
+
+    return { ok: true, message: 'Novo código enviado para seu e-mail.' };
+  } catch (e: any) {
+    return { ok: false, message: e?.message ?? 'Erro inesperado' };
   }
 }
 

@@ -22,15 +22,22 @@ export const metadata: Metadata = {
 import { MSWProvider } from './MSWProvider';
 import { Toaster } from '@pgb/ui';
 import { ThemeProvider } from '../components/ThemeProvider';
+import { WebSocketProvider } from '../contexts/WebSocketContext';
+import { cookies } from 'next/headers';
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className="min-h-screen font-sans antialiased bg-slate-50 text-slate-900 dark:bg-zinc-950 dark:text-zinc-50 transition-colors duration-300" suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <MSWProvider>
-            {children}
-            <Toaster />
+            <WebSocketProvider token={token} apiBaseUrl={apiBaseUrl}>
+              {children}
+              <Toaster />
+            </WebSocketProvider>
           </MSWProvider>
         </ThemeProvider>
       </body>
