@@ -22,8 +22,11 @@ import searchRoutes from './routes/search.routes';
 import profileRoutes from './routes/profile.routes';
 import websocketRoutes from './routes/websocket.routes';
 
-export function buildApp() {
-  const app = Fastify({ logger: true });
+export function buildApp(options: { https?: { key: Buffer; cert: Buffer } } = {}) {
+  const app = Fastify({ 
+    logger: true,
+    https: options.https
+  } as any);
 
   const allowed = (process.env.ALLOWED_ORIGINS || '')
     .split(',')
