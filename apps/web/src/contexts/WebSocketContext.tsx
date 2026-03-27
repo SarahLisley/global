@@ -20,37 +20,43 @@ export function WebSocketProvider({ children, token, apiBaseUrl }: { children: R
     const wsUrl = apiBaseUrl.replace(/^http/, 'ws') + `/ws?token=${token}`;
 
     const connect = () => {
-      ws.current = new WebSocket(wsUrl);
+      try {
+        const socket = new WebSocket(wsUrl);
+        ws.current = socket;
 
-      ws.current.onopen = () => {
-        setIsConnected(true);
-        console.log('[WebSocket] Conectado ao servidor.');
-      };
+        socket.onopen = () => {
+          setIsConnected(true);
+          console.log('[WebSocket] Conectado ao servidor.');
+        };
 
-      ws.current.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          
-          if (data.type === 'NOTIFICATION') {
-            toast.info(data.message, {
-              duration: 5000,
-              position: 'bottom-right',
-            });
+        socket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'NOTIFICATION') {
+              toast.info(data.message, {
+                duration: 5000,
+                position: 'bottom-right',
+              });
+            }
+          } catch (err) {
+            console.error('[WebSocket] Erro ao fazer parse da mensagem', err);
           }
-        } catch (err) {
-          console.error('[WebSocket] Erro ao fazer parse da mensagem', err);
-        }
-      };
+        };
 
-      ws.current.onclose = () => {
-        setIsConnected(false);
-        console.log('[WebSocket] Desconectado. Tentando reconectar em 5 segundos...');
+        socket.onclose = () => {
+          setIsConnected(false);
+          console.log('[WebSocket] Desconectado. Tentando reconectar em 5 segundos...');
+          setTimeout(connect, 5000);
+        };
+
+        socket.onerror = (err) => {
+          console.error('[WebSocket] Erro na conexão:', err);
+        };
+      } catch (err) {
+        console.error('[WebSocket] Erro síncrono ao criar WebSocket:', err);
+        // Tenta reconectar mais tarde mesmo se falhar a criação (ex: erro temporário de DNS/URL)
         setTimeout(connect, 5000);
-      };
-
-      ws.current.onerror = (err) => {
-        console.error('[WebSocket] Erro na conexão:', err);
-      };
+      }
     };
 
     connect();

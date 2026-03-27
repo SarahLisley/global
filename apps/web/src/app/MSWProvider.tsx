@@ -19,15 +19,18 @@ export function MSWProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         // Enforce cleanup of zombie Service Workers if mocks are disabled
-        if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then((registrations) => {
+        try {
+          if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
             for (const registration of registrations) {
               if (registration.active?.scriptURL.includes('mockServiceWorker.js')) {
                 console.log('Unregistering MSW Service Worker:', registration.active.scriptURL);
-                registration.unregister();
+                await registration.unregister();
               }
             }
-          });
+          }
+        } catch (err) {
+          console.error('[MSW] Erro ao limpar Service Workers:', err);
         }
         setMswReady(true);
       }
