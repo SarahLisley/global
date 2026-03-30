@@ -1,6 +1,4 @@
-import { cookies } from 'next/headers';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
+import { apiServer } from '../../../lib/api';
 
 export type RawKpis = {
   codcli: number;
@@ -10,19 +8,7 @@ export type RawKpis = {
 };
 
 export async function fetchKpis(): Promise<RawKpis> {
-  const token = (await cookies()).get('pgb_session')?.value;
-  if (!token) throw new Error('Sem token de sessão');
-
-  const res = await fetch(`${API_BASE}/dashboard/kpis`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error || `Falha ao buscar KPIs (${res.status})`);
-  }
-  return res.json();
+  return apiServer<RawKpis>('/dashboard/kpis');
 }
 
 export type KpiCard = {

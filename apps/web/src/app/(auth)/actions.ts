@@ -2,7 +2,16 @@
 
 import { cookies } from 'next/headers';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
+// Comunicação Server-to-Server, usamos 127.0.0.1 direto caso haja NAT loopback.
+// Isso evita que o Next.js fique "rodando infinito" tentando achar a si próprio no roteador externo.
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Permite conectar no HTTPS interno (self-signed)
+
+// Tenta usar uma URL interna primeiro se fornecida, senão forçamos um mapeamento seguro caso seja o ddns global
+const rawApiBase = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
+const API_BASE = rawApiBase.includes('globalh.ddns.net') 
+  ? 'https://127.0.0.1:4001' // Resolve o IP localmente para Server Actions não sofrerem de NAT Loopback
+  : rawApiBase;
+
 const MOCK = process.env.NEXT_PUBLIC_MOCK_AUTH === '1';
 
 export async function loginAction(form: { email: string; password: string; remember?: boolean }) {

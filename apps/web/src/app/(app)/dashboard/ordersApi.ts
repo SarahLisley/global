@@ -1,6 +1,4 @@
-import { cookies } from 'next/headers';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
+import { apiServer } from '../../../lib/api';
 
 export type OrderDTO = {
   orderNumber: string;
@@ -10,18 +8,7 @@ export type OrderDTO = {
 };
 
 export async function fetchRecentOrders(page = 1, pageSize = 10): Promise<{ orders: OrderDTO[], total: number }> {
-  const token = (await cookies()).get('pgb_session')?.value;
-  if (!token) throw new Error('Sem token de sessão');
-
-  const res = await fetch(`${API_BASE}/orders/recent?page=${page}&pageSize=${pageSize}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error || `Falha ao buscar pedidos (${res.status})`);
-  }
-  const data = await res.json();
+  const data = await apiServer<{ orders: OrderDTO[], total: number }>(`/orders/recent?page=${page}&pageSize=${pageSize}`);
   const orders = (data?.orders ?? []) as any[];
   const total = Number(data?.total ?? 0);
 

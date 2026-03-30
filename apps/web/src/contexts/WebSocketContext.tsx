@@ -12,12 +12,28 @@ const WebSocketContext = createContext<WebSocketContextData>({ isConnected: fals
 export function WebSocketProvider({ children, token, apiBaseUrl }: { children: React.ReactNode, token?: string, apiBaseUrl: string }) {
   const [isConnected, setIsConnected] = useState(false);
   const ws = useRef<WebSocket | null>(null);
+  const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!token) return;
 
-    // Converte http://localhost:4001 para ws://localhost:4001
-    const wsUrl = apiBaseUrl.replace(/^http/, 'ws') + `/ws?token=${token}`;
+    // Constrói a URL do WebSocket de forma robusta
+    const base = apiBaseUrl?.replace(/\/+$/, '') || '';
+    let wsUrl = '';
+    
+    if (base.startsWith('https://')) {
+      wsUrl = base.replace('https://', 'wss://');
+    } else if (base.startsWith('http://')) {
+      wsUrl = base.replace('http://', 'ws://');
+    } else {
+      // Caso não possua http/https, define wss ou ws
+      wsUrl = base.includes('localhost') || base.includes('127.0.0.1')
+        ? `ws://${base}`
+        : `wss://${base}`;
+    }
+    
+    // Anexa o caminho e o token
+    wsUrl += `/ws?token=${token}`;
 
     const connect = () => {
       try {
@@ -46,7 +62,7 @@ export function WebSocketProvider({ children, token, apiBaseUrl }: { children: R
         socket.onclose = () => {
           setIsConnected(false);
           console.log('[WebSocket] Desconectado. Tentando reconectar em 5 segundos...');
-          setTimeout(connect, 5000);
+          reconnectTimeout.current = setTimeout(connect, 5000);
         };
 
         socket.onerror = (err) => {
@@ -55,13 +71,16 @@ export function WebSocketProvider({ children, token, apiBaseUrl }: { children: R
       } catch (err) {
         console.error('[WebSocket] Erro síncrono ao criar WebSocket:', err);
         // Tenta reconectar mais tarde mesmo se falhar a criação (ex: erro temporário de DNS/URL)
-        setTimeout(connect, 5000);
+        reconnectTimeout.current = setTimeout(connect, 5000);
       }
     };
 
     connect();
 
     return () => {
+      if (reconnectTimeout.current) {
+        clearTimeout(reconnectTimeout.current);
+      }
       if (ws.current) {
         ws.current.onclose = null; // evita reconexão no unmount
         ws.current.close();
@@ -77,3 +96,4 @@ export function WebSocketProvider({ children, token, apiBaseUrl }: { children: R
 }
 
 export const useWebSocket = () => useContext(WebSocketContext);
+

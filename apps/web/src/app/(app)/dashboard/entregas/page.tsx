@@ -1,15 +1,11 @@
 import React, { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import EntregasClient, { Entrega } from './EntregasClient';
+import EntregasClient from './EntregasClient';
 import EntregasLoading from './loading';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
+import { apiServer } from '../../../../lib/api';
 
 async function getEntregas(searchParams: { [key: string]: string | string[] | undefined }) {
-  const token = (await cookies()).get('pgb_session')?.value;
-  if (!token) return { entregas: [], total: 0, page: 1 };
-
   const params = new URLSearchParams();
   const page = typeof searchParams.page === 'string' ? searchParams.page : '1';
   const pageSize = typeof searchParams.pageSize === 'string' ? searchParams.pageSize : '10';
@@ -29,28 +25,15 @@ async function getEntregas(searchParams: { [key: string]: string | string[] | un
   if (status && status !== 'todos' && status !== 'all') params.append('status', status);
 
   try {
-    const res = await fetch(`${API_BASE}/entregas?${params.toString()}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: 'no-store', // Ensure fresh data on every request
-    });
-
-    if (!res.ok) {
-      if (res.status === 401) {
-        redirect('/login?from=/dashboard/entregas');
-      }
-      console.error('Failed to fetch entregas:', res.status, await res.text());
-      return { entregas: [], total: 0, page: 1 };
-    }
-
-    const data = await res.json();
+    const data = await apiServer<{ entregas: any[], total: number }>(`/entregas?${params.toString()}`);
     return {
       entregas: data.entregas || [],
       total: data.total || 0,
       page: Number(page),
     };
   } catch (error: any) {
-    if (error?.digest?.includes('NEXT_REDIRECT')) {
-      throw error;
+    if (error?.message === 'NOT_AUTHENTICATED' || error?.digest?.includes('NEXT_REDIRECT')) {
+      redirect('/login?from=/dashboard/entregas');
     }
     console.error('Error fetching entregas:', error);
     return { entregas: [], total: 0, page: 1 };

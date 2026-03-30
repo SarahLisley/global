@@ -1,6 +1,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+import { API_BASE } from '../../../../../lib/api';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -14,9 +16,8 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized: Session cookie missing' }, { status: 401 });
   }
 
-  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
   // Construct backend URL: /financeiro/boletos/:id
-  const url = `${backendUrl}/financeiro/boletos/${id}`;
+  const url = `${API_BASE}/financeiro/boletos/${id}`;
 
   try {
     const res = await fetch(url, {

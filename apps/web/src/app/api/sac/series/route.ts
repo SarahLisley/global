@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
+import { API_BASE } from '@/lib/api';
 
 export async function GET() {
   const token = (await cookies()).get('pgb_session')?.value;

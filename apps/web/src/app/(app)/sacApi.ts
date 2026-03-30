@@ -1,6 +1,4 @@
-import { cookies } from 'next/headers';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
+import { apiServer } from '../../lib/api';
 
 export type SACDataset = {
   label: string;
@@ -34,20 +32,9 @@ function emptySeries(reason?: string): SACSeries {
 
 export async function fetchSacSeries(): Promise<SACSeries> {
   try {
-    const token = (await cookies()).get('pgb_session')?.value;
-    if (!token) {
-      return emptySeries('sem sessão');
-    }
-    const res = await fetch(`${API_BASE}/sac/series`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: 'no-store',
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      return emptySeries(err?.error ? `erro API: ${err.error}` : `falha API (${res.status})`);
-    }
-    return res.json();
+    return await apiServer<SACSeries>('/sac/series');
   } catch (e: any) {
-    return emptySeries(e?.message ?? 'erro inesperado');
+    const reason = e?.message === 'NOT_AUTHENTICATED' ? 'sem sessão' : (e?.message ?? 'erro inesperado');
+    return emptySeries(reason);
   }
 }

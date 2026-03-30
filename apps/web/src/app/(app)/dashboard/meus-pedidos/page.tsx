@@ -1,15 +1,11 @@
 import React, { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import MeusPedidosClient, { Pedido } from './MeusPedidosClient';
+import MeusPedidosClient from './MeusPedidosClient';
 import MeusPedidosLoading from './loading';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
+import { apiServer } from '../../../../lib/api';
 
 async function getPedidos(searchParams: { [key: string]: string | string[] | undefined }) {
-  const token = (await cookies()).get('pgb_session')?.value;
-  if (!token) return { pedidos: [], total: 0, page: 1 };
-
   const params = new URLSearchParams();
   const page = typeof searchParams.page === 'string' ? searchParams.page : '1';
   const pageSize = typeof searchParams.pageSize === 'string' ? searchParams.pageSize : '10';
@@ -26,28 +22,15 @@ async function getPedidos(searchParams: { [key: string]: string | string[] | und
   if (nf) params.append('nf', nf);
 
   try {
-    const res = await fetch(`${API_BASE}/orders?${params.toString()}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: 'no-store',
-    });
-
-    if (!res.ok) {
-      if (res.status === 401) {
-        redirect('/login?from=/dashboard/meus-pedidos');
-      }
-      console.error('Failed to fetch orders:', res.status, await res.text());
-      return { pedidos: [], total: 0, page: 1 };
-    }
-
-    const data = await res.json();
+    const data = await apiServer<{ pedidos: any[], total: number }>(`/orders?${params.toString()}`);
     return {
       pedidos: data.pedidos || [],
       total: data.total || 0,
       page: Number(page),
     };
   } catch (error: any) {
-    if (error?.digest?.includes('NEXT_REDIRECT')) {
-      throw error;
+    if (error?.message === 'NOT_AUTHENTICATED' || error?.digest?.includes('NEXT_REDIRECT')) {
+      redirect('/login?from=/dashboard/meus-pedidos');
     }
     console.error('Error fetching orders:', error);
     return { pedidos: [], total: 0, page: 1 };

@@ -1,6 +1,18 @@
 import { cookies } from 'next/headers';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
+const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
+
+// Configuração para permitir conexões internas com certificados autoassinados no server-side
+if (typeof window === 'undefined') {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
+// Tratamento de NAT Loopback: Se estamos no servidor e a URL aponta para o domínio global,
+// redirecionamos para o IP local (127.0.0.1) para evitar bloqueio do roteador.
+export const API_BASE = (typeof window === 'undefined' && rawApiBase.includes('globalh.ddns.net'))
+  ? rawApiBase.replace(/https?:\/\/globalh\.ddns\.net/, 'https://127.0.0.1')
+  : rawApiBase;
+
 
 /**
  * Helper centralizado para chamadas server-side à API.

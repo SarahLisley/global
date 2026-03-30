@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
+import { API_BASE } from '../../../lib/api';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
