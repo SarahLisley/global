@@ -7,7 +7,7 @@
 
 param(
     [Parameter(Mandatory=$false)]
-    [ValidateSet("letsencrypt", "selfsigned")]
+    [ValidateSet("letsencrypt", "letsencrypt-dns", "selfsigned")]
     [string]$Mode = "selfsigned",
 
     [Parameter(Mandatory=$false)]
@@ -108,9 +108,40 @@ function Generate-LetsEncrypt {
         Write-Host "  3. Firewall permite conexoes de entrada?" -ForegroundColor Yellow
     }
 }
+function Generate-LetsEncryptDNS {
+    Write-Host "=== Gerando Certificado Válido via DNS (Bypass do Roteador) ===" -ForegroundColor Cyan
+    
+    $wacmePath = Join-Path $CertDir "win-acme"
+    $wacmeExe = Get-ChildItem -Path $wacmePath -Filter "wacs.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+
+    if (-not $wacmeExe) {
+        Write-Host "ERRO: win-acme nao encontrado. Baixe em win-acme.com" -ForegroundColor Red
+        return
+    }
+
+    Write-Host ""
+    Write-Host "--- IMPORTANTE! LEIA ANTES DE CONTINUAR ---" -ForegroundColor Yellow
+    Write-Host "A tela preta do gerador (win-acme) vai abrir e fará perguntas. Responda assim:"
+    Write-Host "1. Digite 'M' (Create certificate - full options)"
+    Write-Host "2. Digite '2' (Manual input)"
+    Write-Host "3. Cole seu domínio: $Domain"
+    Write-Host "4. Aperte Enter para pular 'Friendly name'"
+    Write-Host "5. Escolha a opção [dns-01] Create verification records manually (geralmente opção 6)"
+    Write-Host "6. Escolha a opção [RSA key]"
+    Write-Host "7. Escolha a opção 'Store in PEM files' (geralmente a 2 ou 3) e cole a pasta: $CertDir"
+    Write-Host "8. Aperte '3' para Nao armazenar em mais nenhum lugar."
+    Write-Host "9. 'No (additional) installation steps' (geralmente opção 1)."
+    Write-Host "-------------------------------------------"
+    Write-Host "Em seguida ele te dará um código para você colar no seu DNS do site No-IP!"
+    Write-Host "Pressione qualquer tecla para iniciar a tela mágica..."
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    
+    & $wacmeExe.FullName
+}
 
 # Executar modo escolhido
 switch ($Mode) {
-    "letsencrypt" { Generate-LetsEncrypt }
-    "selfsigned"  { Generate-SelfSigned }
+    "letsencrypt"     { Generate-LetsEncrypt }
+    "letsencrypt-dns" { Generate-LetsEncryptDNS }
+    "selfsigned"      { Generate-SelfSigned }
 }
