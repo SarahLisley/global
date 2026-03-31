@@ -5,6 +5,12 @@ const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:400
 // Configuração para permitir conexões internas com certificados autoassinados no server-side
 if (typeof window === 'undefined') {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  try {
+    const { Agent, setGlobalDispatcher } = require('undici');
+    setGlobalDispatcher(new Agent({ connect: { rejectUnauthorized: false } }));
+  } catch (e) {
+    // Ignora silenciosamente se o undici não puder ser injetado (fallback p/ env)
+  }
 }
 
 // Tratamento de NAT Loopback: Se estamos no servidor e a URL aponta para o domínio global,
