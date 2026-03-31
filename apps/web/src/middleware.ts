@@ -9,7 +9,7 @@ export function middleware(req: NextRequest) {
   // Redirecionamento Global Condicional — apenas em produção (ignora localhost)
   const isLocalhost = host?.includes('localhost') || host?.startsWith('127.0.0.1') || host?.startsWith('10.');
   if (!isLocalhost && host !== 'globalh.ddns.net:3200' && !pathname.startsWith('/_next') && !pathname.startsWith('/images') && !pathname.startsWith('/favicon.ico')) {
-    return NextResponse.redirect('http://globalh.ddns.net:3200/login', 301);
+    return NextResponse.redirect('https://globalh.ddns.net:3200/login', 301);
   }
 
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) return NextResponse.next();

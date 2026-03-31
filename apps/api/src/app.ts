@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
 import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
@@ -22,11 +23,44 @@ import searchRoutes from './routes/search.routes';
 import profileRoutes from './routes/profile.routes';
 import websocketRoutes from './routes/websocket.routes';
 
-export function buildApp(options: { https?: { key: Buffer; cert: Buffer } } = {}) {
+export function buildApp(options: { https?: any } = {}) {
+  const isProduction = process.env.NODE_ENV === 'production';
+
   const app = Fastify({ 
     logger: true,
     https: options.https
   } as any);
+
+  // Security Headers (Helmet) — proteção contra clickjacking, XSS, sniffing, etc.
+  app.register(helmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'blob:'],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        frameSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
+    // HSTS — força HTTPS por 1 ano
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+    },
+    // Previne clickjacking
+    frameguard: { action: 'deny' },
+    // Previne sniffing de MIME type
+    noSniff: true,
+    // Desabilita X-Powered-By
+    hidePoweredBy: true,
+    // Referrer policy
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  });
 
   const allowed = (process.env.ALLOWED_ORIGINS || '')
     .split(',')
@@ -57,26 +91,28 @@ export function buildApp(options: { https?: { key: Buffer; cert: Buffer } } = {}
     timeWindow: '1 minute',
   });
 
-  // Swagger Documentation
-  app.register(swagger, {
-    openapi: {
-      info: {
-        title: 'Portal Global Bravo System API',
-        description: 'Documentação interativa das rotas.',
-        version: '1.0.0'
-      },
-      servers: [{ url: 'http://localhost:4001', description: 'Development Server' }],
-      components: {
-        securitySchemes: {
-          bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }
+  // Swagger Documentation — APENAS em desenvolvimento (não expor em produção)
+  if (!isProduction) {
+    app.register(swagger, {
+      openapi: {
+        info: {
+          title: 'Portal Global Bravo System API',
+          description: 'Documentação interativa das rotas.',
+          version: '1.0.0'
+        },
+        servers: [{ url: 'http://localhost:4001', description: 'Development Server' }],
+        components: {
+          securitySchemes: {
+            bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }
+          }
         }
       }
-    }
-  });
-  app.register(swaggerUi, {
-    routePrefix: '/docs',
-    uiConfig: { docExpansion: 'list', deepLinking: false }
-  });
+    });
+    app.register(swaggerUi, {
+      routePrefix: '/docs',
+      uiConfig: { docExpansion: 'list', deepLinking: false }
+    });
+  }
 
   // WebSockets
   app.register(websocket);
@@ -102,7 +138,9 @@ export function buildApp(options: { https?: { key: Buffer; cert: Buffer } } = {}
 
   app.setErrorHandler((err, _req, reply) => {
     app.log.error({ err }, 'Unhandled error');
-    reply.code(500).send({ message: 'Internal error' });
+    // Em produção, nunca expor detalhes internos do erro
+    const message = isProduction ? 'Erro interno do servidor' : err.message;
+    reply.code(500).send({ message });
   });
 
   return app;

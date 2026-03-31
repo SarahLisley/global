@@ -45,7 +45,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
     );
   }
 
-  const { ticket, timeline } = res;
+  const { ticket, timeline = [] } = res;
   const lastUpdate = timeline.length > 0 ? timeline[timeline.length - 1].when : ticket.openedAt;
 
   return (

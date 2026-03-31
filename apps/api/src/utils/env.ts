@@ -1,15 +1,20 @@
 import 'dotenv/config';
 import { z } from 'zod';
 
+// Regex para validar nomes de schema/user Oracle — previne SQL injection
+const oracleIdentifier = z.string().regex(/^[A-Z0-9_]+$/i, {
+  message: 'Deve conter apenas letras, números e underscore (A-Z, 0-9, _)',
+});
+
 const envSchema = z.object({
   PORT: z.string().default('4001'),
   ORACLE_HOST: z.string(),
   ORACLE_PORT: z.string().default('1521'),
   ORACLE_SERVICE: z.string(),
-  ORACLE_USER: z.string(),
+  ORACLE_USER: oracleIdentifier,
   ORACLE_PASSWORD: z.string(),
-  ORACLE_OWNER: z.string().optional(),
-  ORACLE_CURRENT_SCHEMA: z.string().optional(),
+  ORACLE_OWNER: oracleIdentifier.optional(),
+  ORACLE_CURRENT_SCHEMA: oracleIdentifier.optional(),
   ALLOWED_ORIGINS: z.string().optional(),
   JWT_SECRET: z.string(),
   DB_POOL_MIN: z.coerce.number().int().min(0).default(0),

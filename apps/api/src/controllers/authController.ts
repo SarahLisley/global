@@ -90,7 +90,7 @@ export async function login(email: string, password: string) {
     };
   } catch (err: any) {
     console.error('Login Error:', err);
-    return { ok: false, status: 500, message: `DB Error: ${err.message}` as const };
+    return { ok: false, status: 500, message: 'Erro interno ao processar login. Tente novamente.' as const };
   }
 }
 
@@ -138,7 +138,8 @@ export async function getUserProfile(email: string) {
       }
     };
   } catch (err: any) {
-    return { ok: false, status: 500, message: `DB Error: ${err.message}` as const };
+    console.error('GetUserProfile Error:', err);
+    return { ok: false, status: 500, message: 'Erro interno ao carregar perfil.' as const };
   }
 }
 
@@ -197,7 +198,7 @@ export async function forgotPassword(email: string) {
     };
   } catch (err: any) {
     console.error('ForgotPassword Error:', err);
-    return { ok: false, status: 500, message: `Erro: ${err.message}` };
+    return { ok: false, status: 500, message: 'Erro interno ao processar recuperação de senha.' };
   }
 }
 
@@ -224,7 +225,7 @@ export async function resetPassword(token: string, newPassword: string) {
     return { ok: true, status: 200, message: 'Senha atualizada com sucesso. Você já pode fazer login.' };
   } catch (err: any) {
     console.error('ResetPassword Error:', err);
-    return { ok: false, status: 500, message: `Erro: ${err.message}` };
+    return { ok: false, status: 500, message: 'Erro interno ao redefinir senha.' };
   }
 }
 
@@ -273,7 +274,7 @@ export async function registerUser(cnpj: string, name: string, email: string, pa
     };
   } catch (err: any) {
     console.error('Register Error:', err);
-    return { ok: false, status: 500, message: `Erro ao cadastrar: ${err.message}` };
+    return { ok: false, status: 500, message: 'Erro interno ao cadastrar. Tente novamente.' };
   }
 }
 
@@ -314,7 +315,7 @@ export async function completeRegistration(email: string, code: string) {
     return { ok: true, status: 200, message: 'Cadastro realizado com sucesso! Faça login para continuar.' };
   } catch (err: any) {
     console.error('CompleteRegistration Error:', err);
-    return { ok: false, status: 500, message: `Erro ao completar cadastro: ${err.message}` };
+    return { ok: false, status: 500, message: 'Erro interno ao completar cadastro.' };
   }
 }
 
@@ -336,7 +337,7 @@ export async function resendRegistrationCode(email: string) {
     };
   } catch (err: any) {
     console.error('ResendCode Error:', err);
-    return { ok: false, status: 500, message: `Erro ao reenviar código: ${err.message}` };
+    return { ok: false, status: 500, message: 'Erro interno ao reenviar código.' };
   }
 }
 
@@ -349,7 +350,7 @@ export async function updateProfile(email: string, name: string) {
     return { ok: true, status: 200, message: 'Perfil atualizado com sucesso.' };
   } catch (err: any) {
     console.error('UpdateProfile Error:', err);
-    return { ok: false, status: 500, message: `Erro ao atualizar perfil: ${err.message}` };
+    return { ok: false, status: 500, message: 'Erro interno ao atualizar perfil.' };
   }
 }
 
@@ -384,6 +385,6 @@ export async function updatePassword(email: string, currentPass: string, newPass
     return { ok: true, status: 200, message: 'Senha alterada com sucesso.' };
   } catch (err: any) {
     console.error('UpdatePassword Error:', err);
-    return { ok: false, status: 500, message: `Erro ao alterar senha: ${err.message}` };
+    return { ok: false, status: 500, message: 'Erro interno ao alterar senha.' };
   }
 }

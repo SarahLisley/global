@@ -4,3 +4,15 @@ node_modules
 dist
 .next
 .env
+.env.*
+!.env.local.example
+
+# Credenciais de deploy (senhas, JWT secrets)
+deploy/*.env*
+
+# Certificados SSL e chaves privadas
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
