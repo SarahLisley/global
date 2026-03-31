@@ -1,6 +1,5 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import helmet from '@fastify/helmet';
 import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
@@ -31,35 +30,14 @@ export function buildApp(options: { https?: any } = {}) {
     https: options.https
   } as any);
 
-  // Security Headers (Helmet) — proteção contra clickjacking, XSS, sniffing, etc.
-  app.register(helmet, {
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", 'data:', 'blob:'],
-        connectSrc: ["'self'"],
-        fontSrc: ["'self'"],
-        objectSrc: ["'none'"],
-        frameSrc: ["'none'"],
-        baseUri: ["'self'"],
-        formAction: ["'self'"],
-      },
-    },
-    // HSTS — força HTTPS por 1 ano
-    hsts: {
-      maxAge: 31536000,
-      includeSubDomains: true,
-    },
-    // Previne clickjacking
-    frameguard: { action: 'deny' },
-    // Previne sniffing de MIME type
-    noSniff: true,
-    // Desabilita X-Powered-By
-    hidePoweredBy: true,
-    // Referrer policy
-    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  // Security Headers nativos (sem biblioteca extra para evitar module not found)
+  app.addHook('onRequest', (req, reply, done) => {
+    reply.header('X-Frame-Options', 'DENY');
+    reply.header('X-Content-Type-Options', 'nosniff');
+    reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+    reply.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'");
+    done();
   });
 
   const allowed = (process.env.ALLOWED_ORIGINS || '')
