@@ -142,38 +142,38 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Rastreio de Entregas</h1>
-          <p className="text-slate-500 mt-1">Acompanhe o status e a previsão de entrega dos seus pedidos.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">Rastreio de Entregas</h1>
+          <p className="text-slate-500 dark:text-zinc-400 mt-1">Acompanhe o status e a previsão de entrega dos seus pedidos.</p>
         </div>
       </div>
 
-      <Card className="p-0 overflow-hidden border-slate-200 shadow-sm">
-        <div className="p-6 bg-slate-50/50 border-b border-slate-100 space-y-6">
+      <Card className="p-0 overflow-hidden border-slate-200 dark:border-zinc-800 shadow-sm">
+        <div className="p-6 bg-slate-50/50 dark:bg-zinc-900/50 border-b border-slate-100 dark:border-zinc-800/50 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
 
             {/* Período e Status */}
             <div className="md:col-span-5 space-y-4">
-              <div className="font-semibold text-sm text-slate-700 flex items-center gap-2">
+              <div className="font-semibold text-sm text-slate-700 dark:text-zinc-300 flex items-center gap-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
                 Período de Emissão
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:border-blue-500 transition-all">
-                  <label htmlFor="dtInicial" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">De</label>
+                <div className="bg-white dark:bg-zinc-900 rounded-lg p-1 border border-slate-200 dark:border-zinc-800 shadow-sm focus-within:border-blue-500 transition-all">
+                  <label htmlFor="dtInicial" className="block text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider px-2 pt-1">De</label>
                   <input
                     id="dtInicial"
                     type="date"
-                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm"
+                    className="block w-full border-0 p-0 text-slate-900 dark:text-white px-2 pb-1 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:ring-0 focus:outline-none text-sm"
                     value={filters.dtInicial}
                     onChange={(e) => setFilter('dtInicial', e.target.value)}
                   />
                 </div>
-                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:border-blue-500 transition-all">
-                  <label htmlFor="dtFinal" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">Até</label>
+                <div className="bg-white dark:bg-zinc-900 rounded-lg p-1 border border-slate-200 dark:border-zinc-800 shadow-sm focus-within:border-blue-500 transition-all">
+                  <label htmlFor="dtFinal" className="block text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider px-2 pt-1">Até</label>
                   <input
                     id="dtFinal"
                     type="date"
-                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm"
+                    className="block w-full border-0 p-0 text-slate-900 dark:text-white px-2 pb-1 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:ring-0 focus:outline-none text-sm"
                     value={filters.dtFinal}
                     onChange={(e) => setFilter('dtFinal', e.target.value)}
                   />
@@ -181,11 +181,11 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
               </div>
 
               {/* Status Select */}
-              <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:border-blue-500 transition-all relative mt-2">
-                <label htmlFor="status" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">Status</label>
+              <div className="bg-white dark:bg-zinc-900 rounded-lg p-1 border border-slate-200 dark:border-zinc-800 shadow-sm focus-within:border-blue-500 transition-all relative mt-2">
+                <label htmlFor="status" className="block text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider px-2 pt-1">Status</label>
                 <select
                   id="status"
-                  className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 bg-transparent focus:ring-0 focus:outline-none text-sm cursor-pointer appearance-none"
+                  className="block w-full border-0 p-0 text-slate-900 dark:text-white px-2 pb-1 bg-transparent focus:ring-0 focus:outline-none text-sm cursor-pointer appearance-none"
                   value={filters.status}
                   onChange={(e) => setFilter('status', e.target.value)}
                 >
@@ -195,7 +195,7 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
                   <option value="aguardando coleta">Aguardando coleta</option>
                   <option value="entregue">Entregue</option>
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 pt-3 text-slate-500">
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 pt-3 text-slate-500 dark:text-zinc-400">
                   <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
                 </div>
               </div>
@@ -203,29 +203,29 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
 
             {/* Identificação */}
             <div className="md:col-span-7 space-y-4">
-              <div className="font-semibold text-sm text-slate-700 flex items-center gap-1.5">
+              <div className="font-semibold text-sm text-slate-700 dark:text-zinc-300 flex items-center gap-1.5">
                 <Search size={16} className="text-blue-500" />
                 Identificação
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:border-blue-500 transition-all">
-                  <label htmlFor="pedido" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">Pedido</label>
+                <div className="bg-white dark:bg-zinc-900 rounded-lg p-1 border border-slate-200 dark:border-zinc-800 shadow-sm focus-within:border-blue-500 transition-all">
+                  <label htmlFor="pedido" className="block text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider px-2 pt-1">Pedido</label>
                   <input
                     id="pedido"
                     type="text"
                     placeholder="Ex.: 15025165"
-                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm"
+                    className="block w-full border-0 p-0 text-slate-900 dark:text-white px-2 pb-1 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:ring-0 focus:outline-none text-sm"
                     value={filters.pedido}
                     onChange={(e) => setFilter('pedido', e.target.value)}
                   />
                 </div>
-                <div className="bg-white rounded-lg p-1 border border-slate-200 shadow-sm focus-within:border-blue-500 transition-all">
-                  <label htmlFor="nf" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1">Nota Fiscal</label>
+                <div className="bg-white dark:bg-zinc-900 rounded-lg p-1 border border-slate-200 dark:border-zinc-800 shadow-sm focus-within:border-blue-500 transition-all">
+                  <label htmlFor="nf" className="block text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider px-2 pt-1">Nota Fiscal</label>
                   <input
                     id="nf"
                     type="text"
                     placeholder="Ex.: NF-12345"
-                    className="block w-full border-0 p-0 text-slate-900 px-2 pb-1 placeholder:text-slate-400 focus:ring-0 focus:outline-none text-sm"
+                    className="block w-full border-0 p-0 text-slate-900 dark:text-white px-2 pb-1 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:ring-0 focus:outline-none text-sm"
                     value={filters.nf}
                     onChange={(e) => setFilter('nf', e.target.value)}
                   />
@@ -234,14 +234,14 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-end pt-4 border-t border-slate-200 gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-end pt-4 border-t border-slate-200 dark:border-zinc-800 gap-4">
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Button type="button" onClick={onPesquisar} loading={isNavigationLoading} className="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-medium px-6 rounded-full flex items-center justify-center gap-1.5 group outline-none">
+              <Button type="button" onClick={onPesquisar} loading={isNavigationLoading} className="flex-1 sm:flex-none bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800/50 dark:bg-zinc-900/40 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-medium px-6 rounded-full flex items-center justify-center gap-1.5 group outline-none">
                 <Search size={16} className="text-blue-500" />
                 Pesquisar
               </Button>
-              <Button type="button" variant="secondary" onClick={onLimpar} className="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-medium px-6 rounded-full flex items-center justify-center gap-2 group outline-none">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-red-500 group-hover:text-red-600 transition-colors">
+              <Button type="button" variant="secondary" onClick={onLimpar} className="flex-1 sm:flex-none bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800/50 dark:bg-zinc-900/40 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-medium px-6 rounded-full flex items-center justify-center gap-2 group outline-none">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-red-500 group-hover:text-red-600 dark:text-red-500 transition-colors">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
@@ -253,22 +253,22 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
 
         {initialData.length === 0 ? (
           <div className="p-12 text-center flex flex-col items-center justify-center">
-            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400">
+            <div className="w-16 h-16 bg-slate-50 dark:bg-zinc-900/40 rounded-full flex items-center justify-center mb-4">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400 dark:text-zinc-500">
                 <rect x="1" y="3" width="15" height="13" />
                 <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
                 <circle cx="5.5" cy="18.5" r="2.5" />
                 <circle cx="18.5" cy="18.5" r="2.5" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-slate-900">Nenhuma entrega encontrada</h3>
-            <p className="text-slate-500 mt-1 max-w-sm">Tente ajustar os filtros selecionados.</p>
+            <h3 className="text-lg font-medium text-slate-900 dark:text-zinc-100">Nenhuma entrega encontrada</h3>
+            <p className="text-slate-500 dark:text-zinc-400 mt-1 max-w-sm">Tente ajustar os filtros selecionados.</p>
           </div>
         ) : (
           <div className={`overflow-x-auto transition-opacity duration-300 ${isNavigationLoading ? 'opacity-50 pointer-events-none' : ''}`}>
             {/* Título da Tabela */}
             <div className="px-6 pt-6 pb-2">
-              <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-slate-800 dark:text-zinc-200 flex items-center gap-2">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500">
                   <rect x="1" y="3" width="15" height="13" />
                   <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
@@ -278,30 +278,30 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
                 Entregas Localizadas
               </h2>
             </div>
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 border-b border-slate-200">
+            <table className="w-full text-left text-sm text-slate-600 dark:text-zinc-400">
+              <thead className="bg-slate-50 dark:bg-zinc-900/40 border-b border-slate-200 dark:border-zinc-800">
                 <tr>
-                  <th className="px-6 py-3 font-semibold text-slate-700 whitespace-nowrap">Nro Pedido</th>
-                  <th className="px-6 py-3 font-semibold text-slate-700 whitespace-nowrap">Filial</th>
-                  <th className="px-6 py-3 font-semibold text-slate-700 whitespace-nowrap">Nro NF</th>
-                  <th className="px-6 py-3 font-semibold text-slate-700 whitespace-nowrap">Vlr. Total</th>
-                  <th className="px-6 py-3 font-semibold text-slate-700 whitespace-nowrap">Prev. Entrega</th>
-                  <th className="px-6 py-3 font-semibold text-slate-700 whitespace-nowrap">Dt Agendamento</th>
-                  <th className="px-6 py-3 font-semibold text-slate-700 whitespace-nowrap">Dt Entrega</th>
-                  <th className="px-6 py-3 font-semibold text-slate-700 whitespace-nowrap">Status</th>
-                  <th className="px-6 py-3 font-semibold text-slate-700 whitespace-nowrap">Transportadora</th>
-                  <th className="px-6 py-3 font-semibold text-slate-700 whitespace-nowrap">Ações</th>
+                  <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Nro Pedido</th>
+                  <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Filial</th>
+                  <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Nro NF</th>
+                  <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Vlr. Total</th>
+                  <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Prev. Entrega</th>
+                  <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Dt Agendamento</th>
+                  <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Dt Entrega</th>
+                  <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Status</th>
+                  <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Transportadora</th>
+                  <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/50">
                 {initialData.map((e) => (
-                  <tr key={e.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={e.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 dark:bg-zinc-900/40 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-medium text-slate-900">{e.nroPedido}</div>
+                      <div className="font-medium text-slate-900 dark:text-zinc-100">{e.nroPedido}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-medium border border-slate-200 dark:border-zinc-800">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500 dark:text-zinc-400">
                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                           <circle cx="12" cy="7" r="4"></circle>
                         </svg>
@@ -310,8 +310,8 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
                     </td>
                     <td className="px-6 py-4">
                       {e.nroNF ? (
-                        <div className="flex items-center gap-1.5 text-slate-600">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400">
+                        <div className="flex items-center gap-1.5 text-slate-600 dark:text-zinc-400">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400 dark:text-zinc-500">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                             <polyline points="14 2 14 8 20 8" />
                             <line x1="16" y1="13" x2="8" y2="13" />
@@ -320,15 +320,15 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
                           <span className="font-medium">{e.nroNF}</span>
                         </div>
                       ) : (
-                        <span className="text-slate-400">-</span>
+                        <span className="text-slate-400 dark:text-zinc-500">-</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-slate-900">{fmtBRL.format(e.vlrTotal)}</div>
+                      <div className="font-semibold text-slate-900 dark:text-zinc-100">{fmtBRL.format(e.vlrTotal)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {e.prevEntrega ? (
-                        <div className="flex items-center gap-1.5 text-slate-600">
+                        <div className="flex items-center gap-1.5 text-slate-600 dark:text-zinc-400">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                             <line x1="16" y1="2" x2="16" y2="6" />
@@ -338,11 +338,11 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
                           {fmtBR.format(new Date(e.prevEntrega))}
                         </div>
                       ) : (
-                        <span className="text-slate-400">-</span>
+                        <span className="text-slate-400 dark:text-zinc-500">-</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {e.dtAgendamento ? fmtBR.format(new Date(e.dtAgendamento)) : <span className="text-slate-400">-</span>}
+                      {e.dtAgendamento ? fmtBR.format(new Date(e.dtAgendamento)) : <span className="text-slate-400 dark:text-zinc-500">-</span>}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {e.dtEntrega ? (
@@ -353,27 +353,27 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
                           {fmtBR.format(new Date(e.dtEntrega))}
                         </div>
                       ) : (
-                        <span className="text-slate-400">-</span>
+                        <span className="text-slate-400 dark:text-zinc-500">-</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       {e.status === 'Entregue' ? (
-                        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-100 px-2.5 py-1 rounded-md w-fit border border-slate-200">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-zinc-400 font-medium bg-slate-100 dark:bg-zinc-800 px-2.5 py-1 rounded-md w-fit border border-slate-200 dark:border-zinc-800">
                           <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
                           Entregue
                         </div>
                       ) : e.status === 'Em trânsito' ? (
-                        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-100 px-2.5 py-1 rounded-md w-fit border border-slate-200 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-zinc-400 font-medium bg-slate-100 dark:bg-zinc-800 px-2.5 py-1 rounded-md w-fit border border-slate-200 dark:border-zinc-800 whitespace-nowrap">
                           <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                           Em trânsito
                         </div>
                       ) : e.status === 'Aguardando coleta' ? (
-                        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-100 px-2.5 py-1 rounded-md w-fit border border-slate-200">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-zinc-400 font-medium bg-slate-100 dark:bg-zinc-800 px-2.5 py-1 rounded-md w-fit border border-slate-200 dark:border-zinc-800">
                           <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                           Aguardando
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-100 px-2.5 py-1 rounded-md w-fit border border-slate-200">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-zinc-400 font-medium bg-slate-100 dark:bg-zinc-800 px-2.5 py-1 rounded-md w-fit border border-slate-200 dark:border-zinc-800">
                           <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
                           Agendado
                         </div>
@@ -381,14 +381,14 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
                     </td>
                     <td className="px-6 py-4">
                       {e.transportadora ? (
-                        <span className="text-slate-900 font-medium">{e.transportadora}</span>
+                        <span className="text-slate-900 dark:text-zinc-100 font-medium">{e.transportadora}</span>
                       ) : (
-                        <span className="text-slate-400">-</span>
+                        <span className="text-slate-400 dark:text-zinc-500">-</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       <button
-                        className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 bg-white hover:bg-slate-50 border border-slate-200 hover:border-blue-200 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
+                        className="inline-flex items-center gap-2 text-slate-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 dark:text-blue-500 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800/50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800 hover:border-blue-200 dark:border-blue-800/50 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
                         onClick={() => openTimeline(e.id)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -407,19 +407,19 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
 
         {/* Paginação */}
         {total > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-slate-50 border-t border-slate-200">
-            <div className="text-sm text-slate-600 flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-slate-50 dark:bg-zinc-900/40 border-t border-slate-200 dark:border-zinc-800">
+            <div className="text-sm text-slate-600 dark:text-zinc-400 flex items-center gap-2">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500">
                 <rect x="1" y="3" width="15" height="13" />
                 <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
                 <circle cx="5.5" cy="18.5" r="2.5" />
                 <circle cx="18.5" cy="18.5" r="2.5" />
               </svg>
-              <span>Mostrando página <span className="font-bold text-slate-900">{page}</span> de <span className="font-bold text-slate-900">{totalPages}</span></span>
+              <span>Mostrando página <span className="font-bold text-slate-900 dark:text-zinc-100">{page}</span> de <span className="font-bold text-slate-900 dark:text-zinc-100">{totalPages}</span></span>
             </div>
             <div className="flex items-center gap-1">
               <button
-                className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800/50 dark:bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 disabled={page <= 1}
                 onClick={() => onPageChange(page - 1)}
               >
@@ -440,7 +440,7 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
                       onClick={() => onPageChange(pageNum)}
                       className={`w-9 h-9 flex items-center justify-center rounded-lg font-medium text-sm transition-colors ${page === pageNum
                         ? 'bg-blue-600 text-white border border-blue-600'
-                        : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
+                        : 'bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 border border-slate-300 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800/50 dark:bg-zinc-900/40'
                         }`}
                     >
                       {pageNum}
@@ -450,7 +450,7 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
               </div>
 
               <button
-                className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800/50 dark:bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 disabled={page >= totalPages}
                 onClick={() => onPageChange(page + 1)}
               >
@@ -464,14 +464,14 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
       {/* Modal Timeline - unchanged logic, just visual tweaks */}
       {timelineOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all" onClick={closeTimeline}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b border-slate-100 dark:border-zinc-800/50 flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-slate-900">Timeline da Entrega</h3>
-                <p className="text-sm text-slate-500">Acompanhe o histórico do transporte</p>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-zinc-100">Timeline da Entrega</h3>
+                <p className="text-sm text-slate-500 dark:text-zinc-400">Acompanhe o histórico do transporte</p>
               </div>
               <button
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 dark:text-zinc-400 transition-colors"
                 onClick={closeTimeline}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
@@ -482,24 +482,24 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
               {timelineLoading ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
-                  <p className="text-slate-500 font-medium">Carregando eventos...</p>
+                  <p className="text-slate-500 dark:text-zinc-400 font-medium">Carregando eventos...</p>
                 </div>
               ) : timelineError ? (
-                <div className="p-4 bg-red-50 text-red-600 rounded-xl text-center">
+                <div className="p-4 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-500 rounded-xl text-center">
                   {timelineError}
                 </div>
               ) : timelineEvents.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-slate-500 dark:text-zinc-400">
                   Nenhum evento registrado para esta entrega.
                 </div>
               ) : (
-                <div className="relative pl-4 border-l-2 border-slate-100 space-y-8">
+                <div className="relative pl-4 border-l-2 border-slate-100 dark:border-zinc-800/50 space-y-8">
                   {timelineEvents.map((ev, idx) => (
                     <div key={idx} className="relative">
                       <div className="absolute -left-[21px] top-1 w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_0_4px_rgba(59,130,246,0.1)]"></div>
-                      <div className="text-xs font-semibold text-blue-600 mb-1">{fmtBR.format(new Date(ev.when))}</div>
-                      <div className="text-base font-bold text-slate-800 mb-1">{ev.occurrence || 'Evento'}</div>
-                      <div className="text-slate-600 text-sm leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
+                      <div className="text-xs font-semibold text-blue-600 dark:text-blue-500 mb-1">{fmtBR.format(new Date(ev.when))}</div>
+                      <div className="text-base font-bold text-slate-800 dark:text-zinc-200 mb-1">{ev.occurrence || 'Evento'}</div>
+                      <div className="text-slate-600 dark:text-zinc-400 text-sm leading-relaxed bg-slate-50 dark:bg-zinc-900/40 p-3 rounded-lg border border-slate-100 dark:border-zinc-800/50">
                         <div className="mb-1">{ev.description}</div>
                         <div className="flex flex-wrap gap-2 mt-2">
                           {ev.city && <Badge variant="secondary" className="text-xs py-0.5">{ev.city}</Badge>}
@@ -511,8 +511,8 @@ export default function EntregasClient({ initialData, total, page, pageSize, sea
                 </div>
               )}
             </div>
-            <div className="p-4 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl flex justify-end">
-              <Button variant="secondary" onClick={closeTimeline} className="hover:bg-slate-200">Fechar Visualização</Button>
+            <div className="p-4 border-t border-slate-100 dark:border-zinc-800/50 bg-slate-50/50 dark:bg-zinc-900/50 rounded-b-2xl flex justify-end">
+              <Button variant="secondary" onClick={closeTimeline} className="hover:bg-slate-200 dark:hover:bg-zinc-700 dark:bg-zinc-700">Fechar Visualização</Button>
             </div>
           </div>
         </div>

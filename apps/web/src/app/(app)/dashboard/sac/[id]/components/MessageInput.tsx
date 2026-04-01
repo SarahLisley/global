@@ -40,12 +40,12 @@ export function MessageInput({
     }
   };
   return (
-    <div className="p-4 bg-white border-t border-slate-100 shrink-0 relative z-10 transition-colors focus-within:bg-slate-50/10">
-      <form onSubmit={onSubmit} className="flex gap-2 items-end relative bg-slate-50 rounded-2xl border border-slate-200 p-2 focus-within:ring-2 focus-within:ring-blue-500/10 focus-within:border-blue-400 transition-all shadow-sm">
+    <div className="p-4 bg-white dark:bg-zinc-900 border-t border-slate-100 dark:border-zinc-800/50 shrink-0 relative z-10 transition-colors focus-within:bg-slate-50/10">
+      <form onSubmit={onSubmit} className="flex gap-2 items-end relative bg-slate-50 dark:bg-zinc-900/40 rounded-2xl border border-slate-200 dark:border-zinc-800 p-2 focus-within:ring-2 focus-within:ring-blue-500/10 focus-within:border-blue-400 transition-all shadow-sm">
         {onFileSelect && (
           <button
             type="button"
-            className={`p-2.5 rounded-xl transition-all ${selectedFile ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
+            className={`p-2.5 rounded-xl transition-all ${selectedFile ? 'text-blue-600 dark:text-blue-500 bg-blue-50 dark:bg-blue-950/30' : 'text-slate-400 dark:text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 dark:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:bg-blue-950/30'}`}
             title="Anexar arquivo"
             onClick={handleAttachClick}
             disabled={disabled}
@@ -71,7 +71,7 @@ export function MessageInput({
               e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
             }}
             placeholder={placeholder}
-            className="w-full text-sm bg-transparent border-none focus:ring-0 p-0 outline-none resize-none placeholder:text-slate-400 max-h-[120px]"
+            className="w-full text-sm bg-transparent border-none focus:ring-0 p-0 outline-none resize-none placeholder:text-slate-400 dark:placeholder:text-zinc-500 max-h-[120px]"
             rows={1}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -97,7 +97,7 @@ export function MessageInput({
 
       {selectedFile && (
         <div className="px-2 mt-2 flex items-center gap-2">
-          <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 text-blue-700 rounded-md border border-blue-100 text-[10px] font-medium animate-in fade-in slide-in-from-left-1">
+          <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 rounded-md border border-blue-100 text-[10px] font-medium animate-in fade-in slide-in-from-left-1">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><polyline points="13 2 13 9 20 9" /></svg>
             <span className="truncate max-w-[200px]">{selectedFile.name}</span>
             <button
@@ -112,7 +112,7 @@ export function MessageInput({
       )}
 
       <div className="px-2 mt-2 flex justify-end">
-        <span className="text-[10px] text-slate-400 font-medium">Pressione Enter para enviar</span>
+        <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-medium">Pressione Enter para enviar</span>
       </div>
     </div>
   );

@@ -81,7 +81,7 @@ function LoginContent() {
             autoFocus
             autoComplete="email"
             disabled={isPending}
-            className="h-11 bg-white dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 rounded-xl pl-11 text-sm text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-11 bg-white dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 rounded-xl pl-11 text-sm text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
             leftIcon={<Mail className="w-5 h-5 text-slate-400 dark:text-zinc-500" />}
             {...register('email')}
           />
@@ -106,7 +106,7 @@ function LoginContent() {
               autoComplete="current-password"
               disabled={isPending}
               onKeyDown={handleKeyDown}
-              className="h-11 bg-white dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 rounded-xl pl-11 text-sm text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-11 bg-white dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 rounded-xl pl-11 text-sm text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
               leftIcon={<LockKeyhole className="w-5 h-5 text-slate-400 dark:text-zinc-500" />}
               withPasswordToggle
               {...register('password')}

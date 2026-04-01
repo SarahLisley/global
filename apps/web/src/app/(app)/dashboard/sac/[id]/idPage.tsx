@@ -35,7 +35,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
               <line x1="9" y1="9" x2="15" y2="15" />
             </svg>
             <h2 className="text-lg font-bold text-gray-900 mb-2">Erro ao Carregar Ticket</h2>
-            <p className="text-sm text-red-600 mb-6">{res.message || 'Não foi possível carregar as informações do ticket'}</p>
+            <p className="text-sm text-red-600 dark:text-red-500 mb-6">{res.message || 'Não foi possível carregar as informações do ticket'}</p>
             <Link href="/dashboard/sac">
               <Button variant="secondary">Voltar para SAC</Button>
             </Link>
@@ -59,7 +59,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Ticket #{ticket.id}</h1>
             {statusBadge(ticket.status)}
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-slate-600">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-slate-600 dark:text-zinc-400">
             <div className="flex items-center gap-1.5">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10" />
@@ -102,30 +102,30 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
         <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <div className="group">
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Assunto</div>
+            <div className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wide mb-1.5">Assunto</div>
             <div className="text-sm font-medium text-gray-900">{ticket.subject || '—'}</div>
           </div>
 
           <div className="group">
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Filial</div>
+            <div className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wide mb-1.5">Filial</div>
             <div className="text-sm text-gray-900">{ticket.branch ?? '—'}</div>
           </div>
 
           <div className="group">
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Número do Pedido</div>
+            <div className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wide mb-1.5">Número do Pedido</div>
             <div className="text-sm font-mono text-gray-900">{ticket.orderNumber ?? '—'}</div>
           </div>
 
           <div className="group">
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Nota Fiscal</div>
+            <div className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wide mb-1.5">Nota Fiscal</div>
             <div className="text-sm font-mono text-gray-900">{ticket.invoiceNumber ?? '—'}</div>
           </div>
 
           <div className="group">
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Finalização</div>
+            <div className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wide mb-1.5">Finalização</div>
             <div className="text-sm text-gray-900">
               {ticket.closedAt ? formatDateTime(ticket.closedAt) : (
-                <span className="text-slate-400 italic">Em aberto</span>
+                <span className="text-slate-400 dark:text-zinc-500 italic">Em aberto</span>
               )}
             </div>
           </div>
@@ -144,13 +144,13 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
         {timeline.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-300 mb-3">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-300 dark:text-zinc-600 mb-3">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <p className="text-sm text-slate-500 font-medium">Nenhuma movimentação registrada</p>
-            <p className="text-xs text-slate-400 mt-1">As atualizações aparecerão aqui</p>
+            <p className="text-sm text-slate-500 dark:text-zinc-400 font-medium">Nenhuma movimentação registrada</p>
+            <p className="text-xs text-slate-400 dark:text-zinc-500 mt-1">As atualizações aparecerão aqui</p>
           </div>
         ) : (
           <div className="relative">
@@ -170,11 +170,11 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
                   </div>
 
                   {/* Conteúdo */}
-                  <div className="flex-1 bg-slate-50 rounded-lg p-4 hover:bg-slate-100 transition-colors">
+                  <div className="flex-1 bg-slate-50 dark:bg-zinc-900/40 rounded-lg p-4 hover:bg-slate-100 dark:hover:bg-zinc-800 dark:bg-zinc-800 transition-colors">
                     <div className="flex items-center justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2">
                         {statusBadge(item.status)}
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-slate-500 dark:text-zinc-400">
                           {formatDateTime(item.when)}
                         </span>
                       </div>
@@ -189,16 +189,16 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
       </Card>
 
       {/* Ações Futuras: Comentários, Anexos */}
-      <Card className="p-5 sm:p-6 border-2 border-dashed border-slate-200 bg-slate-50/50">
+      <Card className="p-5 sm:p-6 border-2 border-dashed border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50">
         <div className="flex items-start gap-4">
-          <div className="p-3 rounded-lg bg-blue-100 text-blue-600 flex-shrink-0">
+          <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-500 flex-shrink-0">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 0 2 2z" />
             </svg>
           </div>
           <div className="flex-1">
             <h3 className="text-base font-bold text-gray-900 mb-1">Comentários e Anexos</h3>
-            <p className="text-sm text-slate-600 leading-relaxed">
+            <p className="text-sm text-slate-600 dark:text-zinc-400 leading-relaxed">
               Em breve você poderá adicionar comentários e anexar arquivos diretamente nesta tela.
               A funcionalidade de comunicação bidirecional será integrada após confirmação do fluxo completo.
             </p>

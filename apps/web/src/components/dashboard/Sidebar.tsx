@@ -163,7 +163,7 @@ export function Sidebar({ isOpen = false, onClose, user }: SidebarProps) {
                 </span>
                 <span className="truncate">{link.label}</span>
                 {active && (
-                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white animate-pulse flex-shrink-0" />
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white dark:bg-zinc-900 animate-pulse flex-shrink-0" />
                 )}
               </Link>
             );

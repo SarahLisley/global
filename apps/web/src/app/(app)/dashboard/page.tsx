@@ -19,10 +19,10 @@ function KpiSkeleton() {
       {[1, 2, 3, 4].map((i) => (
         <Card key={i} className="relative overflow-hidden p-4 sm:p-5 animate-pulse">
           <div className="flex items-center gap-3 sm:gap-4">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-200 flex-shrink-0" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-200 dark:bg-zinc-700 flex-shrink-0" />
             <div className="flex-1 space-y-2">
-              <div className="h-3 bg-slate-200 rounded w-20" />
-              <div className="h-6 bg-slate-200 rounded w-28" />
+              <div className="h-3 bg-slate-200 dark:bg-zinc-700 rounded w-20" />
+              <div className="h-6 bg-slate-200 dark:bg-zinc-700 rounded w-28" />
             </div>
           </div>
         </Card>
@@ -35,10 +35,10 @@ function ChartSkeleton() {
   return (
     <Card className="p-4 sm:p-6 animate-pulse">
       <div className="space-y-3 mb-4">
-        <div className="h-5 bg-slate-200 rounded w-40" />
-        <div className="h-3 bg-slate-200 rounded w-28" />
+        <div className="h-5 bg-slate-200 dark:bg-zinc-700 rounded w-40" />
+        <div className="h-3 bg-slate-200 dark:bg-zinc-700 rounded w-28" />
       </div>
-      <div className="h-[280px] bg-slate-100 rounded-xl" />
+      <div className="h-[280px] bg-slate-100 dark:bg-zinc-800 rounded-xl" />
     </Card>
   );
 }
@@ -47,16 +47,16 @@ function TicketsSkeleton() {
   return (
     <Card className="flex flex-col p-4 sm:p-6 animate-pulse">
       <div className="space-y-3 mb-4">
-        <div className="h-5 bg-slate-200 rounded w-40" />
-        <div className="h-3 bg-slate-200 rounded w-28" />
+        <div className="h-5 bg-slate-200 dark:bg-zinc-700 rounded w-40" />
+        <div className="h-3 bg-slate-200 dark:bg-zinc-700 rounded w-28" />
       </div>
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
           <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-gray-100">
-            <div className="w-2 h-2 rounded-full bg-slate-200 shrink-0" />
+            <div className="w-2 h-2 rounded-full bg-slate-200 dark:bg-zinc-700 shrink-0" />
             <div className="flex-1 space-y-2">
-              <div className="h-4 bg-slate-200 rounded w-3/4" />
-              <div className="h-3 bg-slate-200 rounded w-1/3" />
+              <div className="h-4 bg-slate-200 dark:bg-zinc-700 rounded w-3/4" />
+              <div className="h-3 bg-slate-200 dark:bg-zinc-700 rounded w-1/3" />
             </div>
           </div>
         ))}
@@ -69,16 +69,16 @@ function TableSkeleton() {
   return (
     <Card className="p-0 overflow-hidden animate-pulse">
       <div className="p-4 sm:p-6 flex items-center justify-between">
-        <div className="h-5 bg-slate-200 rounded w-40" />
-        <div className="h-8 bg-slate-200 rounded w-24" />
+        <div className="h-5 bg-slate-200 dark:bg-zinc-700 rounded w-40" />
+        <div className="h-8 bg-slate-200 dark:bg-zinc-700 rounded w-24" />
       </div>
       <div className="px-6">
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="flex items-center gap-4 py-4 border-t border-slate-100">
-            <div className="h-4 bg-slate-200 rounded w-24" />
-            <div className="h-4 bg-slate-200 rounded w-32 flex-1" />
-            <div className="h-4 bg-slate-200 rounded w-20" />
-            <div className="h-6 bg-slate-200 rounded w-20" />
+          <div key={i} className="flex items-center gap-4 py-4 border-t border-slate-100 dark:border-zinc-800/50">
+            <div className="h-4 bg-slate-200 dark:bg-zinc-700 rounded w-24" />
+            <div className="h-4 bg-slate-200 dark:bg-zinc-700 rounded w-32 flex-1" />
+            <div className="h-4 bg-slate-200 dark:bg-zinc-700 rounded w-20" />
+            <div className="h-6 bg-slate-200 dark:bg-zinc-700 rounded w-20" />
           </div>
         ))}
       </div>
@@ -89,14 +89,14 @@ function TableSkeleton() {
 function DocsSkeleton() {
   return (
     <Card className="p-4 sm:p-6 animate-pulse">
-      <div className="h-5 bg-slate-200 rounded w-48 mb-4" />
+      <div className="h-5 bg-slate-200 dark:bg-zinc-700 rounded w-48 mb-4" />
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="flex items-center gap-4 p-3 border border-slate-100 rounded-lg">
-            <div className="h-4 bg-slate-200 rounded w-32" />
-            <div className="h-4 bg-slate-200 rounded w-24" />
-            <div className="h-4 bg-slate-200 rounded w-20" />
-            <div className="h-6 bg-slate-200 rounded w-16" />
+          <div key={i} className="flex items-center gap-4 p-3 border border-slate-100 dark:border-zinc-800/50 rounded-lg">
+            <div className="h-4 bg-slate-200 dark:bg-zinc-700 rounded w-32" />
+            <div className="h-4 bg-slate-200 dark:bg-zinc-700 rounded w-24" />
+            <div className="h-4 bg-slate-200 dark:bg-zinc-700 rounded w-20" />
+            <div className="h-6 bg-slate-200 dark:bg-zinc-700 rounded w-16" />
           </div>
         ))}
       </div>
@@ -127,7 +127,7 @@ async function KpiSection() {
               {icons[index % icons.length]}
             </div>
             <div className="flex-1 min-w-0" title={String(k.value)}>
-              <div className="text-xs sm:text-sm font-medium text-slate-500 dark:text-zinc-400 mb-0.5">{k.label}</div>
+              <div className="text-xs sm:text-sm font-medium text-slate-500 dark:text-zinc-400 dark:text-zinc-400 mb-0.5">{k.label}</div>
               <div className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-zinc-100 truncate">{k.value}</div>
             </div>
           </div>
@@ -150,7 +150,7 @@ async function SacChartSection() {
         <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-zinc-100 truncate">SAC - Séries (Hoje)</h2>
         <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400 truncate">Distribuição por hora</p>
         {hasNoSession && (
-          <p className="mt-2 text-xs sm:text-sm text-amber-600">
+          <p className="mt-2 text-xs sm:text-sm text-amber-600 dark:text-amber-500">
             Não foi possível carregar as séries do SAC ({sacSeries.datasets[0].label.replace('Resolvidos ', '').replace(/\(|\)/g, '')}). Exibindo dados vazios.
           </p>
         )}
@@ -170,15 +170,15 @@ async function PendingTicketsSection() {
           <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-zinc-100 truncate">SAC - Próximas ações</h2>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400 truncate">Tickets pendentes</p>
         </div>
-        <Link href="/dashboard/sac?status=em_andamento" className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline">
+        <Link href="/dashboard/sac?status=em_andamento" className="text-xs font-medium text-blue-600 dark:text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">
           Ver todos →
         </Link>
       </div>
 
       {pendingTickets.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center py-8 sm:py-10 border-2 border-dashed border-gray-100 dark:border-zinc-800 rounded-xl bg-gray-50/50 dark:bg-zinc-900/50">
-          <div className="p-3 bg-white dark:bg-zinc-800 rounded-full shadow-sm mb-3 ring-1 ring-gray-100 dark:ring-zinc-700">
-            <svg width="24" height="24" className="text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <div className="p-3 bg-white dark:bg-zinc-900 dark:bg-zinc-800 rounded-full shadow-sm mb-3 ring-1 ring-gray-100 dark:ring-zinc-700">
+            <svg width="24" height="24" className="text-emerald-500 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
@@ -192,11 +192,11 @@ async function PendingTicketsSection() {
             <Link
               key={ticket.id}
               href={`/dashboard/sac/${ticket.id}`}
-              className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 dark:border-zinc-800 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-all group"
+              className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 dark:border-zinc-800 hover:border-blue-200 dark:border-blue-800/50 dark:hover:border-blue-800 hover:bg-blue-50/50 dark:bg-blue-950/20 dark:hover:bg-blue-900/20 transition-all group"
             >
               <div className={`w-2 h-2 rounded-full shrink-0 ${ticket.status === 'pendente' ? 'bg-amber-500' : 'bg-blue-500'}`} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-zinc-100 truncate group-hover:text-blue-700 dark:group-hover:text-blue-400">{ticket.subject}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-zinc-100 truncate group-hover:text-blue-700 dark:text-blue-400 dark:group-hover:text-blue-400">{ticket.subject}</p>
                 <p className="text-xs text-gray-500 dark:text-zinc-400">
                   #{ticket.id} • {new Date(ticket.openedAt).toLocaleDateString('pt-BR')}
                 </p>

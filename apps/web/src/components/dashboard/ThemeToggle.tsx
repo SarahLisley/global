@@ -32,7 +32,7 @@ export function ThemeToggle({ isSearchOpen }: ThemeToggleProps) {
     <button
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       className={clsx(
-        'relative p-2 sm:p-2.5 text-gray-600 dark:text-zinc-400 hover:text-[#4a90e2] dark:hover:text-amber-400 hover:bg-blue-50 dark:hover:bg-zinc-800 rounded-xl transition-all duration-200',
+        'relative p-2 sm:p-2.5 text-gray-600 dark:text-zinc-400 hover:text-[#4a90e2] dark:hover:text-amber-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:bg-blue-950/30 dark:hover:bg-zinc-800 rounded-xl transition-all duration-200',
         'hidden md:block',
         isSearchOpen && 'md:hidden lg:block'
       )}

@@ -31,8 +31,8 @@ export async function login(email: string, password: string) {
         c.CODCLI, c.CLIENTE
       FROM ${OWNER}.BRLOGINWEB l
       LEFT JOIN ${OWNER}.PCCLIENT c
-        ON REPLACE(REPLACE(REPLACE(l.CGC, '/',''), '.',''), '-','')
-         = REPLACE(REPLACE(REPLACE(c.CGCENT, '/',''), '.',''), '-','')
+        ON REGEXP_REPLACE(l.CGC, '[^0-9]', '')
+         = REGEXP_REPLACE(c.CGCENT, '[^0-9]', '')
       WHERE UPPER(TRIM(l.EMAIL)) = UPPER(TRIM(:email))
       FETCH FIRST 1 ROWS ONLY
       `,
@@ -104,8 +104,8 @@ export async function getUserProfile(email: string) {
         c.ENDE, c.BAIRRO, c.CIDADE, c.UF, c.CEP, c.TEL
       FROM ${OWNER}.BRLOGINWEB l
       LEFT JOIN ${OWNER}.PCCLIENT c
-        ON REPLACE(REPLACE(REPLACE(l.CGC, '/',''), '.',''), '-','')
-         = REPLACE(REPLACE(REPLACE(c.CGCENT, '/',''), '.',''), '-','')
+        ON REGEXP_REPLACE(l.CGC, '[^0-9]', '')
+         = REGEXP_REPLACE(c.CGCENT, '[^0-9]', '')
       WHERE UPPER(TRIM(l.EMAIL)) = UPPER(TRIM(:email))
       FETCH FIRST 1 ROWS ONLY
       `,

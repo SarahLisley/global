@@ -1,0 +1,12 @@
+﻿--- TESTANDO CONEX├âO SMTP ---
+HOST: smtp.office365.com
+PORT: 587
+USER: gh.portal2026@outlook.com
+PASS: ********
+
+ÔÅ│ Verificando conex├úo e credenciais com o Outlook...
+
+­ƒÆí DIAGN├ôSTICO:
+> O Outlook bloqueou o login. Motivos comuns:
+  1. O SMTP pode estar desativado para contas rec├®m-criadas (precisa ativar no painel do Outlook).
+  2. Voc├¬ ativou a Verifica├º├úo em Duas Etapas e precisa criar uma "Senha de Aplicativo" na Microsoft.

@@ -11,12 +11,12 @@ function TicketsLoading() {
     <div className="space-y-6 animate-pulse">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-2">
-          <div className="h-8 bg-slate-200 rounded w-64"></div>
-          <div className="h-4 bg-slate-200 rounded w-48"></div>
+          <div className="h-8 bg-slate-200 dark:bg-zinc-700 rounded w-64"></div>
+          <div className="h-4 bg-slate-200 dark:bg-zinc-700 rounded w-48"></div>
         </div>
-        <div className="h-10 bg-slate-200 rounded-full w-32"></div>
+        <div className="h-10 bg-slate-200 dark:bg-zinc-700 rounded-full w-32"></div>
       </div>
-      <div className="h-[400px] bg-slate-100 rounded-xl border border-slate-200"></div>
+      <div className="h-[400px] bg-slate-100 dark:bg-zinc-800 rounded-xl border border-slate-200 dark:border-zinc-800"></div>
     </div>
   );
 }

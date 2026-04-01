@@ -27,7 +27,7 @@ export function CloseTicketButton({ ticketId, isDisabled }: { ticketId: string; 
     <button
       onClick={handleClose}
       disabled={isPending}
-      className="px-4 py-2 bg-white text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 shadow-sm"
+      className="px-4 py-2 bg-white dark:bg-zinc-900 text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 shadow-sm"
       title="Marcar ticket como resolvido"
     >
       {isPending ? (

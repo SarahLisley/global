@@ -17,10 +17,10 @@ import {
 
 // Mapa de ícones por tipo de notificação
 const typeConfig: Record<string, { icon: any; color: string; bg: string }> = {
-  sac: { icon: FileText, color: 'text-blue-600', bg: 'bg-blue-100' },
-  boleto: { icon: CreditCard, color: 'text-red-600', bg: 'bg-red-100' },
-  pedido: { icon: ShoppingCart, color: 'text-emerald-600', bg: 'bg-emerald-100' },
-  default: { icon: Bell, color: 'text-slate-500', bg: 'bg-slate-100' },
+  sac: { icon: FileText, color: 'text-blue-600 dark:text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/50' },
+  boleto: { icon: CreditCard, color: 'text-red-600 dark:text-red-500', bg: 'bg-red-100 dark:bg-red-900/50' },
+  pedido: { icon: ShoppingCart, color: 'text-emerald-600 dark:text-emerald-500', bg: 'bg-emerald-100 dark:bg-emerald-900/50' },
+  default: { icon: Bell, color: 'text-slate-500 dark:text-zinc-400', bg: 'bg-slate-100 dark:bg-zinc-800' },
 };
 
 function formatTime(timestamp: string): string {
@@ -112,14 +112,14 @@ export default function NotificationsPage() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Notificações</h1>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">Notificações</h1>
               {unreadCount > 0 && (
                 <span className="inline-flex items-center justify-center h-6 min-w-[24px] px-2 rounded-full bg-orange-500 text-white text-xs font-bold shadow-sm">
                   {unreadCount}
                 </span>
               )}
             </div>
-            <p className="text-sm text-slate-500 mt-0.5">
+            <p className="text-sm text-slate-500 dark:text-zinc-400 mt-0.5">
               Acompanhe eventos recentes de tickets, boletos e pedidos.
             </p>
           </div>
@@ -128,7 +128,7 @@ export default function NotificationsPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={fetchNotifications}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all duration-200"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-zinc-400 bg-slate-50 dark:bg-zinc-900/40 hover:bg-slate-100 dark:hover:bg-zinc-800 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-800 transition-all duration-200"
           >
             <RefreshCw className="w-4 h-4" />
             Atualizar
@@ -136,7 +136,7 @@ export default function NotificationsPage() {
           {unreadCount > 0 && (
             <button
               onClick={markAllAsRead}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 hover:border-blue-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-blue-500/10 active:translate-y-0"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-blue-600 dark:text-blue-500 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:bg-blue-900/50 border border-blue-100 hover:border-blue-200 dark:border-blue-800/50 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-blue-500/10 active:translate-y-0"
             >
               <CheckCheck className="w-4 h-4" />
               Marcar todas como lidas
@@ -149,20 +149,20 @@ export default function NotificationsPage() {
       {loading && (
         <div className="flex flex-col items-center justify-center py-16">
           <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-3" />
-          <p className="text-sm text-slate-500">Carregando notificações...</p>
+          <p className="text-sm text-slate-500 dark:text-zinc-400">Carregando notificações...</p>
         </div>
       )}
 
       {/* Error state */}
       {error && !loading && (
         <div className="flex flex-col items-center justify-center py-16">
-          <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center mb-4">
+          <div className="w-16 h-16 rounded-2xl bg-red-100 dark:bg-red-900/50 flex items-center justify-center mb-4">
             <AlertTriangle className="w-8 h-8 text-red-500" />
           </div>
-          <p className="text-base font-medium text-slate-700">{error}</p>
+          <p className="text-base font-medium text-slate-700 dark:text-zinc-300">{error}</p>
           <button
             onClick={fetchNotifications}
-            className="mt-3 text-sm text-blue-600 hover:underline font-medium"
+            className="mt-3 text-sm text-blue-600 dark:text-blue-500 hover:underline font-medium"
           >
             Tentar novamente
           </button>
@@ -171,17 +171,17 @@ export default function NotificationsPage() {
 
       {/* Notification List */}
       {!loading && !error && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-100 dark:border-zinc-800/50 shadow-sm overflow-hidden">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-4">
-              <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
-                <Sparkles className="w-8 h-8 text-slate-400" />
+              <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center mb-4">
+                <Sparkles className="w-8 h-8 text-slate-400 dark:text-zinc-500" />
               </div>
-              <p className="text-base font-medium text-slate-700">Tudo em dia!</p>
-              <p className="text-sm text-slate-500 mt-1">Nenhuma notificação no momento.</p>
+              <p className="text-base font-medium text-slate-700 dark:text-zinc-300">Tudo em dia!</p>
+              <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">Nenhuma notificação no momento.</p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100/80">
+            <div className="divide-y divide-slate-100 dark:divide-zinc-800/50/80">
               {notifications.map((notification, index) => {
                 const cfg = typeConfig[notification.type] || typeConfig.default;
                 const IconComponent = cfg.icon;
@@ -221,18 +221,18 @@ export default function NotificationsPage() {
                             <p
                               className={clsx(
                                 'text-sm font-semibold truncate transition-colors',
-                                !notification.read ? 'text-slate-900' : 'text-slate-700',
+                                !notification.read ? 'text-slate-900 dark:text-zinc-100' : 'text-slate-700 dark:text-zinc-300',
                               )}
                             >
                               {notification.title}
                             </p>
-                            <p className="text-sm text-slate-500 mt-0.5 line-clamp-2">
+                            <p className="text-sm text-slate-500 dark:text-zinc-400 mt-0.5 line-clamp-2">
                               {notification.description}
                             </p>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
-                            <Clock className="w-3.5 h-3.5 text-slate-400" />
-                            <span className="text-xs text-slate-400 whitespace-nowrap font-medium">
+                            <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
+                            <span className="text-xs text-slate-400 dark:text-zinc-500 whitespace-nowrap font-medium">
                               {formatTime(notification.timestamp)}
                             </span>
                           </div>
@@ -249,7 +249,7 @@ export default function NotificationsPage() {
 
       {/* Summary footer */}
       {!loading && !error && notifications.length > 0 && (
-        <div className="flex items-center justify-center gap-2 text-xs text-slate-400 pt-2">
+        <div className="flex items-center justify-center gap-2 text-xs text-slate-400 dark:text-zinc-500 pt-2">
           <Bell className="w-3.5 h-3.5" />
           <span>
             {notifications.length} notificação{notifications.length !== 1 ? 'ões' : ''} ·{' '}

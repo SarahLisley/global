@@ -1,8 +1,6 @@
 import clsx from 'clsx';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useTheme } from 'next-themes';
-import { Moon, Sun } from 'lucide-react';
 import { logoutAction } from '../../actions/logoutAction';
 
 interface ProfileDropdownProps {
@@ -16,7 +14,6 @@ interface ProfileDropdownProps {
 
 export function ProfileDropdown({ userName, userEmail, avatarUrl, isOpen, setIsOpen, isSearchOpen }: ProfileDropdownProps) {
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
 
   const handleLogout = async () => {
     setIsOpen(false);
@@ -50,7 +47,7 @@ export function ProfileDropdown({ userName, userEmail, avatarUrl, isOpen, setIsO
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-900 rounded-xl shadow-xl border border-gray-100 dark:border-zinc-800 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200" role="menu">
+          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-900 dark:bg-zinc-900 rounded-xl shadow-xl border border-gray-100 dark:border-zinc-800 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200" role="menu">
             <div className="p-3 border-b border-gray-100 dark:border-zinc-800">
               <p className="text-sm font-medium text-gray-900 dark:text-zinc-100 truncate" title={userName}>{userName}</p>
               <p className="text-xs text-gray-500 dark:text-zinc-400 truncate" title={userEmail}>{userEmail}</p>
@@ -69,21 +66,10 @@ export function ProfileDropdown({ userName, userEmail, avatarUrl, isOpen, setIsO
                 Meu Perfil
               </Link>
 
-              <button
-                onClick={() => {
-                  setTheme(theme === 'dark' ? 'light' : 'dark');
-                  setIsOpen(false);
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left"
-                role="menuitem"
-              >
-                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                Tema {theme === 'dark' ? 'Claro' : 'Escuro'}
-              </button>
 
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors text-left"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-500 dark:text-red-400 hover:bg-red-50 dark:bg-red-950/30 dark:hover:bg-red-500/10 rounded-lg transition-colors text-left"
                 role="menuitem"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">

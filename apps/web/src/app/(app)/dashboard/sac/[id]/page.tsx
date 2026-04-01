@@ -38,7 +38,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
               <line x1="9" y1="9" x2="15" y2="15" />
             </svg>
             <h2 className="text-lg font-bold text-gray-900 mb-2">Erro ao Carregar Ticket</h2>
-            <p className="text-sm text-red-600 mb-6">{res.message || 'Não foi possível carregar as informações do ticket'}</p>
+            <p className="text-sm text-red-600 dark:text-red-500 mb-6">{res.message || 'Não foi possível carregar as informações do ticket'}</p>
             <Link href="/dashboard/sac">
               <Button variant="secondary">Voltar para SAC</Button>
             </Link>
@@ -67,9 +67,9 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
           <Link href="/dashboard/sac">
             <button
               type="button"
-              className="w-10 h-10 rounded-full bg-white border border-slate-200 shadow-sm hover:shadow-md hover:bg-slate-50 flex items-center justify-center transition-all group shrink-0"
+              className="w-10 h-10 rounded-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md hover:bg-slate-50 dark:hover:bg-zinc-800/50 dark:bg-zinc-900/40 flex items-center justify-center transition-all group shrink-0"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500 group-hover:text-slate-700 transition-colors">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500 dark:text-zinc-400 group-hover:text-slate-700 dark:hover:text-zinc-200 dark:text-zinc-300 transition-colors">
                 <line x1="19" y1="12" x2="5" y2="12" />
                 <polyline points="12 19 5 12 12 5" />
               </svg>
@@ -80,7 +80,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">Ticket #{ticket.id}</h1>
               {statusBadge(ticket.status)}
             </div>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-slate-600">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-slate-600 dark:text-zinc-400">
               <div className="flex items-center gap-1.5">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" />
@@ -98,7 +98,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             </div>
           </div>
         </div>
-        <div className="text-sm text-slate-500 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm capitalize hidden sm:block h-fit">
+        <div className="text-sm text-slate-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 px-4 py-2 rounded-full border border-slate-200 dark:border-zinc-800 shadow-sm capitalize hidden sm:block h-fit">
           {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
         </div>
       </div>
@@ -112,10 +112,10 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
       )}
 
       {/* Timeline / Histórico */}
-      <Card className="p-0 overflow-hidden border-slate-200 shadow-sm">
-        <div className="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50">
+      <Card className="p-0 overflow-hidden border-slate-200 dark:border-zinc-800 shadow-sm">
+        <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-zinc-800/50 bg-slate-50/50 dark:bg-zinc-900/50">
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-600">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-600 dark:text-blue-500">
               <path d="M3 3v18h18" />
               <path d="m19 9-5 5-4-4-3 3" />
             </svg>
@@ -126,20 +126,20 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         <div className="p-6">
           {timeline.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-300">
+              <div className="w-12 h-12 bg-slate-50 dark:bg-zinc-900/40 rounded-full flex items-center justify-center mb-3">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-300 dark:text-zinc-600">
                   <circle cx="12" cy="12" r="10" />
                   <line x1="12" y1="8" x2="12" y2="12" />
                   <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
               </div>
-              <p className="text-sm text-slate-500 font-medium">Nenhuma movimentação registrada</p>
-              <p className="text-xs text-slate-400 mt-1">As atualizações aparecerão aqui</p>
+              <p className="text-sm text-slate-500 dark:text-zinc-400 font-medium">Nenhuma movimentação registrada</p>
+              <p className="text-xs text-slate-400 dark:text-zinc-500 mt-1">As atualizações aparecerão aqui</p>
             </div>
           ) : (
             <div className="relative pl-4 sm:pl-6">
               {/* Linha vertical da timeline */}
-              <div className="absolute left-4 sm:left-6 top-4 bottom-4 w-px bg-slate-200" />
+              <div className="absolute left-4 sm:left-6 top-4 bottom-4 w-px bg-slate-200 dark:bg-zinc-700" />
 
               <div className="space-y-8">
                 {timeline.map((item: any, index: number) => {
@@ -147,18 +147,18 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
                   return (
                     <div key={index} className="relative flex gap-4 sm:gap-6 group">
                       {/* Marcador */}
-                      <div className={`relative z-10 flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center bg-white shadow-sm transition-transform group-hover:scale-110 ${item.status === 'finalizado' ? 'border-emerald-500 text-emerald-600' : 'border-blue-500 text-blue-600'
+                      <div className={`relative z-10 flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center bg-white dark:bg-zinc-900 shadow-sm transition-transform group-hover:scale-110 ${item.status === 'finalizado' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-500' : 'border-blue-500 text-blue-600 dark:text-blue-500'
                         }`}>
                         <span className="text-xs font-bold">{index + 1}</span>
                       </div>
 
                       {/* Conteúdo */}
-                      <div className="flex-1 bg-white rounded-lg border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all -mt-1 group-hover:border-blue-200">
+                      <div className="flex-1 bg-white dark:bg-zinc-900 rounded-lg border border-slate-200 dark:border-zinc-800 p-4 shadow-sm hover:shadow-md transition-all -mt-1 group-hover:border-blue-200 dark:border-blue-800/50">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                          <div className="font-medium text-slate-900">
+                          <div className="font-medium text-slate-900 dark:text-zinc-100">
                             {item.status === 'finalizado' ? 'Ticket Finalizado' : 'Em Análise'}
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-zinc-400 bg-slate-50 dark:bg-zinc-900/40 px-2 py-1 rounded-md border border-slate-100 dark:border-zinc-800/50">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <circle cx="12" cy="12" r="10" />
                               <polyline points="12 6 12 12 16 14" />
@@ -166,7 +166,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
                             {formatDateTime(item.when)}
                           </div>
                         </div>
-                        <p className="text-sm text-slate-600 leading-relaxed font-light">{item.description || '—'}</p>
+                        <p className="text-sm text-slate-600 dark:text-zinc-400 leading-relaxed font-light">{item.description || '—'}</p>
                       </div>
                     </div>
                   );

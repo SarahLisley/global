@@ -55,20 +55,20 @@ export function RecentOrdersTable({
   const statusBadge = (s: Order['status']) => {
     if (s === 'faturado') {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 border border-emerald-200 dark:border-emerald-800/50">
           Faturado
         </span>
       );
     }
     if (s === 'liberado') {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-800 border border-blue-200 dark:border-blue-800/50">
           Liberado
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-800 border border-red-200 dark:border-red-800/50">
         Bloqueado
       </span>
     );
@@ -81,7 +81,7 @@ export function RecentOrdersTable({
   return (
     <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300">
       {/* Header Responsivo */}
-      <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-gray-50 dark:from-zinc-900 to-white dark:to-zinc-800">
+      <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-gray-50 dark:from-zinc-900 to-white dark:to-zinc-900 dark:to-zinc-800">
         <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-zinc-100 mb-0.5 sm:mb-1">Pedidos Recentes</h2>
         <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400">Últimos 30 Dias</p>
       </div>
@@ -138,7 +138,7 @@ export function RecentOrdersTable({
                       <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <Link
                           href={`/dashboard/meus-pedidos?pedido=${o.orderNumber}`}
-                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium text-xs sm:text-sm hover:underline inline-flex items-center gap-1"
+                          className="text-blue-600 dark:text-blue-500 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-400 dark:hover:text-blue-300 font-medium text-xs sm:text-sm hover:underline inline-flex items-center gap-1"
                         >
                           Ver
                           <ChevronRight size={14} />

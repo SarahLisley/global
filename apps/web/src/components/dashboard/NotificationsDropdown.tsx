@@ -45,7 +45,7 @@ export function NotificationsDropdown({ notifications, isOpen, setIsOpen, isSear
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-100 dark:border-zinc-800 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-zinc-900 dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-100 dark:border-zinc-800 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="p-4 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between bg-gray-50/50 dark:bg-zinc-800/50">
               <h3 className="font-semibold text-gray-900 dark:text-zinc-100">Notificações</h3>
               <button

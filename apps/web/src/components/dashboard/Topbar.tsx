@@ -96,7 +96,7 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
   });
 
   return (
-    <header className="sticky top-0 z-30 bg-white dark:bg-zinc-950 border-b border-slate-200 dark:border-zinc-800">
+    <header className="sticky top-0 z-30 bg-white dark:bg-zinc-900 dark:bg-zinc-950 border-b border-slate-200 dark:border-zinc-800 dark:border-zinc-800">
       <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
         <div className="flex items-center justify-between gap-3">
           
@@ -118,11 +118,11 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
             'flex flex-col gap-0.5 flex-1 min-w-0',
             isSearchOpen ? 'hidden lg:flex' : 'flex'
           )}>
-            <div className="flex items-center gap-2 text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">
-              <Link href="/dashboard" className="hover:text-blue-600 transition-colors">Portal Global</Link>
+            <div className="flex items-center gap-2 text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider truncate">
+              <Link href="/dashboard" className="hover:text-blue-600 dark:hover:text-blue-400 dark:text-blue-500 transition-colors">Portal Global</Link>
               {currentModule && (
                 <>
-                  <span className="text-slate-300">/</span>
+                  <span className="text-slate-300 dark:text-zinc-600">/</span>
                   <span className={clsx(subModules.length === 0 ? "text-blue-500" : "hover:text-blue-500 transition-colors cursor-pointer")}>
                     {pageTitle}
                   </span>
@@ -165,7 +165,7 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
             <button
               onClick={() => setIsHelpOpen(!isHelpOpen)}
               className={clsx(
-                'p-2 sm:p-2.5 text-gray-600 dark:text-zinc-400 hover:text-[#4a90e2] hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-xl transition-all duration-200',
+                'p-2 sm:p-2.5 text-gray-600 dark:text-zinc-400 hover:text-[#4a90e2] hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:bg-blue-950/30 dark:hover:bg-blue-900/30 rounded-xl transition-all duration-200',
                 'hidden md:block',
                 isSearchOpen && 'md:hidden lg:block'
               )}

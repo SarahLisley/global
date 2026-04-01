@@ -2,7 +2,7 @@
 
 import { Card } from '@pgb/ui';
 import { useState, useMemo } from 'react';
-import { Search, X, Filter, FileText, CheckCircle2, AlertTriangle, XCircle, ChevronRight, Copy, Check } from 'lucide-react';
+import { Search, X, FileText, CheckCircle2, AlertTriangle, XCircle, Copy, Check, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
 
 type Doc = {
@@ -43,21 +43,18 @@ export function DocsValidity({ docs }: { docs: Doc[] }) {
   const filteredDocs = useMemo(() => {
     let result = [...docs];
 
-    // Busca por texto (nome ou número)
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
-      result = result.filter(d => 
-        d.description.toLowerCase().includes(term) || 
+      result = result.filter(d =>
+        d.description.toLowerCase().includes(term) ||
         d.docNumber.toLowerCase().includes(term)
       );
     }
 
-    // Filtro por status
     if (filterStatus !== 'todos') {
       result = result.filter(d => d.status === filterStatus);
     }
 
-    // Ordenação: vencido > proximo_vencer > valido
     return result.sort((a, b) => {
       const priority = { vencido: 0, proximo_vencer: 1, valido: 2 };
       return priority[a.status] - priority[b.status];
@@ -71,54 +68,47 @@ export function DocsValidity({ docs }: { docs: Doc[] }) {
     validos: docs.filter(d => d.status === 'valido').length,
   }), [docs]);
 
-  const badge = (s: Doc['status']) => {
+  const statusBadge = (s: Doc['status']) => {
     if (s === 'valido') return (
-      <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 font-bold bg-emerald-50/80 px-2 py-0.5 rounded-full ring-1 ring-emerald-500/20">
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 border border-emerald-200 dark:border-emerald-800/50">
+        <CheckCircle2 size={12} />
         Válido
-      </div>
+      </span>
     );
     if (s === 'proximo_vencer') return (
-      <div className="flex items-center gap-1.5 text-[11px] text-amber-600 font-bold bg-amber-50/80 px-2 py-0.5 rounded-full ring-1 ring-amber-500/20">
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/50 text-amber-800 border border-amber-200 dark:border-amber-800/50">
+        <AlertTriangle size={12} />
         Próx. Venc.
-      </div>
+      </span>
     );
     return (
-      <div className="flex items-center gap-1.5 text-[11px] text-red-500 font-bold bg-red-50/80 px-2 py-0.5 rounded-full ring-1 ring-red-500/20">
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-800 border border-red-200 dark:border-red-800/50">
+        <XCircle size={12} />
         Vencido
-      </div>
+      </span>
     );
   };
 
-  const statusTab = (id: FilterStatus, label: string, count: number, activeColor: string) => {
-    const active = filterStatus === id;
-    return (
-      <button
-        onClick={() => setFilterStatus(id)}
-        className={clsx(
-          "flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200",
-          active 
-            ? `${activeColor} text-white shadow-md shadow-slate-200 dark:shadow-none scale-[1.03]` 
-            : "bg-slate-50 dark:bg-zinc-800/50 text-slate-500 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800"
-        )}
-      >
-        {label}
-        <span className={clsx(
-          "px-1.5 rounded-full text-[10px]",
-          active ? "bg-white/20" : "bg-slate-200 dark:bg-zinc-700 text-slate-600 dark:text-zinc-400"
-        )}>
-          {count}
-        </span>
-      </button>
-    );
+  const statusIndicatorColor = (s: Doc['status']) => {
+    if (s === 'vencido') return 'bg-red-500';
+    if (s === 'proximo_vencer') return 'bg-amber-500';
+    return 'bg-emerald-500';
   };
+
+  const filterTabs: { id: FilterStatus; label: string; count: number }[] = [
+    { id: 'todos', label: 'Todos', count: stats.total },
+    { id: 'vencido', label: 'Vencidos', count: stats.vencidos },
+    { id: 'proximo_vencer', label: 'A Vencer', count: stats.proximos },
+    { id: 'valido', label: 'Válidos', count: stats.validos },
+  ];
 
   return (
     <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300">
-      {/* Header com Busca */}
-      <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-zinc-800 space-y-4">
+      {/* Header */}
+      <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-gray-50 dark:from-zinc-900 to-white dark:to-zinc-900 dark:to-zinc-800">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-blue-600 dark:text-blue-400">
+            <div className="p-2 bg-blue-50 dark:bg-blue-950/30 dark:bg-blue-900/20 rounded-xl text-blue-600 dark:text-blue-500 dark:text-blue-400">
               <FileText size={20} />
             </div>
             <div className="min-w-0">
@@ -127,130 +117,176 @@ export function DocsValidity({ docs }: { docs: Doc[] }) {
             </div>
           </div>
 
-          <div className="relative group max-w-sm w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
             <input
               type="text"
               placeholder="Buscar por nome ou número..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-10 pl-10 pr-10 bg-slate-50 dark:bg-zinc-800/80 border-slate-200 dark:border-zinc-700 rounded-xl text-sm focus:bg-white dark:focus:bg-zinc-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+              className="w-full pl-8 pr-8 py-1.5 sm:py-2 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg text-xs sm:text-sm text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#4a90e2] focus:border-transparent transition-all"
             />
             {searchTerm && (
-              <button 
+              <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-full transition-colors"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full transition-colors"
                 title="Limpar busca"
               >
-                <X size={14} className="text-slate-400" />
+                <X size={14} className="text-gray-400" />
               </button>
             )}
           </div>
         </div>
-
-        {/* Filtros de Status (Tabs) */}
-        <div className="flex flex-wrap gap-2 pt-1">
-          {statusTab('todos', 'Todos', stats.total, 'bg-slate-900 dark:bg-zinc-700')}
-          {statusTab('vencido', 'Vencidos', stats.vencidos, 'bg-red-500')}
-          {statusTab('proximo_vencer', 'A Vencer', stats.proximos, 'bg-amber-500')}
-          {statusTab('valido', 'Válidos', stats.validos, 'bg-emerald-500')}
-        </div>
       </div>
 
-      <div className="p-4 sm:p-6 bg-slate-50/30 dark:bg-zinc-900/30">
-        {/* Header de colunas desktop */}
-        {filteredDocs.length > 0 && (
-          <div className="hidden sm:grid sm:grid-cols-12 gap-x-6 px-5 pb-3 text-[10px] uppercase tracking-wider text-slate-400 dark:text-zinc-500 font-bold">
-            <div className="sm:col-span-5">Documento</div>
-            <div className="sm:col-span-3">Vencimento</div>
-            <div className="sm:col-span-2">Referência</div>
-            <div className="sm:col-span-2 text-right">Situação</div>
-          </div>
-        )}
-
-        {/* Lista */}
-        <div className="space-y-2">
-          {filteredDocs.length > 0 ? (
-            filteredDocs.map((d) => (
-              <div
-                key={d.description + d.docNumber}
+      <div className="p-4 sm:p-6">
+        {/* Filter Tabs */}
+        <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
+          {filterTabs.map((tab) => {
+            const active = filterStatus === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setFilterStatus(tab.id)}
                 className={clsx(
-                  "group relative rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 transition-all hover:shadow-md hover:-translate-y-0.5",
-                  d.status === 'vencido' && "border-l-[4px] border-l-red-500",
-                  d.status === 'proximo_vencer' && "border-l-[4px] border-l-amber-500",
-                  d.status === 'valido' && "border-l-[4px] border-l-emerald-500"
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200",
+                  active
+                    ? "bg-gray-900 dark:bg-zinc-200 text-white dark:text-zinc-900 shadow-sm"
+                    : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700"
                 )}
               >
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-y-3 sm:gap-x-6 items-center">
-                  {/* Nome do documento */}
-                  <div className="sm:col-span-5 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <a
-                        href={d.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={clsx(
-                          "text-sm font-bold truncate transition-colors",
-                          d.url ? "text-slate-800 dark:text-zinc-100 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer" : "text-slate-500 cursor-default"
-                        )}
-                        onClick={(e) => !d.url && e.preventDefault()}
+                {tab.label}
+                <span className={clsx(
+                  "px-1.5 py-0.5 rounded-full text-[10px] font-bold",
+                  active
+                    ? "bg-white/20 dark:bg-zinc-900/30"
+                    : "bg-gray-200 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400"
+                )}>
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <div className="inline-block min-w-full align-middle">
+            <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-zinc-800">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-gray-50 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800">
+                  <tr>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 dark:text-zinc-300 text-xs sm:text-sm whitespace-nowrap">Documento</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 dark:text-zinc-300 text-xs sm:text-sm whitespace-nowrap">Vencimento</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 dark:text-zinc-300 text-xs sm:text-sm whitespace-nowrap">Referência</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 dark:text-zinc-300 text-xs sm:text-sm whitespace-nowrap">Situação</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
+                  {filteredDocs.length > 0 ? (
+                    filteredDocs.map((d) => (
+                      <tr
+                        key={d.description + d.docNumber}
+                        className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors group"
                       >
-                        {d.description}
-                      </a>
-                    </div>
-                  </div>
+                        {/* Documento */}
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2.5">
+                            <span className={clsx("w-2 h-2 rounded-full shrink-0", statusIndicatorColor(d.status))} />
+                            <a
+                              href={d.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={clsx(
+                                "text-xs sm:text-sm font-medium truncate max-w-[200px] sm:max-w-[280px]",
+                                d.url
+                                  ? "text-gray-900 dark:text-zinc-100 hover:text-blue-600 dark:hover:text-blue-400 dark:text-blue-500 dark:hover:text-blue-400 cursor-pointer"
+                                  : "text-gray-600 dark:text-zinc-300 cursor-default"
+                              )}
+                              onClick={(e) => !d.url && e.preventDefault()}
+                            >
+                              {d.description}
+                            </a>
+                            {d.url && (
+                              <ChevronRight size={14} className="text-gray-300 dark:text-zinc-600 group-hover:text-blue-500 transition-colors shrink-0" />
+                            )}
+                          </div>
+                        </td>
 
-                  {/* Data de Vencimento */}
-                  <div className="sm:col-span-3">
-                    <div className="flex items-center gap-1.5 text-slate-600 dark:text-zinc-400 text-sm">
-                      <span className="font-medium">
-                        {new Date(d.dueDate).toLocaleDateString('pt-BR')}
-                      </span>
-                      <span className={clsx(
-                        "text-[10px] font-medium",
-                        d.status === 'vencido' ? "text-red-500" : "text-slate-400 dark:text-zinc-500"
-                      )}>
-                        ({getRelativeTime(d.dueDate)})
-                      </span>
-                    </div>
-                  </div>
+                        {/* Vencimento */}
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-zinc-100">
+                              {new Date(d.dueDate).toLocaleDateString('pt-BR')}
+                            </span>
+                            <span className={clsx(
+                              "text-[10px] sm:text-xs font-medium",
+                              d.status === 'vencido' ? "text-red-500" : "text-gray-400 dark:text-zinc-500"
+                            )}>
+                              ({getRelativeTime(d.dueDate)})
+                            </span>
+                          </div>
+                        </td>
 
-                  {/* Referência (Copy) */}
-                  <div className="sm:col-span-2">
-                    <button 
-                      onClick={() => handleCopy(d.docNumber)}
-                      className="flex items-center gap-1.5 p-1 px-2 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors group/row"
-                      title="Copiar referência"
-                    >
-                      <span className="text-xs font-mono text-slate-400 dark:text-zinc-500 group-hover/row:text-slate-900 dark:group-hover/row:text-zinc-200">{d.docNumber}</span>
-                      {copied === d.docNumber ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} className="text-slate-300 group-hover/row:text-blue-400" />}
-                    </button>
-                  </div>
+                        {/* Referência */}
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          <button
+                            onClick={() => handleCopy(d.docNumber)}
+                            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors group/copy"
+                            title="Copiar referência"
+                          >
+                            <span className="text-xs font-mono text-gray-500 dark:text-zinc-400 group-hover/copy:text-gray-900 dark:group-hover/copy:text-zinc-200 transition-colors">
+                              {d.docNumber}
+                            </span>
+                            {copied === d.docNumber
+                              ? <Check size={12} className="text-emerald-500 dark:text-emerald-400" />
+                              : <Copy size={12} className="text-gray-300 group-hover/copy:text-[#4a90e2] transition-colors" />
+                            }
+                          </button>
+                        </td>
 
-                  {/* Status */}
-                  <div className="sm:col-span-2 flex justify-start sm:justify-end">
-                    {badge(d.status)}
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 px-4 text-center bg-white dark:bg-zinc-900 rounded-xl border-2 border-dashed border-slate-200 dark:border-zinc-800">
-               <div className="p-4 bg-slate-50 dark:bg-zinc-800 rounded-full mb-4">
-                  <Search size={24} className="text-slate-300" />
-               </div>
-               <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-100 mb-1">Nenhum documento encontrado</h3>
-               <p className="text-xs text-slate-500 dark:text-zinc-400 mb-6 max-w-[200px]">Tente ajustar seus filtros ou termo de busca.</p>
-               <button 
-                onClick={() => { setSearchTerm(''); setFilterStatus('todos'); }}
-                className="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
-               >
-                 Limpar todos os filtros
-               </button>
+                        {/* Status */}
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                          {statusBadge(d.status)}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="px-3 sm:px-6 py-8 sm:py-12 text-center">
+                        <div className="flex flex-col items-center gap-2 text-gray-500 dark:text-zinc-500">
+                          <svg width="40" height="40" className="sm:w-12 sm:h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                          </svg>
+                          <p className="font-medium text-sm sm:text-base text-gray-900 dark:text-zinc-300">Nenhum documento encontrado</p>
+                          <p className="text-xs sm:text-sm">Tente ajustar seus filtros ou termo de busca.</p>
+                          <button
+                            onClick={() => { setSearchTerm(''); setFilterStatus('todos'); }}
+                            className="mt-2 text-xs font-bold text-blue-600 dark:text-blue-500 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-400 dark:hover:text-blue-300 hover:underline inline-flex items-center gap-1 transition-colors"
+                          >
+                            Limpar filtros
+                            <ChevronRight size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
-          )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-3 sm:mt-4 flex items-center justify-between text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+          <span>
+            Mostrando <span className="font-semibold text-gray-900 dark:text-zinc-100">{filteredDocs.length}</span> de{' '}
+            <span className="font-semibold text-gray-900 dark:text-zinc-100">{docs.length}</span> documentos
+          </span>
         </div>
       </div>
     </Card>
   );
-}
+}

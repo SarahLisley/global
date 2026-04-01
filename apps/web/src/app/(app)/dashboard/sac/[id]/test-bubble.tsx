@@ -20,7 +20,7 @@ export default function TestSac() {
   };
 
   return (
-    <div className="p-10 space-y-4 bg-slate-100 h-screen">
+    <div className="p-10 space-y-4 bg-slate-100 dark:bg-zinc-800 h-screen">
       <ChatBubble message={msgWinthor} isDisabled={false} onEdit={() => { }} onDelete={() => { }} />
       <ChatBubble message={msgCliente} isDisabled={false} onEdit={() => { }} onDelete={() => { }} />
     </div>

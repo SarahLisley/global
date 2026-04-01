@@ -193,8 +193,8 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
       {/* ÁREA 1: INTERAÇÃO SAC */}
       <div
         className={cn(
-          "bg-white rounded-2xl border transition-all duration-300 flex flex-col h-[650px] overflow-hidden relative shadow-md shadow-slate-200/50",
-          isDragOver ? "border-blue-500 ring-4 ring-blue-500/5" : "border-slate-200/60"
+          "bg-white dark:bg-zinc-900 rounded-2xl border transition-all duration-300 flex flex-col h-[650px] overflow-hidden relative shadow-md shadow-slate-200/50",
+          isDragOver ? "border-blue-500 ring-4 ring-blue-500/5" : "border-slate-200 dark:border-zinc-800/60"
         )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -203,23 +203,23 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
         {/* Drag Overlay */}
         {isDragOver && (
           <div className="absolute inset-0 z-50 bg-blue-600/5 backdrop-blur-sm flex flex-col items-center justify-center border-2 border-dashed border-blue-500 m-2 rounded-xl animate-in fade-in zoom-in duration-200">
-            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm animate-bounce">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-600"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+            <div className="w-16 h-16 bg-white dark:bg-zinc-900 rounded-full flex items-center justify-center mb-4 shadow-sm animate-bounce">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-600 dark:text-blue-500"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
             </div>
-            <h3 className="text-lg font-bold text-blue-700">Solte o arquivo aqui</h3>
-            <p className="text-blue-600/80 text-sm">Para anexar à mensagem</p>
+            <h3 className="text-lg font-bold text-blue-700 dark:text-blue-400">Solte o arquivo aqui</h3>
+            <p className="text-blue-600 dark:text-blue-500/80 text-sm">Para anexar à mensagem</p>
           </div>
         )}
 
         {/* Header */}
-        <div className="bg-slate-50/80 backdrop-blur-md px-6 py-5 flex items-center justify-between border-b border-slate-200/60 sticky top-0 z-20 shadow-sm">
+        <div className="bg-slate-50/80 backdrop-blur-md px-6 py-5 flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/60 sticky top-0 z-20 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200 text-white">
               <ChatIcon />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-slate-800 font-semibold text-base tracking-tight">Interação SAC</h3>
+                <h3 className="text-slate-800 dark:text-zinc-200 font-semibold text-base tracking-tight">Interação SAC</h3>
                 <button
                   onClick={() => {
                     startTransition(async () => {
@@ -232,18 +232,18 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
                       }
                     });
                   }}
-                  className="opacity-0 hover:opacity-100 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] rounded border border-amber-200 transition-opacity"
+                  className="opacity-0 hover:opacity-100 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 text-[10px] rounded border border-amber-200 dark:border-amber-800/50 transition-opacity"
                   title="Dev Only: Simular resposta da Winthor"
                 >
                   Simular Winthor
                 </button>
               </div>
-              <p className="text-slate-400 text-xs font-medium">Conversa direta com o suporte</p>
+              <p className="text-slate-400 dark:text-zinc-500 text-xs font-medium">Conversa direta com o suporte</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
+          <div className="flex items-center gap-2 bg-slate-50 dark:bg-zinc-900/40 px-3 py-1.5 rounded-full border border-slate-100 dark:border-zinc-800/50">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]"></span>
-            <span className="text-slate-600 text-[11px] font-semibold uppercase tracking-wide">{allMessages.length} MSG</span>
+            <span className="text-slate-600 dark:text-zinc-400 text-[11px] font-semibold uppercase tracking-wide">{allMessages.length} MSG</span>
           </div>
         </div>
 
@@ -257,18 +257,18 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
           }}
         >
           {allMessages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-slate-400 select-none opacity-60">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 ring-1 ring-slate-200/50 shadow-sm">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-slate-300"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2-2z" /></svg>
+            <div className="flex flex-col items-center justify-center h-full text-slate-400 dark:text-zinc-500 select-none opacity-60">
+              <div className="w-20 h-20 bg-white dark:bg-zinc-900 rounded-full flex items-center justify-center mb-4 ring-1 ring-slate-200/50 shadow-sm">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-slate-300 dark:text-zinc-600"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2-2z" /></svg>
               </div>
-              <span className="text-sm font-medium text-slate-500">Nenhum histórico</span>
-              <span className="text-xs mt-1.5 text-slate-400">Inicie uma conversa abaixo.</span>
+              <span className="text-sm font-medium text-slate-500 dark:text-zinc-400">Nenhum histórico</span>
+              <span className="text-xs mt-1.5 text-slate-400 dark:text-zinc-500">Inicie uma conversa abaixo.</span>
             </div>
           ) : (
             allMessages.map((msg) => (
               editingId === msg.id ? (
                 <div key={msg.id} className="flex flex-col items-end gap-2 animate-in fade-in zoom-in duration-300">
-                  <div className="w-full max-w-[75%] bg-white border-2 border-blue-400 rounded-2xl px-5 py-3.5 shadow-xl shadow-blue-500/10 relative">
+                  <div className="w-full max-w-[75%] bg-white dark:bg-zinc-900 border-2 border-blue-400 rounded-2xl px-5 py-3.5 shadow-xl shadow-blue-500/10 relative">
                     <textarea
                       value={editContent}
                       onChange={(e) => {
@@ -276,15 +276,15 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
                         e.target.style.height = 'auto';
                         e.target.style.height = e.target.scrollHeight + 'px';
                       }}
-                      className="w-full text-sm bg-transparent border-none focus:ring-0 p-0 outline-none resize-none placeholder:text-slate-400 min-h-[40px]"
+                      className="w-full text-sm bg-transparent border-none focus:ring-0 p-0 outline-none resize-none placeholder:text-slate-400 dark:placeholder:text-zinc-500 min-h-[40px]"
                       autoFocus
                     />
-                    <div className="absolute -right-1.5 top-3 w-3 h-3 bg-white border-r border-t border-blue-400 rotate-[45deg] rounded-[1px]" />
+                    <div className="absolute -right-1.5 top-3 w-3 h-3 bg-white dark:bg-zinc-900 border-r border-t border-blue-400 rotate-[45deg] rounded-[1px]" />
                   </div>
                   <div className="flex gap-2 mr-1">
                     <button
                       onClick={() => setEditingId(null)}
-                      className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-all"
+                      className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 dark:bg-zinc-800 rounded-md transition-all"
                     >
                       Cancelar
                     </button>
@@ -312,8 +312,8 @@ export function CommentsSection({ ticketId, initialComments, ticketStatus }: Pro
 
         {/* Message Input or Finalized Banner */}
         {isDisabled ? (
-          <div className="p-6 bg-slate-50 border-t border-slate-200 text-center animate-in slide-in-from-bottom-2 duration-500">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-200/50 text-slate-600 text-sm font-medium border border-slate-200">
+          <div className="p-6 bg-slate-50 dark:bg-zinc-900/40 border-t border-slate-200 dark:border-zinc-800 text-center animate-in slide-in-from-bottom-2 duration-500">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-200/50 text-slate-600 dark:text-zinc-400 text-sm font-medium border border-slate-200 dark:border-zinc-800">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" /></svg>
               Este ticket foi finalizado. Não é possível enviar novas mensagens.
             </div>

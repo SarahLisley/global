@@ -128,13 +128,13 @@ export default function ProfilePage() {
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">Meu Perfil</h1>
-        <p className="text-slate-500 dark:text-zinc-400 mt-1">Gerencie suas informações pessoais e segurança da conta.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-zinc-100 dark:text-zinc-100 tracking-tight">Meu Perfil</h1>
+        <p className="text-slate-500 dark:text-zinc-400 dark:text-zinc-400 mt-1">Gerencie suas informações pessoais e segurança da conta.</p>
       </div>
 
       {message && (
         <div className={`p-4 rounded-xl border flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
-          message.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800 text-emerald-800 dark:text-emerald-400' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800 text-red-800 dark:text-red-400'
+          message.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-950/30 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800 text-emerald-800 dark:text-emerald-400' : 'bg-red-50 dark:bg-red-950/30 dark:bg-red-900/20 border-red-100 dark:border-red-800 text-red-800 dark:text-red-400'
         }`}>
           {message.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
           <span className="text-sm font-medium">{message.text}</span>
@@ -145,35 +145,35 @@ export default function ProfilePage() {
         {/* Left Column: Basic Info */}
         <div className="lg:col-span-2 space-y-8">
           {/* Personal Info Card */}
-          <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-slate-100 dark:border-zinc-800 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-50 dark:border-zinc-800 flex items-center gap-3 bg-slate-50/50 dark:bg-zinc-900/50">
+          <div className="bg-white dark:bg-zinc-900 dark:bg-zinc-950 rounded-2xl border border-slate-100 dark:border-zinc-800/50 dark:border-zinc-800 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-slate-50 dark:border-zinc-800 flex items-center gap-3 bg-slate-50/50 dark:bg-zinc-900/50 dark:bg-zinc-900/50">
               <User className="w-5 h-5 text-blue-500" />
-              <h2 className="font-bold text-slate-800 dark:text-zinc-100">Dados Pessoais</h2>
+              <h2 className="font-bold text-slate-800 dark:text-zinc-200 dark:text-zinc-100">Dados Pessoais</h2>
             </div>
             <div className="p-6">
               <form onSubmit={profileForm.handleSubmit(onUpdateProfile)} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Nome Completo</label>
+                    <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300 dark:text-zinc-300">Nome Completo</label>
                     <Input 
                       {...profileForm.register('name')}
                       placeholder="Seu nome"
                       disabled={isPending}
-                      className="bg-white dark:bg-zinc-950"
+                      className="bg-white dark:bg-zinc-900 dark:bg-zinc-950"
                     />
                     {profileForm.formState.errors.name && (
                       <p className="text-xs text-red-500 mt-1">{profileForm.formState.errors.name.message}</p>
                     )}
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">E-mail</label>
+                    <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300 dark:text-zinc-300">E-mail</label>
                     <Input 
                       value={user?.email || ''} 
                       disabled 
-                      className="bg-slate-50 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 cursor-not-allowed opacity-70"
-                      leftIcon={<Mail className="w-4 h-4 text-slate-400" />}
+                      className="bg-slate-50 dark:bg-zinc-900/40 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 dark:border-zinc-800 cursor-not-allowed opacity-70"
+                      leftIcon={<Mail className="w-4 h-4 text-slate-400 dark:text-zinc-500" />}
                     />
-                    <p className="text-[10px] text-slate-400">O e-mail é usado como identificador e não pode ser alterado.</p>
+                    <p className="text-[10px] text-slate-400 dark:text-zinc-500">O e-mail é usado como identificador e não pode ser alterado.</p>
                   </div>
                 </div>
                 <div className="flex justify-end pt-2">
@@ -187,33 +187,49 @@ export default function ProfilePage() {
           </div>
 
           {/* Business Info (Read Only) */}
-          <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-slate-100 dark:border-zinc-800 shadow-sm overflow-hidden opacity-90">
-            <div className="p-6 border-b border-slate-50 dark:border-zinc-800 flex items-center gap-3 bg-slate-50/50 dark:bg-zinc-900/50">
+          <div className="bg-white dark:bg-zinc-900 dark:bg-zinc-950 rounded-2xl border border-slate-100 dark:border-zinc-800/50 dark:border-zinc-800 shadow-sm overflow-hidden opacity-90">
+            <div className="p-6 border-b border-slate-50 dark:border-zinc-800 flex items-center gap-3 bg-slate-50/50 dark:bg-zinc-900/50 dark:bg-zinc-900/50">
               <Building2 className="w-5 h-5 text-orange-500" />
-              <h2 className="font-bold text-slate-800 dark:text-zinc-100">Vínculo Empresarial</h2>
+              <h2 className="font-bold text-slate-800 dark:text-zinc-200 dark:text-zinc-100">Vínculo Empresarial</h2>
             </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="space-y-1">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cliente / Empresa</p>
+                <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Código WinThor</p>
+                <div className="flex items-center gap-2 text-sm font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md w-fit">
+                  {user?.client?.code || 'N/A'}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Cliente / Empresa</p>
                 <p className="text-sm font-medium text-slate-900 dark:text-zinc-100">{user?.client?.name || 'Não vinculado'}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">CNPJ</p>
+                <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">CNPJ</p>
                 <p className="text-sm font-medium text-slate-900 dark:text-zinc-100">{user?.client?.document || 'N/A'}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Contato</p>
+                <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Contato Principal</p>
                 <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-zinc-300">
-                  <Phone className="w-3.5 h-3.5" />
+                  <Phone className="w-3.5 h-3.5 text-slate-400" />
                   {user?.client?.phone || 'N/A'}
                 </div>
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Endereço</p>
+                <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">CEP</p>
+                <p className="text-sm font-medium text-slate-900 dark:text-zinc-100">{user?.client?.address?.zip || 'N/A'}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Cidade / UF</p>
                 <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-zinc-300">
-                  <MapPin className="w-3.5 h-3.5" />
+                  <MapPin className="w-3.5 h-3.5 text-slate-400" />
                   {user?.client?.address?.city} - {user?.client?.address?.state}
                 </div>
+              </div>
+              <div className="md:col-span-2 lg:col-span-3 space-y-1 pt-2 border-t border-slate-50 dark:border-zinc-800/50">
+                <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Endereço Completo</p>
+                <p className="text-sm text-slate-700 dark:text-zinc-300">
+                   {user?.client?.address?.street}{user?.client?.address?.neighborhood ? `, ${user?.client?.address?.neighborhood}` : ''}
+                </p>
               </div>
             </div>
             <div className="px-6 py-3 bg-orange-50/50 dark:bg-orange-950/10 border-t border-orange-50 dark:border-orange-900/20">
@@ -227,23 +243,23 @@ export default function ProfilePage() {
 
         {/* Right Column: Password */}
         <div className="space-y-8">
-          <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-slate-100 dark:border-zinc-800 shadow-sm overflow-hidden sticky top-24">
-            <div className="p-6 border-b border-slate-50 dark:border-zinc-800 flex items-center gap-3 bg-slate-50/50 dark:bg-zinc-900/50">
-              <ShieldCheck className="w-5 h-5 text-emerald-500" />
-              <h2 className="font-bold text-slate-800 dark:text-zinc-100">Segurança</h2>
+          <div className="bg-white dark:bg-zinc-900 dark:bg-zinc-950 rounded-2xl border border-slate-100 dark:border-zinc-800/50 dark:border-zinc-800 shadow-sm overflow-hidden sticky top-24">
+            <div className="p-6 border-b border-slate-50 dark:border-zinc-800 flex items-center gap-3 bg-slate-50/50 dark:bg-zinc-900/50 dark:bg-zinc-900/50">
+              <ShieldCheck className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+              <h2 className="font-bold text-slate-800 dark:text-zinc-200 dark:text-zinc-100">Segurança</h2>
             </div>
             <div className="p-6">
               <form onSubmit={passwordForm.handleSubmit(onUpdatePassword)} className="space-y-4">
-                <p className="text-xs text-slate-500 mb-2">Altere sua senha de acesso periodicamente para manter sua conta segura.</p>
+                <p className="text-xs text-slate-500 dark:text-zinc-400 mb-2">Altere sua senha de acesso periodicamente para manter sua conta segura.</p>
                 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Senha Atual</label>
+                  <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300 dark:text-zinc-300">Senha Atual</label>
                   <Input 
                     {...passwordForm.register('currentPassword')}
                     type="password" 
                     placeholder="••••••••"
                     disabled={isPending}
-                    className="bg-white dark:bg-zinc-950"
+                    className="bg-white dark:bg-zinc-900 dark:bg-zinc-950"
                   />
                   {passwordForm.formState.errors.currentPassword && (
                     <p className="text-xs text-red-500 mt-1">{passwordForm.formState.errors.currentPassword.message}</p>
@@ -251,13 +267,13 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Nova Senha</label>
+                  <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300 dark:text-zinc-300">Nova Senha</label>
                   <Input 
                     {...passwordForm.register('newPassword')}
                     type="password" 
                     placeholder="••••••••"
                     disabled={isPending}
-                    className="bg-white dark:bg-zinc-950"
+                    className="bg-white dark:bg-zinc-900 dark:bg-zinc-950"
                   />
                   {passwordForm.formState.errors.newPassword && (
                     <p className="text-xs text-red-500 mt-1">{passwordForm.formState.errors.newPassword.message}</p>
@@ -265,13 +281,13 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Confirmar Nova Senha</label>
+                  <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300 dark:text-zinc-300">Confirmar Nova Senha</label>
                   <Input 
                     {...passwordForm.register('confirmPassword')}
                     type="password" 
                     placeholder="••••••••"
                     disabled={isPending}
-                    className="bg-white dark:bg-zinc-950"
+                    className="bg-white dark:bg-zinc-900 dark:bg-zinc-950"
                   />
                   {passwordForm.formState.errors.confirmPassword && (
                     <p className="text-xs text-red-500 mt-1">{passwordForm.formState.errors.confirmPassword.message}</p>

@@ -36,7 +36,7 @@ export function SearchBar({ isSearchOpen, searchQuery, setSearchQuery, toggleSea
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar pedido, NF ou transação..."
-            className="w-full pl-10 pr-10 py-2 sm:py-2.5 bg-gray-100/50 dark:bg-zinc-900 border-none rounded-xl text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#4a90e2]/50 focus:bg-white dark:focus:bg-zinc-800 transition-all placeholder:text-gray-400"
+            className="w-full pl-10 pr-10 py-2 sm:py-2.5 bg-gray-100/50 dark:bg-zinc-900 border-none rounded-xl text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#4a90e2]/50 focus:bg-white dark:bg-zinc-900 dark:focus:bg-zinc-800 transition-all placeholder:text-gray-400"
             autoFocus={isSearchOpen}
           />
           {searchQuery && (
@@ -57,7 +57,7 @@ export function SearchBar({ isSearchOpen, searchQuery, setSearchQuery, toggleSea
           'p-2 sm:p-2.5 rounded-xl transition-all duration-200 sm:hidden', // Hidden on desktop since search is persistent
           isSearchOpen
             ? 'text-white bg-[#4a90e2] hover:bg-[#2563eb] shadow-lg'
-            : 'text-gray-600 dark:text-zinc-400 hover:text-[#4a90e2] hover:bg-blue-50 dark:hover:bg-blue-900/30'
+            : 'text-gray-600 dark:text-zinc-400 hover:text-[#4a90e2] hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:bg-blue-950/30 dark:hover:bg-blue-900/30'
         )}
         title={isSearchOpen ? 'Fechar busca' : 'Buscar'}
       >

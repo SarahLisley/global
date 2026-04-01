@@ -41,10 +41,10 @@ export default async function BuscaPage(props: { searchParams: Promise<{ [key: s
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Resultados da Busca</h1>
-        <p className="text-slate-500">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">Resultados da Busca</h1>
+        <p className="text-slate-500 dark:text-zinc-400">
           {q ? (
-            <>Mostrando resultados para: <span className="font-semibold text-slate-900">"{q}"</span></>
+            <>Mostrando resultados para: <span className="font-semibold text-slate-900 dark:text-zinc-100">"{q}"</span></>
           ) : (
             'Digite algo na barra superior para pesquisar.'
           )}
@@ -52,8 +52,8 @@ export default async function BuscaPage(props: { searchParams: Promise<{ [key: s
       </div>
 
       <Suspense fallback={
-        <Card className="p-12 flex flex-col items-center justify-center text-slate-500 animate-pulse">
-          <div className="w-10 h-10 border-4 border-slate-200 border-t-slate-400 rounded-full animate-spin mb-4" />
+        <Card className="p-12 flex flex-col items-center justify-center text-slate-500 dark:text-zinc-400 animate-pulse">
+          <div className="w-10 h-10 border-4 border-slate-200 dark:border-zinc-800 border-t-slate-400 rounded-full animate-spin mb-4" />
           Buscando informações...
         </Card>
       }>

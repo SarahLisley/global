@@ -60,14 +60,14 @@ export function NPSSurvey({ ticketId }: { ticketId: string }) {
   if (checking) return null;
   if (data?.rated && !success) {
     return (
-      <Card className="p-6 bg-emerald-50/50 border-emerald-100 mb-6">
+      <Card className="p-6 bg-emerald-50 dark:bg-emerald-950/30/50 border-emerald-100 mb-6">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-xl">
+          <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-500 font-bold text-xl">
             {data.nps?.SCORE}
           </div>
           <div>
-            <h3 className="font-bold text-slate-900">Obrigado pela sua avaliação!</h3>
-            <p className="text-sm text-slate-600">Sua nota ajuda a melhorar nosso atendimento cada vez mais.</p>
+            <h3 className="font-bold text-slate-900 dark:text-zinc-100">Obrigado pela sua avaliação!</h3>
+            <p className="text-sm text-slate-600 dark:text-zinc-400">Sua nota ajuda a melhorar nosso atendimento cada vez mais.</p>
           </div>
         </div>
       </Card>
@@ -76,22 +76,22 @@ export function NPSSurvey({ ticketId }: { ticketId: string }) {
 
   if (success) {
     return (
-      <Card className="p-6 bg-emerald-50/50 border-emerald-100 mb-6 animate-in fade-in zoom-in-95">
+      <Card className="p-6 bg-emerald-50 dark:bg-emerald-950/30/50 border-emerald-100 mb-6 animate-in fade-in zoom-in-95">
         <div className="text-center py-4">
-          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mx-auto mb-4">
+          <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-500 mx-auto mb-4">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
-          <h3 className="text-xl font-bold text-slate-900">Avaliação enviada com sucesso!</h3>
-          <p className="text-slate-600 mt-2">Agradecemos o seu feedback.</p>
+          <h3 className="text-xl font-bold text-slate-900 dark:text-zinc-100">Avaliação enviada com sucesso!</h3>
+          <p className="text-slate-600 dark:text-zinc-400 mt-2">Agradecemos o seu feedback.</p>
         </div>
       </Card>
     );
   }
 
   return (
-    <Card className="p-0 overflow-hidden border-blue-200 shadow-lg mb-6 border-2">
+    <Card className="p-0 overflow-hidden border-blue-200 dark:border-blue-800/50 shadow-lg mb-6 border-2">
       <div className="bg-blue-600 p-4 text-white">
         <h3 className="font-bold flex items-center gap-2">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -111,7 +111,7 @@ export function NPSSurvey({ ticketId }: { ticketId: string }) {
               className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl font-bold text-sm sm:text-lg transition-all border-2 ${
                 score === n
                   ? 'bg-blue-600 text-white border-blue-600 scale-110 shadow-md'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600'
+                  : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-800 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 dark:text-blue-500'
               }`}
             >
               {n}
@@ -119,16 +119,16 @@ export function NPSSurvey({ ticketId }: { ticketId: string }) {
           ))}
         </div>
 
-        <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-6">
+        <div className="flex justify-between text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest px-2 mb-6">
           <span>Pouco Satisfeito</span>
           <span>Muito Satisfeito</span>
         </div>
 
         <div className="space-y-4">
           <label className="block sm:px-1">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Conte-nos mais (opcional)</span>
+            <span className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Conte-nos mais (opcional)</span>
             <textarea
-              className="mt-1 block w-full rounded-xl border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-24 p-3 bg-slate-50 transition-colors"
+              className="mt-1 block w-full rounded-xl border-slate-200 dark:border-zinc-800 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm h-24 p-3 bg-slate-50 dark:bg-zinc-900/40 transition-colors"
               placeholder="Sua experiência ajuda a Bravo a melhorar..."
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
