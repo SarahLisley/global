@@ -2,6 +2,16 @@ import type { FastifyInstance } from 'fastify';
 import { getConnection } from '../db/pool';
 
 export default async function healthRoutes(app: FastifyInstance) {
+  // Rota raiz
+  app.get('/', async (_req, reply) => {
+    return reply.send({
+      name: 'Portal Global Bravo System API',
+      version: '1.0.0',
+      status: 'online',
+      docs: 'http://localhost:4001/docs'
+    });
+  });
+
   // Liveness — sempre responde
   app.get('/health', async (_req, reply) => {
     let dbOk = false;
