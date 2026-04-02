@@ -252,7 +252,7 @@ export default function RegisterPage() {
         return;
       }
       if (res.needsVerification) {
-        router.push(`/auth/verify-register?email=${encodeURIComponent(data.email)}`);
+        router.push(`/verify-register?email=${encodeURIComponent(data.email)}`);
       }
     });
   };
