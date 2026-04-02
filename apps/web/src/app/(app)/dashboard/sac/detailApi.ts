@@ -2,7 +2,19 @@
 
 import { apiServer } from '../../../../lib/api';
 
-export async function fetchTicketDetail(id: string) {
+type TicketDetailSuccess = {
+  ok: true;
+  ticket: any;
+  timeline: any[];
+  comments: any[];
+};
+
+type TicketDetailFailure = {
+  ok: false;
+  message: string;
+};
+
+export async function fetchTicketDetail(id: string): Promise<TicketDetailSuccess | TicketDetailFailure> {
   try {
     const data = await apiServer<{ ticket: any; timeline?: any[]; comments?: any[] }>(`/sac/tickets/${encodeURIComponent(id)}`);
     return { ok: true, ticket: data.ticket, timeline: data.timeline ?? [], comments: data.comments ?? [] };

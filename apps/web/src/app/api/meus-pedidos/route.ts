@@ -12,14 +12,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Forward params to backend
     const backendUrl = new URL(`${API_BASE}/orders`);
     searchParams.forEach((value, key) => {
       backendUrl.searchParams.append(key, value);
     });
-
-    console.log('[PROXY] Fetching backend:', backendUrl.toString());
-    console.log('[PROXY] Auth Token:', token?.slice(0, 10) + '...');
 
     const res = await fetch(backendUrl.toString(), {
       headers: {
@@ -34,9 +30,6 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await res.json();
-    console.log('[PROXY] Backend URL Used:', backendUrl.toString());
-    console.log('[PROXY] Orders Count:', data.orders?.length ?? 'undefined');
-    console.log('[PROXY] Total:', data.total);
     return NextResponse.json(data);
   } catch (error) {
     console.error('Proxy Error:', error);

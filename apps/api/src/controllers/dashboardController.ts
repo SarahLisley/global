@@ -1,5 +1,6 @@
 import { select } from '../db/query';
 import { OWNER } from '../utils/env';
+import { getOrSetCache } from '../utils/ttlCache';
 import type { DashboardSummary } from '@pgb/sdk';
 
 type KPIs = {
@@ -40,63 +41,69 @@ async function resolveCodcli(params: { email?: string; codcli?: string | number 
 
 export async function getDashboardKpis(params: { email?: string; codcli?: string | number }): Promise<KPIs> {
   const codcli = await resolveCodcli(params);
+  return getOrSetCache(`dashboard:kpis:${codcli}`, 30_000, async () => {
+    const [ordersRows, receivablesRows, deliveriesRows] = await Promise.all([
+      select<{ VLATENDIDO: number; QTPEDIDOS: number }>(
+        `
+        SELECT
+          SUM(VLATEND) AS VLATENDIDO,
+          COUNT(NUMPED) AS QTPEDIDOS
+          FROM ${OWNER}.PCPEDC
+         WHERE DATA >= TRUNC(SYSDATE) - 30
+           AND POSICAO NOT IN ('C')
+           AND CODCLI = :CODCLI
+        `,
+        { CODCLI: codcli }
+      ),
+      select<{ VALOR: number }>(
+        `
+        SELECT SUM(VALOR) AS VALOR
+          FROM ${OWNER}.PCPREST
+         WHERE CODCOB NOT IN ('DESD', 'CANC')
+           AND DTCANCEL IS NULL
+           AND DTPAG IS NULL
+           AND CODCLI = :CODCLI
+        `,
+        { CODCLI: codcli }
+      ),
+      select<{ ENTREGAS_30D: number; ENTREGAS_HOJE: number }>(
+        `
+        SELECT
+          SUM(CASE WHEN a.DTENTREGA IS NOT NULL
+                     AND a.DTENTREGA >= TRUNC(SYSDATE) - 30
+                   THEN 1 ELSE 0 END) AS ENTREGAS_30D,
+          SUM(CASE WHEN a.DTENTREGA IS NOT NULL
+                     AND a.DTENTREGA >= TRUNC(SYSDATE)
+                     AND a.DTENTREGA < TRUNC(SYSDATE) + 1
+                   THEN 1 ELSE 0 END) AS ENTREGAS_HOJE
+          FROM ${OWNER}.BRAGENDANF a
+          JOIN ${OWNER}.PCNFSAID n
+            ON n.NUMTRANSVENDA = a.NUMTRANSVENDA
+         WHERE n.CODCLI = :CODCLI
+        `,
+        { CODCLI: codcli }
+      ),
+    ]);
 
-  const [orders] = await select<{ VLATENDIDO: number; QTPEDIDOS: number }>(
-    `
-    SELECT
-      SUM(VLATEND) AS VLATENDIDO,
-      COUNT(NUMPED) AS QTPEDIDOS
-      FROM ${OWNER}.PCPEDC
-     WHERE TRUNC(DATA) >= TRUNC(SYSDATE) - 30
-       AND POSICAO NOT IN ('C')
-       AND CODCLI = :CODCLI
-    `,
-    { CODCLI: codcli }
-  );
+    const orders = ordersRows[0];
+    const receivables = receivablesRows[0];
+    const deliveries = deliveriesRows[0];
 
-  const [receivables] = await select<{ VALOR: number }>(
-    `
-    SELECT SUM(VALOR) AS VALOR
-      FROM ${OWNER}.PCPREST
-     WHERE CODCOB NOT IN ('DESD', 'CANC')
-       AND DTCANCEL IS NULL
-       AND DTPAG IS NULL
-       AND CODCLI = :CODCLI
-    `,
-    { CODCLI: codcli }
-  );
-
-  const [deliveries] = await select<{ ENTREGAS_30D: number; ENTREGAS_HOJE: number }>(
-    `
-    SELECT
-      SUM(CASE WHEN a.DTENTREGA IS NOT NULL
-                 AND TRUNC(a.DTENTREGA) >= TRUNC(SYSDATE) - 30
-               THEN 1 ELSE 0 END) AS ENTREGAS_30D,
-      SUM(CASE WHEN a.DTENTREGA IS NOT NULL
-                 AND TRUNC(a.DTENTREGA) = TRUNC(SYSDATE)
-               THEN 1 ELSE 0 END) AS ENTREGAS_HOJE
-      FROM ${OWNER}.BRAGENDANF a
-      JOIN ${OWNER}.PCNFSAID n
-        ON n.NUMTRANSVENDA = a.NUMTRANSVENDA
-     WHERE n.CODCLI = :CODCLI
-    `,
-    { CODCLI: codcli }
-  );
-
-  return {
-    codcli,
-    ordersLast30d: {
-      totalAmount: orders?.VLATENDIDO ?? 0,
-      totalOrders: orders?.QTPEDIDOS ?? 0,
-    },
-    receivablesOpen: {
-      totalAmount: receivables?.VALOR ?? 0,
-    },
-    deliveries: {
-      doneLast30d: deliveries?.ENTREGAS_30D ?? 0,
-      doneToday: deliveries?.ENTREGAS_HOJE ?? 0,
-    },
-  };
+    return {
+      codcli,
+      ordersLast30d: {
+        totalAmount: orders?.VLATENDIDO ?? 0,
+        totalOrders: orders?.QTPEDIDOS ?? 0,
+      },
+      receivablesOpen: {
+        totalAmount: receivables?.VALOR ?? 0,
+      },
+      deliveries: {
+        doneLast30d: deliveries?.ENTREGAS_30D ?? 0,
+        doneToday: deliveries?.ENTREGAS_HOJE ?? 0,
+      },
+    };
+  });
 }
 
 let summaryCache: { data: DashboardSummary | null; expires: number } = { data: null, expires: 0 };

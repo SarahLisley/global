@@ -2,6 +2,7 @@ import { getConnection } from '../db/pool';
 import { safeLogBinds } from '../utils/log';
 import { select } from '../db/query';
 import { OWNER } from '../utils/env';
+import { getOrSetCache } from '../utils/ttlCache';
 import type { FastifyRequest } from 'fastify';
 
 export type SACSeriesDTO = {
@@ -37,68 +38,66 @@ export function classify(row: any): 'resolved' | 'in_progress' | 'pending' {
 }
 
 export async function getSACSeries(params: { codcli: number }): Promise<SACSeriesDTO> {
-    const rows = await select<any>(
-        `
-    SELECT
-      BRSACC.DTABERTURA,
-      BRSACC.DTFINALIZA,
-      BRSACC.STATUS
-    FROM ${OWNER}.BRSACC
-    WHERE BRSACC.NUMTICKET = BRSACC.NUMTICKETPRINC
-      AND NVL(BRSACC.STATUS,'') <> 'Cancelado'
-      AND TRUNC(BRSACC.DTABERTURA) = TRUNC(SYSDATE)
-      AND BRSACC.CODCLI = :CODCLI
-    `,
-        { CODCLI: params.codcli }
-    );
+    return getOrSetCache(`sac:series:${params.codcli}`, 30_000, async () => {
+        const rows = await select<any>(
+            `
+        SELECT
+          BRSACC.DTABERTURA,
+          BRSACC.DTFINALIZA,
+          BRSACC.STATUS
+        FROM ${OWNER}.BRSACC
+        WHERE BRSACC.NUMTICKET = BRSACC.NUMTICKETPRINC
+          AND NVL(BRSACC.STATUS,'') <> 'Cancelado'
+          AND BRSACC.DTABERTURA >= TRUNC(SYSDATE)
+          AND BRSACC.DTABERTURA < TRUNC(SYSDATE) + 1
+          AND BRSACC.CODCLI = :CODCLI
+        `,
+            { CODCLI: params.codcli }
+        );
 
-    const resolved = empty24();
-    const inProgress = empty24();
-    const pending = empty24();
+        const resolved = empty24();
+        const inProgress = empty24();
+        const pending = empty24();
 
-    for (const r of rows) {
-        const idx = hourIdx(r.DTABERTURA);
-        const cls = classify(r);
-        if (cls === 'resolved') resolved[idx] += 1;
-        else if (cls === 'in_progress') inProgress[idx] += 1;
-        else pending[idx] += 1;
-    }
+        for (const r of rows) {
+            const idx = hourIdx(r.DTABERTURA);
+            const cls = classify(r);
+            if (cls === 'resolved') resolved[idx] += 1;
+            else if (cls === 'in_progress') inProgress[idx] += 1;
+            else pending[idx] += 1;
+        }
 
-    // --- MOCK REMOVED ---
-    // User requested to remove mocks and show real data only.
-    // If no data, the charts will simply be empty, which is correct behavior.
-
-
-    const labels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
-    return {
-        labels,
-        datasets: [
-            {
-                label: 'Resolvidos',
-                data: resolved,
-                borderColor: '#4a90e2',
-                backgroundColor: 'rgba(74, 144, 226, 0.2)',
-                tension: 0.3,
-                fill: true,
-            },
-            {
-                label: 'Em andamento',
-                data: inProgress,
-                borderColor: '#22c55e',
-                backgroundColor: 'rgba(34, 197, 94, 0.15)',
-                tension: 0.3,
-                fill: true,
-            },
-            {
-                label: 'Pendentes',
-                data: pending,
-                borderColor: '#f59e0b',
-                backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                tension: 0.3,
-                fill: true,
-            },
-        ],
-    };
+        const labels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+        return {
+            labels,
+            datasets: [
+                {
+                    label: 'Resolvidos',
+                    data: resolved,
+                    borderColor: '#4a90e2',
+                    backgroundColor: 'rgba(74, 144, 226, 0.2)',
+                    tension: 0.3,
+                    fill: true,
+                },
+                {
+                    label: 'Em andamento',
+                    data: inProgress,
+                    borderColor: '#22c55e',
+                    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                    tension: 0.3,
+                    fill: true,
+                },
+                {
+                    label: 'Pendentes',
+                    data: pending,
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                    tension: 0.3,
+                    fill: true,
+                },
+            ],
+        };
+    });
 }
 
 // ---------- Criação de ticket (INSERT em BRSACC) ----------
