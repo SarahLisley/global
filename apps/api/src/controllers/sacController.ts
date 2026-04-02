@@ -50,6 +50,7 @@ export async function getSACSeries(params: { codcli?: number | null }): Promise<
     };
   }
   return getOrSetCache(`sac:series:${params.codcli}`, 30_000, async () => {
+    try {
         const rows = await select<any>(
             `
         SELECT
@@ -108,6 +109,21 @@ export async function getSACSeries(params: { codcli?: number | null }): Promise<
                 },
             ],
         };
+    } catch (err: any) {
+        const msg = err.message || String(err);
+        if (msg.includes('ORA-00903') || msg.includes('ORA-00942')) {
+            const labels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+            return {
+                labels,
+                datasets: [
+                    { label: 'Resolvidos', data: Array(24).fill(0), borderColor: '#4a90e2', backgroundColor: 'rgba(74, 144, 226, 0.2)', tension: 0.3, fill: true },
+                    { label: 'Em andamento', data: Array(24).fill(0), borderColor: '#22c55e', backgroundColor: 'rgba(34, 197, 94, 0.15)', tension: 0.3, fill: true },
+                    { label: 'Pendentes', data: Array(24).fill(0), borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.15)', tension: 0.3, fill: true },
+                ],
+            };
+        }
+        throw err;
+    }
     });
 }
 

@@ -76,23 +76,33 @@ export async function getDashboardKpis(params: { email?: string; codcli?: string
         `,
         { CODCLI: codcli }
       ),
-      select<{ ENTREGAS_30D: number; ENTREGAS_HOJE: number }>(
-        `
-        SELECT
-          SUM(CASE WHEN a.DTENTREGA IS NOT NULL
-                     AND a.DTENTREGA >= TRUNC(SYSDATE) - 30
-                   THEN 1 ELSE 0 END) AS ENTREGAS_30D,
-          SUM(CASE WHEN a.DTENTREGA IS NOT NULL
-                     AND a.DTENTREGA >= TRUNC(SYSDATE)
-                     AND a.DTENTREGA < TRUNC(SYSDATE) + 1
-                   THEN 1 ELSE 0 END) AS ENTREGAS_HOJE
-          FROM ${OWNER}.BRAGENDANF a
-          JOIN ${OWNER}.PCNFSAID n
-            ON n.NUMTRANSVENDA = a.NUMTRANSVENDA
-         WHERE n.CODCLI = :CODCLI
-        `,
-        { CODCLI: codcli }
-      ),
+      (async () => {
+        try {
+          return await select<{ ENTREGAS_30D: number; ENTREGAS_HOJE: number }>(
+            `
+            SELECT
+              SUM(CASE WHEN a.DTENTREGA IS NOT NULL
+                         AND a.DTENTREGA >= TRUNC(SYSDATE) - 30
+                       THEN 1 ELSE 0 END) AS ENTREGAS_30D,
+              SUM(CASE WHEN a.DTENTREGA IS NOT NULL
+                         AND a.DTENTREGA >= TRUNC(SYSDATE)
+                         AND a.DTENTREGA < TRUNC(SYSDATE) + 1
+                       THEN 1 ELSE 0 END) AS ENTREGAS_HOJE
+              FROM ${OWNER}.BRAGENDANF a
+              JOIN ${OWNER}.PCNFSAID n
+                ON n.NUMTRANSVENDA = a.NUMTRANSVENDA
+             WHERE n.CODCLI = :CODCLI
+            `,
+            { CODCLI: codcli }
+          );
+        } catch (err: any) {
+          const msg = err.message || String(err);
+          if (msg.includes('ORA-00903') || msg.includes('ORA-00942')) {
+            return [{ ENTREGAS_30D: 0, ENTREGAS_HOJE: 0 }];
+          }
+          throw err;
+        }
+      })(),
     ]);
 
     const orders = ordersRows[0];

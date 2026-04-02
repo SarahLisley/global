@@ -143,7 +143,8 @@ export async function searchDeliveries(params: {
     `deliveries:${buildDeliveryCacheKey(params)}`,
     DELIVERIES_TTL_MS,
     async () => {
-      const limit = Math.max(1, Math.min(100, params.pageSize));
+      try {
+        const limit = Math.max(1, Math.min(100, params.pageSize));
       const offset = (Math.max(1, params.page) - 1) * limit;
       const startRow = offset + 1;
       const endRow = offset + limit;
@@ -281,6 +282,15 @@ export async function searchDeliveries(params: {
       }));
 
       return { list, total };
+      } catch (err: any) {
+        // Tratar erro de tabela inexistente de forma graciosa
+        const msg = err.message || String(err);
+        if (msg.includes('ORA-00903') || msg.includes('ORA-00942')) {
+          console.warn('[DELIVERIES] Tabela BRLOGSSW não encontrada em ' + OWNER + '. Retornando lista vazia.');
+          return { list: [], total: 0 };
+        }
+        throw err;
+      }
     }
   );
 }
@@ -290,7 +300,8 @@ export async function getDeliveryTimeline(numTrans: number, codcli: number) {
     `deliveryTimeline:${codcli}:${numTrans}`,
     DELIVERY_TIMELINE_TTL_MS,
     async () => {
-      const rows = await select<DeliveryTimelineRow>(
+      try {
+        const rows = await select<DeliveryTimelineRow>(
         `
         SELECT
           L.DATA_HORA,
@@ -312,16 +323,23 @@ export async function getDeliveryTimeline(numTrans: number, codcli: number) {
         { NUMTRANS: numTrans, CODCLI: codcli }
       );
 
-      return rows.map((row) => ({
-        when: toIsoDate(row.DATA_HORA_EFETIVA ?? row.DATA_HORA) ?? new Date().toISOString(),
-        occurrence: row.OCORRENCIA ?? '',
-        description: row.DESCRICAO ?? '',
-        city: row.CIDADE ?? '',
-        destinatario: row.DESTINATARIO ?? '',
-        nomeRecebedor: row.NOME_RECEBEDOR ?? '',
-        docRecebedor: row.NRO_DOC_RECEBEDOR ?? '',
-        dominio: row.DOMINIO ?? undefined,
-      }));
+        return rows.map((row) => ({
+          when: toIsoDate(row.DATA_HORA_EFETIVA ?? row.DATA_HORA) ?? new Date().toISOString(),
+          occurrence: row.OCORRENCIA ?? '',
+          description: row.DESCRICAO ?? '',
+          city: row.CIDADE ?? '',
+          destinatario: row.DESTINATARIO ?? '',
+          nomeRecebedor: row.NOME_RECEBEDOR ?? '',
+          docRecebedor: row.NRO_DOC_RECEBEDOR ?? '',
+          dominio: row.DOMINIO ?? undefined,
+        }));
+      } catch (err: any) {
+        const msg = err.message || String(err);
+        if (msg.includes('ORA-00903') || msg.includes('ORA-00942')) {
+          return [];
+        }
+        throw err;
+      }
     }
   );
 }
