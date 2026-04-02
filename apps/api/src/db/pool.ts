@@ -5,27 +5,35 @@ import { connectString, env } from '../utils/env';
 (oracledb as any).fetchAsString = [(oracledb as any).CLOB];
 
 const cfg = {
-  user: process.env.ORACLE_USER!,
-  password: process.env.ORACLE_PASSWORD!,
-  connectString: `${process.env.ORACLE_HOST}:${process.env.ORACLE_PORT}/${process.env.ORACLE_SERVICE}`,
-  poolMin: Number(process.env.DB_POOL_MIN ?? 0),
-  poolMax: Number(process.env.DB_POOL_MAX ?? 4),
-  poolTimeout: Number(process.env.DB_POOL_TIMEOUT_SEC ?? 60),
+  user: env.ORACLE_USER,
+  password: env.ORACLE_PASSWORD,
+  connectString,
+  poolMin: env.DB_POOL_MIN,
+  poolMax: env.DB_POOL_MAX,
+  poolIncrement: env.DB_POOL_INCREMENT,
+  poolTimeout: env.DB_POOL_TIMEOUT_SEC,
+  queueTimeout: env.DB_POOL_QUEUE_TIMEOUT_MS,
+  stmtCacheSize: env.DB_STMT_CACHE_SIZE,
 };
 
 let pool: oracledb.Pool | null = null;
 
 export async function getPool(): Promise<oracledb.Pool> {
   if (pool) return pool;
+
   pool = await oracledb.createPool({
     user: cfg.user,
     password: cfg.password,
     connectString: cfg.connectString,
     poolMin: cfg.poolMin,
     poolMax: cfg.poolMax,
+    poolIncrement: cfg.poolIncrement,
     poolTimeout: cfg.poolTimeout,
-    // thin mode por padrão em v6+
-  });
+    queueTimeout: cfg.queueTimeout,
+    stmtCacheSize: cfg.stmtCacheSize,
+    // thin mode por padrao em v6+
+  } as any);
+
   return pool;
 }
 
@@ -42,6 +50,7 @@ export async function getConnection(): Promise<oracledb.Connection> {
       console.warn('[oracle] CURRENT_SCHEMA not applied:', (err as Error).message);
     }
   }
+
   return conn;
 }
 
