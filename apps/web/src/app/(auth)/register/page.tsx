@@ -227,6 +227,7 @@ function VerificationStep({ email, onBack }: { email: string; onBack: () => void
 
 /* ─────────────────── Main Register Page ─────────────────── */
 export default function RegisterPage() {
+  const router = useRouter();
   const [step, setStep] = useState<'form' | 'verify'>('form');
   const [registeredEmail, setRegisteredEmail] = useState('');
   const [serverError, setServerError] = useState<string | null>(null);
@@ -251,8 +252,7 @@ export default function RegisterPage() {
         return;
       }
       if (res.needsVerification) {
-        setRegisteredEmail(data.email);
-        setStep('verify');
+        router.push(`/auth/verify-register?email=${encodeURIComponent(data.email)}`);
       }
     });
   };

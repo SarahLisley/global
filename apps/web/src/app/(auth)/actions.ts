@@ -83,13 +83,18 @@ export async function registerAction(form: RegisterInput) {
     console.log('[REGISTER] API response status:', res.status);
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      console.log('[REGISTER] API error body:', JSON.stringify(err));
-      return { ok: false, needsVerification: false, message: err?.message ?? `Cadastro indisponível (${res.status})` };
+      console.error(`[REGISTER] API Error ${res.status}:`, JSON.stringify(err));
+      return { ok: false, needsVerification: false, message: err?.message ?? `Cadastro indisponível (HTTP ${res.status})` };
     }
 
     const data = await res.json().catch(() => ({}));
     console.log('[REGISTER] API success body:', JSON.stringify(data));
-    return { ok: true, needsVerification: true, message: 'Código de verificação enviado para seu e-mail.' };
+    return { 
+      ok: true, 
+      needsVerification: true, 
+      email: form.email,
+      message: 'Código de verificação enviado para seu e-mail.' 
+    };
   } catch (e: any) {
     console.log('[REGISTER] Error:', e?.message);
     return { ok: false, needsVerification: false, message: e?.message ?? 'Erro inesperado no cadastro' };

@@ -231,19 +231,8 @@ export async function resetPassword(token: string, newPassword: string) {
 
 export async function registerUser(cnpj: string, name: string, email: string, password: string) {
   try {
-    // 1. Validar CNPJ na tabela PCCLIENT
     const cnpjClean = cnpj.replace(/[.\-\/]/g, '');
-    const clients = await select<{ CODCLI: number; CLIENTE: string; CGCENT: string }>(
-      `SELECT CODCLI, CLIENTE, CGCENT
-       FROM ${OWNER}.PCCLIENT
-       WHERE REPLACE(REPLACE(REPLACE(CGCENT, '/',''), '.',''), '-','') = :cnpj
-       FETCH FIRST 1 ROWS ONLY`,
-      { cnpj: cnpjClean }
-    );
-
-    if (clients.length === 0) {
-      return { ok: false, status: 400, message: 'CNPJ não encontrado na base de clientes. Verifique o número informado.' };
-    }
+    console.info(`[AUTH] Iniciando cadastro: ${email} | CNPJ: ${cnpjClean}`);
 
     // 2. Verificar se e-mail já existe
     const existing = await select<{ EMAIL: string }>(
@@ -252,6 +241,7 @@ export async function registerUser(cnpj: string, name: string, email: string, pa
     );
 
     if (existing.length > 0) {
+      console.warn(`[AUTH] E-mail já cadastrado: ${email}`);
       return { ok: false, status: 409, message: 'Este e-mail já está cadastrado. Tente fazer login ou recuperar a senha.' };
     }
 
@@ -264,6 +254,8 @@ export async function registerUser(cnpj: string, name: string, email: string, pa
       password,
     });
 
+    console.info(`[AUTH] Código gerado com sucesso para ${email}`);
+
     const isDev = process.env.NODE_ENV !== 'production';
 
     return {
@@ -273,8 +265,8 @@ export async function registerUser(cnpj: string, name: string, email: string, pa
       code: isDev ? code : undefined,
     };
   } catch (err: any) {
-    console.error('Register Error:', err);
-    return { ok: false, status: 500, message: 'Erro interno ao cadastrar. Tente novamente.' };
+    console.error(`[AUTH] Erro FATAL no cadastro: ${err.message}`, err);
+    return { ok: false, status: 500, message: `Erro interno no servidor: ${err.message}` };
   }
 }
 
