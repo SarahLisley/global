@@ -84,7 +84,7 @@ export async function registerAction(form: RegisterInput) {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       console.error(`[REGISTER] API Error ${res.status}:`, JSON.stringify(err));
-      return { ok: false, needsVerification: false, message: err?.message ?? `Cadastro indisponível (HTTP ${res.status})` };
+      return { ok: false, needsVerification: false, message: err?.message ?? `ERRO-BRAVO-X-123 (HTTP ${res.status})` };
     }
 
     const data = await res.json().catch(() => ({}));
