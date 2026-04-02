@@ -12,13 +12,14 @@ interface NotificationItem {
 
 interface NotificationsDropdownProps {
   notifications: NotificationItem[];
+  isLoading: boolean;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   isSearchOpen: boolean;
   onMarkAllAsRead: () => void;
 }
 
-export function NotificationsDropdown({ notifications, isOpen, setIsOpen, isSearchOpen, onMarkAllAsRead }: NotificationsDropdownProps) {
+export function NotificationsDropdown({ notifications, isLoading, isOpen, setIsOpen, isSearchOpen, onMarkAllAsRead }: NotificationsDropdownProps) {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
@@ -57,7 +58,18 @@ export function NotificationsDropdown({ notifications, isOpen, setIsOpen, isSear
               </button>
             </div>
             <div className="max-h-[400px] overflow-y-auto">
-              {notifications.length === 0 ? (
+              {isLoading ? (
+                <div className="p-8 text-center">
+                  <div className="w-12 h-12 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 dark:text-zinc-500">
+                      <path d="M12 6v6l4 2" />
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-zinc-300">Carregando notificacoes</p>
+                  <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">Buscando atualizacoes recentes.</p>
+                </div>
+              ) : notifications.length === 0 ? (
                 <div className="p-8 text-center">
                   <div className="w-12 h-12 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-3">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 dark:text-zinc-500">

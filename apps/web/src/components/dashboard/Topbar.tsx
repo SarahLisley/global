@@ -1,6 +1,6 @@
 import clsx from 'clsx';
-import { usePathname, useRouter } from 'next/navigation';
-import React, { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 
 import { SearchBar } from './SearchBar';
@@ -32,7 +32,6 @@ interface TopbarProps {
 
 export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -45,23 +44,91 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
   const codcli = initialUser?.codcli;
 
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
+  const [hasLoadedNotifications, setHasLoadedNotifications] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch('/api/notifications')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.notifications) setNotifications(data.notifications);
-      })
-      .catch(() => {});
+  const loadNotifications = useCallback(async () => {
+    if (isNotificationsLoading || hasLoadedNotifications) {
+      return;
+    }
 
+    setIsNotificationsLoading(true);
+    try {
+      const response = await fetch('/api/notifications');
+      const data = response.ok ? await response.json() : null;
+      if (data?.notifications) {
+        setNotifications(data.notifications);
+        setHasLoadedNotifications(true);
+      }
+    } catch {
+      // Silent fail: notifications can be retried when the dropdown opens.
+    } finally {
+      setIsNotificationsLoading(false);
+    }
+  }, [hasLoadedNotifications, isNotificationsLoading]);
+
+  useEffect(() => {
     if (codcli) {
+      let revokedUrl: string | null = null;
+
       fetch(`/api/avatar?codcli=${codcli}`)
         .then(r => r.ok ? r.blob() : Promise.reject())
-        .then(blob => setAvatarUrl(URL.createObjectURL(blob)))
+        .then(blob => {
+          revokedUrl = URL.createObjectURL(blob);
+          setAvatarUrl(revokedUrl);
+        })
         .catch(() => {});
+
+      return () => {
+        if (revokedUrl) {
+          URL.revokeObjectURL(revokedUrl);
+        }
+      };
     }
   }, [codcli]);
+
+  useEffect(() => {
+    if (hasLoadedNotifications) {
+      return;
+    }
+
+    const browserWindow = window as Window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+    let cancelled = false;
+    let timeoutId: number | null = null;
+    let idleId: number | null = null;
+
+    const triggerLoad = () => {
+      if (!cancelled) {
+        void loadNotifications();
+      }
+    };
+
+    if (typeof browserWindow.requestIdleCallback === 'function') {
+      idleId = browserWindow.requestIdleCallback(triggerLoad, { timeout: 1500 });
+    } else {
+      timeoutId = window.setTimeout(triggerLoad, 800);
+    }
+
+    return () => {
+      cancelled = true;
+      if (idleId !== null && typeof browserWindow.cancelIdleCallback === 'function') {
+        browserWindow.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [hasLoadedNotifications, loadNotifications]);
+
+  useEffect(() => {
+    if (isNotificationsOpen) {
+      void loadNotifications();
+    }
+  }, [isNotificationsOpen, loadNotifications]);
 
   const markAllAsRead = async () => {
     const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
@@ -90,10 +157,6 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
   const currentModule = segments[1]; // app/dashboard/[module]
   const subModules = segments.slice(2);
   const pageTitle = currentModule ? (moduleTitles[currentModule] || 'Dashboard') : 'Início';
-
-  const dateStr = new Date().toLocaleDateString('pt-BR', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
 
   return (
     <header className="sticky top-0 z-30 bg-white dark:bg-zinc-900 dark:bg-zinc-950 border-b border-slate-200 dark:border-zinc-800 dark:border-zinc-800">
@@ -154,6 +217,7 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
           )}>
             <NotificationsDropdown 
               notifications={notifications}
+              isLoading={isNotificationsLoading}
               isOpen={isNotificationsOpen}
               setIsOpen={setIsNotificationsOpen}
               isSearchOpen={isSearchOpen}

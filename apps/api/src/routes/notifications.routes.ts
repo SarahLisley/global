@@ -1,7 +1,8 @@
 import type { FastifyInstance } from 'fastify';
-import { select, execute } from '../db/query';
+import { executeMany, select } from '../db/query';
 import { OWNER } from '../utils/env';
 import { extractCodcli, handleAuthError } from '../utils/auth';
+import { getOrSetCache, invalidateCache } from '../utils/ttlCache';
 
 type Notification = {
   id: string;
@@ -13,184 +14,260 @@ type Notification = {
   meta?: Record<string, any>;
 };
 
-export default async function notificationsRoutes(app: FastifyInstance) {
+type ReadNotificationRow = {
+  NOTIF_ID: string;
+};
 
-  // GET / — retorna notificações derivadas dos dados reais do Oracle
+type SacNotificationRow = {
+  NUMTICKET: number;
+  RELATOCLIENTE?: string | null;
+  STATUS?: string | null;
+  DTABERTURA?: Date | string | null;
+  DTFINALIZA?: Date | string | null;
+};
+
+type BoletoNotificationRow = {
+  NUMTRANSVENDA: number;
+  PREST: number;
+  VALOR?: number | null;
+  DTVENC?: Date | string | null;
+};
+
+type PedidoNotificationRow = {
+  NUMPED: number;
+  VLTOTAL?: number | null;
+  DATA?: Date | string | null;
+  DTFAT?: Date | string | null;
+  NUMNOTA?: number | null;
+};
+
+const NOTIFICATIONS_TTL_MS = 30_000;
+
+function toIsoTimestamp(value: Date | string | null | undefined) {
+  if (!value) {
+    return new Date().toISOString();
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+}
+
+export default async function notificationsRoutes(app: FastifyInstance) {
   app.get('/', async (req, reply) => {
     try {
       const { codcli } = extractCodcli(req);
-      const notifications: Notification[] = [];
 
-      // Buscar IDs de notificações já lidas no banco
-      let readRows: { NOTIF_ID: string }[] = [];
-      try {
-        readRows = await select<{ NOTIF_ID: string }>(
-          `SELECT NOTIF_ID FROM ${OWNER}.BRSACC_NOTIF_READ WHERE CODCLI = :CODCLI`,
-          { CODCLI: codcli }
-        );
-      } catch (e) {
-        app.log.warn({ err: e }, 'Notifications: BRSACC_NOTIF_READ query failed. Table might not exist.');
-      }
-      const readIds = new Set(readRows.map(r => r.NOTIF_ID));
+      const payload = await getOrSetCache(
+        `notifications:${codcli}`,
+        NOTIFICATIONS_TTL_MS,
+        async () => {
+          const [readRows, sacRows, boletoRows, pedidoRows] = await Promise.all([
+            select<ReadNotificationRow>(
+              `SELECT NOTIF_ID FROM ${OWNER}.BRSACC_NOTIF_READ WHERE CODCLI = :CODCLI`,
+              { CODCLI: codcli }
+            ).catch((err) => {
+              app.log.warn({ err }, 'Notifications: read-state query failed');
+              return [];
+            }),
+            select<SacNotificationRow>(
+              `
+              SELECT
+                B.NUMTICKET,
+                B.RELATOCLIENTE,
+                B.STATUS,
+                B.DTABERTURA,
+                B.DTFINALIZA
+              FROM ${OWNER}.BRSACC B
+              WHERE B.CODCLI = :CODCLI
+                AND B.NUMTICKET = B.NUMTICKETPRINC
+                AND NVL(B.STATUS, '') <> 'Cancelado'
+                AND (
+                  B.DTABERTURA >= TRUNC(SYSDATE) - 7
+                  OR (B.DTFINALIZA IS NOT NULL AND B.DTFINALIZA >= TRUNC(SYSDATE) - 7)
+                )
+              ORDER BY B.DTABERTURA DESC
+              FETCH FIRST 5 ROWS ONLY
+              `,
+              { CODCLI: codcli }
+            ).catch((err) => {
+              app.log.warn({ err }, 'Notifications: SAC query failed');
+              return [];
+            }),
+            select<BoletoNotificationRow>(
+              `
+              SELECT
+                P.NUMTRANSVENDA,
+                P.PREST,
+                P.VALOR,
+                P.DTVENC
+              FROM ${OWNER}.PCPREST P
+              WHERE P.CODCLI = :CODCLI
+                AND P.DTPAG IS NULL
+                AND P.DTCANCEL IS NULL
+                AND P.CODCOB NOT IN ('DESD', 'CANC')
+                AND P.DTVENC BETWEEN TRUNC(SYSDATE) - 3 AND TRUNC(SYSDATE) + 10
+              ORDER BY P.DTVENC ASC
+              FETCH FIRST 5 ROWS ONLY
+              `,
+              { CODCLI: codcli }
+            ).catch((err) => {
+              app.log.warn({ err }, 'Notifications: boleto query failed');
+              return [];
+            }),
+            select<PedidoNotificationRow>(
+              `
+              SELECT
+                P.NUMPED,
+                P.VLTOTAL,
+                P.DATA,
+                P.DTFAT,
+                P.NUMNOTA
+              FROM ${OWNER}.PCPEDC P
+              WHERE P.CODCLI = :CODCLI
+                AND P.DTFAT IS NOT NULL
+                AND P.DTFAT >= TRUNC(SYSDATE) - 3
+                AND P.POSICAO NOT IN ('C')
+              ORDER BY P.DTFAT DESC
+              FETCH FIRST 5 ROWS ONLY
+              `,
+              { CODCLI: codcli }
+            ).catch((err) => {
+              app.log.warn({ err }, 'Notifications: pedidos query failed');
+              return [];
+            }),
+          ]);
 
-      // 1. Tickets SAC com atividade recente (últimos 7 dias)
-      try {
-        const sacRows = await select<any>(`
-          SELECT
-            B.NUMTICKET,
-            B.RELATOCLIENTE,
-            B.STATUS,
-            B.DTABERTURA,
-            B.DTFINALIZA
-          FROM ${OWNER}.BRSACC B
-          WHERE B.CODCLI = :CODCLI
-            AND B.NUMTICKET = B.NUMTICKETPRINC
-            AND NVL(B.STATUS,'') <> 'Cancelado'
-            AND (
-              TRUNC(B.DTABERTURA) >= TRUNC(SYSDATE) - 7
-              OR (B.DTFINALIZA IS NOT NULL AND TRUNC(B.DTFINALIZA) >= TRUNC(SYSDATE) - 7)
-            )
-          ORDER BY B.DTABERTURA DESC
-          FETCH FIRST 5 ROWS ONLY
-        `, { CODCLI: codcli });
+          const readIds = new Set(readRows.map((row) => row.NOTIF_ID));
+          const notifications: Notification[] = [];
 
-        sacRows.forEach((r: any) => {
-          const isClosed = !!r.DTFINALIZA;
-          const nid = `sac-${r.NUMTICKET}`;
-          notifications.push({
-            id: nid,
-            type: 'sac',
-            title: isClosed ? 'Ticket SAC finalizado' : 'Ticket SAC em andamento',
-            description: r.RELATOCLIENTE
-              ? (r.RELATOCLIENTE as string).substring(0, 100)
-              : `Ticket #${r.NUMTICKET}`,
-            timestamp: (r.DTFINALIZA || r.DTABERTURA)
-              ? new Date(r.DTFINALIZA || r.DTABERTURA).toISOString()
-              : new Date().toISOString(),
-            read: readIds.has(nid),
-            meta: { ticketId: r.NUMTICKET, status: isClosed ? 'finalizado' : 'em_andamento' },
+          sacRows.forEach((row) => {
+            const isClosed = !!row.DTFINALIZA;
+            const id = `sac-${row.NUMTICKET}`;
+
+            notifications.push({
+              id,
+              type: 'sac',
+              title: isClosed ? 'Ticket SAC finalizado' : 'Ticket SAC em andamento',
+              description: row.RELATOCLIENTE?.substring(0, 100) || `Ticket #${row.NUMTICKET}`,
+              timestamp: toIsoTimestamp(row.DTFINALIZA || row.DTABERTURA),
+              read: readIds.has(id),
+              meta: {
+                ticketId: row.NUMTICKET,
+                status: isClosed ? 'finalizado' : 'em_andamento',
+              },
+            });
           });
-        });
-      } catch (e) {
-        app.log.warn({ err: e }, 'Notifications: SAC query failed');
-      }
 
-      // 2. Boletos próximos do vencimento (próximos 10 dias) ou vencidos recentemente (últimos 3 dias)
-      try {
-        const boletoRows = await select<any>(`
-          SELECT
-            P.NUMTRANSVENDA,
-            P.DUPLIC,
-            P.PREST,
-            P.VALOR,
-            P.DTVENC
-          FROM ${OWNER}.PCPREST P
-          WHERE P.CODCLI = :CODCLI
-            AND P.DTPAG IS NULL
-            AND P.DTCANCEL IS NULL
-            AND P.CODCOB NOT IN ('DESD','CANC')
-            AND P.DTVENC BETWEEN TRUNC(SYSDATE) - 3 AND TRUNC(SYSDATE) + 10
-          ORDER BY P.DTVENC ASC
-          FETCH FIRST 5 ROWS ONLY
-        `, { CODCLI: codcli });
+          boletoRows.forEach((row) => {
+            const dueDate = row.DTVENC ? new Date(row.DTVENC) : new Date();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
 
-        boletoRows.forEach((r: any) => {
-          const venc = new Date(r.DTVENC);
-          const hoje = new Date();
-          hoje.setHours(0, 0, 0, 0);
-          const isOverdue = venc < hoje;
-          const diffDays = Math.ceil((venc.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+            const isOverdue = dueDate < today;
+            const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / 86_400_000);
+            const value = Number(row.VALOR ?? 0);
 
-          let desc = '';
-          if (isOverdue) {
-            desc = `Boleto R$ ${Number(r.VALOR).toFixed(2)} vencido há ${Math.abs(diffDays)} dia(s)`;
-          } else if (diffDays === 0) {
-            desc = `Boleto R$ ${Number(r.VALOR).toFixed(2)} vence hoje`;
-          } else {
-            desc = `Boleto R$ ${Number(r.VALOR).toFixed(2)} vence em ${diffDays} dia(s)`;
-          }
+            let description = '';
+            if (isOverdue) {
+              description = `Boleto R$ ${value.toFixed(2)} vencido ha ${Math.abs(diffDays)} dia(s)`;
+            } else if (diffDays === 0) {
+              description = `Boleto R$ ${value.toFixed(2)} vence hoje`;
+            } else {
+              description = `Boleto R$ ${value.toFixed(2)} vence em ${diffDays} dia(s)`;
+            }
 
-          const nid = `boleto-${r.NUMTRANSVENDA}-${r.PREST}`;
-          notifications.push({
-            id: nid,
-            type: 'boleto',
-            title: isOverdue ? 'Boleto vencido' : 'Boleto próximo do vencimento',
-            description: desc,
-            timestamp: venc.toISOString(),
-            read: readIds.has(nid),
-            meta: { valor: Number(r.VALOR), vencimento: venc.toISOString(), overdue: isOverdue },
+            const id = `boleto-${row.NUMTRANSVENDA}-${row.PREST}`;
+            notifications.push({
+              id,
+              type: 'boleto',
+              title: isOverdue ? 'Boleto vencido' : 'Boleto proximo do vencimento',
+              description,
+              timestamp: toIsoTimestamp(dueDate),
+              read: readIds.has(id),
+              meta: {
+                valor: value,
+                vencimento: toIsoTimestamp(dueDate),
+                overdue: isOverdue,
+              },
+            });
           });
-        });
-      } catch (e) {
-        app.log.warn({ err: e }, 'Notifications: Boleto query failed');
-      }
 
-      // 3. Pedidos recentes faturados (últimos 3 dias)
-      try {
-        const pedidoRows = await select<any>(`
-          SELECT
-            P.NUMPED,
-            P.VLTOTAL,
-            P.DATA,
-            P.DTFAT,
-            P.NUMNOTA
-          FROM ${OWNER}.PCPEDC P
-          WHERE P.CODCLI = :CODCLI
-            AND P.DTFAT IS NOT NULL
-            AND TRUNC(P.DTFAT) >= TRUNC(SYSDATE) - 3
-            AND P.POSICAO NOT IN ('C')
-          ORDER BY P.DTFAT DESC
-          FETCH FIRST 5 ROWS ONLY
-        `, { CODCLI: codcli });
+          pedidoRows.forEach((row) => {
+            const id = `pedido-${row.NUMPED}`;
 
-        pedidoRows.forEach((r: any) => {
-          const nid = `pedido-${r.NUMPED}`;
-          notifications.push({
-            id: nid,
-            type: 'pedido',
-            title: 'Pedido faturado',
-            description: `Pedido #${r.NUMPED} — NF ${r.NUMNOTA || 'N/A'} — R$ ${Number(r.VLTOTAL ?? 0).toFixed(2)}`,
-            timestamp: r.DTFAT ? new Date(r.DTFAT).toISOString() : new Date().toISOString(),
-            read: readIds.has(nid),
-            meta: { numped: r.NUMPED, numnota: r.NUMNOTA, valor: Number(r.VLTOTAL ?? 0) },
+            notifications.push({
+              id,
+              type: 'pedido',
+              title: 'Pedido faturado',
+              description: `Pedido #${row.NUMPED} - NF ${row.NUMNOTA || 'N/A'} - R$ ${Number(row.VLTOTAL ?? 0).toFixed(2)}`,
+              timestamp: toIsoTimestamp(row.DTFAT || row.DATA),
+              read: readIds.has(id),
+              meta: {
+                numped: row.NUMPED,
+                numnota: row.NUMNOTA,
+                valor: Number(row.VLTOTAL ?? 0),
+              },
+            });
           });
-        });
-      } catch (e) {
-        app.log.warn({ err: e }, 'Notifications: Pedidos query failed');
-      }
 
-      // Ordenar por timestamp mais recente
-      notifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          notifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-      return reply.send({ notifications, total: notifications.length });
+          return {
+            notifications,
+            total: notifications.length,
+          };
+        }
+      );
+
+      return reply.send(payload);
     } catch (err: any) {
       return handleAuthError(err, reply);
     }
   });
 
-  // POST /read — marca uma ou mais notificações como lidas no banco
   app.post('/read', async (req, reply) => {
     try {
       const { codcli } = extractCodcli(req);
       const { ids } = req.body as { ids: string[] };
 
       if (!ids || !Array.isArray(ids) || ids.length === 0) {
-        return reply.status(400).send({ error: 'IDs de notificação são obrigatórios' });
+        return reply.status(400).send({ error: 'IDs de notificacao sao obrigatorios' });
       }
 
-      // Inserir ignorando duplicatas (o UNIQUE_NOTIF_READ do plano impede duas vezes a mesma)
-      for (const nid of ids) {
-        try {
-          await execute(
-            `INSERT INTO ${OWNER}.BRSACC_NOTIF_READ (CODCLI, NOTIF_ID) VALUES (:CODCLI, :NID)`,
-            { CODCLI: codcli, NID: nid.substring(0, 100) }
-          );
-        } catch (e) {
-          // Ignora erro de PK violada (já lida)
-        }
+      const uniqueIds = [
+        ...new Set(
+          ids
+            .map((id) => `${id}`.trim().slice(0, 100))
+            .filter(Boolean)
+        ),
+      ];
+
+      if (uniqueIds.length === 0) {
+        return reply.status(400).send({ error: 'IDs de notificacao sao obrigatorios' });
       }
 
-      return reply.send({ ok: true });
+      try {
+        await executeMany(
+          `
+          MERGE INTO ${OWNER}.BRSACC_NOTIF_READ target
+          USING (SELECT :CODCLI AS CODCLI, :NID AS NOTIF_ID FROM DUAL) source
+            ON (target.CODCLI = source.CODCLI AND target.NOTIF_ID = source.NOTIF_ID)
+          WHEN NOT MATCHED THEN
+            INSERT (CODCLI, NOTIF_ID)
+            VALUES (source.CODCLI, source.NOTIF_ID)
+          `,
+          uniqueIds.map((notificationId) => ({
+            CODCLI: codcli,
+            NID: notificationId,
+          }))
+        );
+      } catch (err) {
+        app.log.warn({ err }, 'Notifications: batch read update failed');
+      }
+
+      invalidateCache(`notifications:${codcli}`);
+
+      return reply.send({ ok: true, count: uniqueIds.length });
     } catch (err: any) {
       return handleAuthError(err, reply);
     }
