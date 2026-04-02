@@ -6,7 +6,7 @@ import { env } from './env';
  * Extracts and validates the codcli (client code) from the request's Authorization header.
  * Throws an object with { status, error } if validation fails.
  */
-export function extractCodcli(req: FastifyRequest): { codcli: number; payload: any } {
+export function extractCodcli(req: FastifyRequest): { codcli: number | null; payload: any } {
   const auth = req.headers.authorization;
   if (!auth?.startsWith('Bearer ')) {
     throw { status: 401, error: 'Token ausente' };
@@ -16,10 +16,7 @@ export function extractCodcli(req: FastifyRequest): { codcli: number; payload: a
   if (!v.ok) {
     throw { status: 401, error: v.error };
   }
-  const codcli = Number(v.payload?.codcli);
-  if (!codcli) {
-    throw { status: 400, error: 'CODCLI inválido no token' };
-  }
+  const codcli = v.payload?.codcli != null ? Number(v.payload.codcli) : null;
   return { codcli, payload: v.payload };
 }
 

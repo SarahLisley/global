@@ -10,13 +10,13 @@ type KPIs = {
   deliveries: { doneLast30d: number; doneToday: number };
 };
 
-async function resolveCodcli(params: { email?: string; codcli?: string | number }): Promise<number> {
+async function resolveCodcli(params: { email?: string; codcli?: string | number }): Promise<number | null> {
   const { email, codcli } = params;
   if (codcli !== undefined && codcli !== null && `${codcli}`.trim() !== '') {
     return Number(codcli);
   }
   if (!email || !email.trim()) {
-    throw new Error('Forneça ?email= ou ?codcli=');
+    return null;
   }
 
   const [row] = await select<{ CODCLI: number }>(
@@ -32,7 +32,7 @@ async function resolveCodcli(params: { email?: string; codcli?: string | number 
   );
 
   if (!row) {
-    throw new Error('Não foi possível localizar o CODCLI a partir do e-mail informado.');
+    return null;
   }
   return Number(row.CODCLI);
 }
@@ -41,6 +41,16 @@ async function resolveCodcli(params: { email?: string; codcli?: string | number 
 
 export async function getDashboardKpis(params: { email?: string; codcli?: string | number }): Promise<KPIs> {
   const codcli = await resolveCodcli(params);
+  
+  if (!codcli) {
+    return {
+      codcli: 0,
+      ordersLast30d: { totalAmount: 0, totalOrders: 0 },
+      receivablesOpen: { totalAmount: 0 },
+      deliveries: { doneLast30d: 0, doneToday: 0 },
+    };
+  }
+
   return getOrSetCache(`dashboard:kpis:${codcli}`, 30_000, async () => {
     const [ordersRows, receivablesRows, deliveriesRows] = await Promise.all([
       select<{ VLATENDIDO: number; QTPEDIDOS: number }>(

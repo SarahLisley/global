@@ -70,8 +70,8 @@ function buildOrderBindParams(orderNumbers: number[]) {
   return { binds, placeholders };
 }
 
-async function getOrderItemCounts(codcli: number, orderNumbers: number[]) {
-  if (orderNumbers.length === 0) return new Map<string, number>();
+async function getOrderItemCounts(codcli: number | null, orderNumbers: number[]) {
+  if (!codcli || orderNumbers.length === 0) return new Map<string, number>();
 
   const { binds, placeholders } = buildOrderBindParams(orderNumbers);
   const rows = await select<any>(
@@ -92,8 +92,8 @@ async function getOrderItemCounts(codcli: number, orderNumbers: number[]) {
   );
 }
 
-async function getItemsForOrders(codcli: number, orderNumbers: number[]) {
-  if (orderNumbers.length === 0) return new Map<string, OrderItem[]>();
+async function getItemsForOrders(codcli: number | null, orderNumbers: number[]) {
+  if (!codcli || orderNumbers.length === 0) return new Map<string, OrderItem[]>();
 
   const { binds, placeholders } = buildOrderBindParams(orderNumbers);
   const rows = await select<any>(
@@ -134,10 +134,14 @@ async function getItemsForOrders(codcli: number, orderNumbers: number[]) {
   return itemsMap;
 }
 
-export async function getRecentOrders(params: { codcli: number; page?: number; pageSize?: number }) {
+export async function getRecentOrders(params: { codcli: number | null; page?: number; pageSize?: number }) {
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.max(1, params.pageSize ?? 10);
   const offset = (page - 1) * pageSize;
+
+  if (!params.codcli) {
+    return { orders: [], total: 0, page, pageSize };
+  }
 
   return getOrSetCache(`orders:recent:${params.codcli}:${page}:${pageSize}`, 30_000, async () => {
     const rows = await select<any>(
@@ -175,7 +179,7 @@ export async function getRecentOrders(params: { codcli: number; page?: number; p
 }
 
 export async function searchOrders(params: {
-  codcli: number;
+  codcli: number | null;
   dtInicial?: string;
   dtFinal?: string;
   pedido?: string | number;
@@ -187,6 +191,10 @@ export async function searchOrders(params: {
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.max(1, params.pageSize ?? 10);
   const offset = (page - 1) * pageSize;
+
+  if (!params.codcli) {
+    return { orders: [], total: 0, page, pageSize };
+  }
 
   const binds: any = { CODCLI: params.codcli };
   const where: string[] = ['P.CODCLI = :CODCLI'];
@@ -265,7 +273,7 @@ export async function searchOrders(params: {
   return { orders: mapped, total, page, pageSize };
 }
 
-export async function getOrderItems(params: { codcli: number; orderNumber: string | number }) {
+export async function getOrderItems(params: { codcli: number | null; orderNumber: string | number }) {
   const orderNumber = Number(params.orderNumber);
   if (!Number.isFinite(orderNumber)) {
     throw new Error('Pedido invÃ¡lido');

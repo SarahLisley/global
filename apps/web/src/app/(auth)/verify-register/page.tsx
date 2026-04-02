@@ -114,26 +114,34 @@ function VerifyContent() {
           )}
         </Button>
 
-        <div className="flex items-center justify-between pt-2">
-          <Link href="/register" className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1.5 transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            Alterar e-mail
-          </Link>
-          <button
-            type="button"
-            onClick={() => {
-              setMessage(null);
-              startResend(async () => {
-                const res = await resendCodeAction({ email });
-                setMessage({ ok: res.ok, text: res.message });
-              });
-            }}
-            disabled={isResending}
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1.5 disabled:opacity-50 transition-colors"
-          >
-            {isResending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-            Reenviar código
-          </button>
+        <div className="flex flex-col items-center gap-4 pt-4 border-t border-slate-100 dark:border-zinc-800">
+          <p className="text-sm text-slate-500 dark:text-zinc-500">
+            Não recebeu o código?
+          </p>
+          <div className="flex items-center gap-6">
+            <button
+              type="button"
+              onClick={() => {
+                setMessage(null);
+                startResend(async () => {
+                  const res = await resendCodeAction({ email });
+                  setMessage({ ok: res.ok, text: res.message });
+                });
+              }}
+              disabled={isResending}
+              className="text-sm text-blue-600 hover:text-blue-700 font-bold flex items-center gap-2 disabled:opacity-50 transition-colors uppercase tracking-wider"
+            >
+              {isResending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              Reenviar Código
+            </button>
+            
+            <div className="w-px h-4 bg-slate-200 dark:bg-zinc-800" />
+            
+            <Link href="/register" className="text-sm text-slate-500 hover:text-slate-700 font-medium flex items-center gap-1.5 transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+              Alterar e-mail
+            </Link>
+          </div>
         </div>
       </form>
     </div>
