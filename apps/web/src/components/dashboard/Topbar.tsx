@@ -1,24 +1,31 @@
 import clsx from 'clsx';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
 
-import { SearchBar } from './SearchBar';
+import {
+  type ClientNotification,
+  type NotificationsResponse,
+  emitNotificationsRead,
+  listenNotificationsRead,
+  markNotificationsAsRead,
+} from '../../lib/notifications';
+import { HelpModal } from './HelpModal';
 import { NotificationsDropdown } from './NotificationsDropdown';
 import { ProfileDropdown } from './ProfileDropdown';
+import { SearchBar } from './SearchBar';
 import { ThemeToggle } from './ThemeToggle';
-import { HelpModal } from './HelpModal';
 
 const moduleTitles: Record<string, string> = {
-  'sac': 'SAC',
-  'pacientes': 'Produtos',
-  'agenda': 'Agenda',
-  'relatorios': 'Relatórios',
-  'configuracoes': 'Configurações',
-  'financeiro': 'Financeiro',
+  sac: 'SAC',
+  pacientes: 'Produtos',
+  agenda: 'Agenda',
+  relatorios: 'Relatorios',
+  configuracoes: 'Configuracoes',
+  financeiro: 'Financeiro',
   'meus-pedidos': 'Pedidos',
-  'entregas': 'Entregas',
-  'notificacoes': 'Notificações',
+  entregas: 'Entregas',
+  notificacoes: 'Notificacoes',
 };
 
 interface TopbarProps {
@@ -32,21 +39,20 @@ interface TopbarProps {
 
 export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
   const pathname = usePathname();
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-
-  const userName = initialUser?.name || 'Usuário';
-  const userEmail = initialUser?.email || 'usuario@exemplo.com';
-  const codcli = initialUser?.codcli;
-
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<ClientNotification[]>([]);
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
   const [hasLoadedNotifications, setHasLoadedNotifications] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  const userName = initialUser?.name || 'Usuario';
+  const userEmail = initialUser?.email || 'usuario@exemplo.com';
+  const codcli = initialUser?.codcli;
 
   const loadNotifications = useCallback(async () => {
     if (isNotificationsLoading || hasLoadedNotifications) {
@@ -56,7 +62,7 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
     setIsNotificationsLoading(true);
     try {
       const response = await fetch('/api/notifications');
-      const data = response.ok ? await response.json() : null;
+      const data = response.ok ? (await response.json()) as NotificationsResponse : null;
       if (data?.notifications) {
         setNotifications(data.notifications);
         setHasLoadedNotifications(true);
@@ -69,23 +75,25 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
   }, [hasLoadedNotifications, isNotificationsLoading]);
 
   useEffect(() => {
-    if (codcli) {
-      let revokedUrl: string | null = null;
-
-      fetch(`/api/avatar?codcli=${codcli}`)
-        .then(r => r.ok ? r.blob() : Promise.reject())
-        .then(blob => {
-          revokedUrl = URL.createObjectURL(blob);
-          setAvatarUrl(revokedUrl);
-        })
-        .catch(() => {});
-
-      return () => {
-        if (revokedUrl) {
-          URL.revokeObjectURL(revokedUrl);
-        }
-      };
+    if (!codcli) {
+      return;
     }
+
+    let revokedUrl: string | null = null;
+
+    fetch(`/api/avatar?codcli=${codcli}`)
+      .then((response) => (response.ok ? response.blob() : Promise.reject()))
+      .then((blob) => {
+        revokedUrl = URL.createObjectURL(blob);
+        setAvatarUrl(revokedUrl);
+      })
+      .catch(() => {});
+
+    return () => {
+      if (revokedUrl) {
+        URL.revokeObjectURL(revokedUrl);
+      }
+    };
   }, [codcli]);
 
   useEffect(() => {
@@ -130,43 +138,63 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
     }
   }, [isNotificationsOpen, loadNotifications]);
 
+  useEffect(() => {
+    return listenNotificationsRead((ids) => {
+      if (ids.length === 0) {
+        return;
+      }
+
+      const readIds = new Set(ids);
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          readIds.has(notification.id)
+            ? { ...notification, read: true }
+            : notification
+        )
+      );
+    });
+  }, []);
+
   const markAllAsRead = async () => {
-    const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
-    if (unreadIds.length === 0) return;
+    const unreadIds = notifications.filter((notification) => !notification.read).map((notification) => notification.id);
+    if (unreadIds.length === 0) {
+      return;
+    }
 
     try {
-      const res = await fetch('/api/notifications/read', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: unreadIds }),
-      });
-      if (res.ok) {
-        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-      }
-    } catch (e) {
-      console.error('Falha ao marcar notificações como lidas:', e);
+      const updatedIds = await markNotificationsAsRead(unreadIds);
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          updatedIds.includes(notification.id)
+            ? { ...notification, read: true }
+            : notification
+        )
+      );
+      emitNotificationsRead(updatedIds);
+    } catch (error) {
+      console.error('Falha ao marcar notificacoes como lidas:', error);
     }
   };
 
   const toggleSearch = () => {
     setIsSearchOpen(!isSearchOpen);
-    if (isSearchOpen) setSearchQuery('');
+    if (isSearchOpen) {
+      setSearchQuery('');
+    }
   };
 
   const segments = pathname.split('/').filter(Boolean);
-  const currentModule = segments[1]; // app/dashboard/[module]
+  const currentModule = segments[1];
   const subModules = segments.slice(2);
-  const pageTitle = currentModule ? (moduleTitles[currentModule] || 'Dashboard') : 'Início';
+  const pageTitle = currentModule ? moduleTitles[currentModule] || 'Dashboard' : 'Inicio';
 
   return (
-    <header className="sticky top-0 z-30 bg-white dark:bg-zinc-900 dark:bg-zinc-950 border-b border-slate-200 dark:border-zinc-800 dark:border-zinc-800">
-      <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
         <div className="flex items-center justify-between gap-3">
-          
-          {/* Menu Mobile */}
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-2 text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+            className="rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 lg:hidden"
             aria-label="Abrir menu"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -176,46 +204,46 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
             </svg>
           </button>
 
-          {/* Título e Breadcrumbs (Esquerda) */}
-          <div className={clsx(
-            'flex flex-col gap-0.5 flex-1 min-w-0',
-            isSearchOpen ? 'hidden lg:flex' : 'flex'
-          )}>
-            <div className="flex items-center gap-2 text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider truncate">
-              <Link href="/dashboard" className="hover:text-blue-600 dark:hover:text-blue-400 dark:text-blue-500 transition-colors">Portal Global</Link>
+          <div
+            className={clsx(
+              'flex min-w-0 flex-1 flex-col gap-0.5',
+              isSearchOpen ? 'hidden lg:flex' : 'flex'
+            )}
+          >
+            <div className="flex items-center gap-2 truncate text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400 sm:text-xs">
+              <Link href="/dashboard" className="transition-colors hover:text-blue-600 dark:text-blue-500 dark:hover:text-blue-400">
+                Portal Global
+              </Link>
               {currentModule && (
                 <>
                   <span className="text-slate-300 dark:text-zinc-600">/</span>
-                  <span className={clsx(subModules.length === 0 ? "text-blue-500" : "hover:text-blue-500 transition-colors cursor-pointer")}>
+                  <span className={clsx(subModules.length === 0 ? 'text-blue-500' : 'cursor-pointer transition-colors hover:text-blue-500')}>
                     {pageTitle}
                   </span>
                 </>
               )}
             </div>
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-zinc-100 tracking-tight truncate leading-tight">
+            <h1 className="truncate text-lg font-bold leading-tight tracking-tight text-gray-900 dark:text-zinc-100 sm:text-xl">
               {pageTitle}
             </h1>
           </div>
 
-          {/* SearchBar (Centro) */}
-          <div className={clsx(
-            'flex-[2] flex justify-center',
-            !isSearchOpen && 'hidden sm:flex'
-          )}>
-            <SearchBar 
-              isSearchOpen={isSearchOpen} 
-              searchQuery={searchQuery} 
-              setSearchQuery={setSearchQuery} 
-              toggleSearch={toggleSearch} 
+          <div className={clsx('flex flex-[2] justify-center', !isSearchOpen && 'hidden sm:flex')}>
+            <SearchBar
+              isSearchOpen={isSearchOpen}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              toggleSearch={toggleSearch}
             />
           </div>
 
-          {/* Ações (Direita) */}
-          <div className={clsx(
-            'flex-1 flex justify-end items-center gap-2 sm:gap-3 lg:gap-4',
-            isSearchOpen ? 'hidden lg:flex' : 'flex'
-          )}>
-            <NotificationsDropdown 
+          <div
+            className={clsx(
+              'flex flex-1 items-center justify-end gap-2 sm:gap-3 lg:gap-4',
+              isSearchOpen ? 'hidden lg:flex' : 'flex'
+            )}
+          >
+            <NotificationsDropdown
               notifications={notifications}
               isLoading={isNotificationsLoading}
               isOpen={isNotificationsOpen}
@@ -229,8 +257,7 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
             <button
               onClick={() => setIsHelpOpen(!isHelpOpen)}
               className={clsx(
-                'p-2 sm:p-2.5 text-gray-600 dark:text-zinc-400 hover:text-[#4a90e2] hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:bg-blue-950/30 dark:hover:bg-blue-900/30 rounded-xl transition-all duration-200',
-                'hidden md:block',
+                'hidden rounded-xl p-2 transition-all duration-200 hover:bg-blue-50 hover:text-[#4a90e2] dark:bg-blue-950/30 dark:text-zinc-400 dark:hover:bg-blue-900/30 md:block sm:p-2.5',
                 isSearchOpen && 'md:hidden lg:block'
               )}
               title="Ajuda e Suporte"
@@ -242,13 +269,15 @@ export function Topbar({ onMenuClick, initialUser }: TopbarProps) {
               </svg>
             </button>
 
-            <div className={clsx(
-              'w-px h-6 sm:h-8 bg-gray-200 dark:bg-zinc-800',
-              'hidden md:block',
-              isSearchOpen && 'md:hidden lg:block'
-            )} aria-hidden="true" />
+            <div
+              className={clsx(
+                'hidden h-6 w-px bg-gray-200 dark:bg-zinc-800 sm:h-8 md:block',
+                isSearchOpen && 'md:hidden lg:block'
+              )}
+              aria-hidden="true"
+            />
 
-            <ProfileDropdown 
+            <ProfileDropdown
               userName={userName}
               userEmail={userEmail}
               avatarUrl={avatarUrl}
