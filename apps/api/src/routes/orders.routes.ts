@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { getRecentOrders, searchOrders } from '../controllers/ordersController';
+import { getOrderItems, getRecentOrders, searchOrders } from '../controllers/ordersController';
 import { extractCodcli, handleAuthError } from '../utils/auth';
 
 export default async function ordersRoutes(app: FastifyInstance) {
@@ -17,6 +17,17 @@ export default async function ordersRoutes(app: FastifyInstance) {
     }
   });
 
+  app.get('/:orderNumber/items', async (req, reply) => {
+    try {
+      const { codcli } = extractCodcli(req);
+      const { orderNumber } = req.params as { orderNumber: string };
+      const items = await getOrderItems({ codcli, orderNumber });
+      return reply.send({ ok: true, items });
+    } catch (err) {
+      return handleAuthError(err, reply);
+    }
+  });
+
   app.get('/', async (req, reply) => {
     try {
       const { codcli } = extractCodcli(req);
@@ -29,6 +40,7 @@ export default async function ordersRoutes(app: FastifyInstance) {
         nf: q.nf,
         page: Number(q.page),
         pageSize: Number(q.pageSize),
+        includeItems: q.includeItems === '1',
       });
       return reply.send({
         ok: true,
@@ -45,8 +57,8 @@ export default async function ordersRoutes(app: FastifyInstance) {
           vlrTotal: o.total,
           vlrDesconto: o.desconto,
           vlrFrete: o.frete,
-          nroItens: (o as any).itens?.length ?? 0,
-          itens: (o as any).itens ?? [],
+          nroItens: o.itemCount ?? 0,
+          itens: q.includeItems === '1' ? (o as any).itens ?? [] : undefined,
         })),
         total: data.total,
         page: data.page,

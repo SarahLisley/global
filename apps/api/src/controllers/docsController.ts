@@ -1,5 +1,6 @@
 import { select } from '../db/query';
 import { OWNER } from '../utils/env';
+import { getOrSetCache } from '../utils/ttlCache';
 
 export type DocValidityDTO = {
   description: string;
@@ -25,30 +26,32 @@ function toStatus(dt: Date, thresholdDays = 7): 'valido' | 'vencido' | 'proximo_
 }
 
 export async function getDocsValidity(params: { codcli: number }): Promise<DocValidityDTO[]> {
-  const rows = await select<any>(
-    `
-    SELECT 
-      v.DESCRICAO,
-      cv.NUMDOC,
-      cv.DTVALIDADE
-    FROM ${OWNER}.PCTIPOCONTROLEVENDA v
-    JOIN ${OWNER}.PCCLICONTROLEVENDA cv
-      ON v.CODTIPOCONTROLEVENDA = cv.CODTIPOCONTROLEVENDA
-    WHERE cv.CODCLI = :CODCLI
-    ORDER BY cv.CODCLI
-    `,
-    { CODCLI: params.codcli }
-  );
+  return getOrSetCache(`docs:validity:${params.codcli}`, 60_000, async () => {
+    const rows = await select<any>(
+      `
+      SELECT 
+        v.DESCRICAO,
+        cv.NUMDOC,
+        cv.DTVALIDADE
+      FROM ${OWNER}.PCTIPOCONTROLEVENDA v
+      JOIN ${OWNER}.PCCLICONTROLEVENDA cv
+        ON v.CODTIPOCONTROLEVENDA = cv.CODTIPOCONTROLEVENDA
+      WHERE cv.CODCLI = :CODCLI
+      ORDER BY cv.CODCLI
+      `,
+      { CODCLI: params.codcli }
+    );
 
-  return rows.map((r: any) => {
-    const dt = r.DTVALIDADE ? new Date(r.DTVALIDADE) : new Date(NaN);
-    const status = toStatus(dt, 7);
-    return {
-      description: String(r.DESCRICAO ?? '').trim(),
-      dueDate: dt.toISOString(),
-      docNumber: String(r.NUMDOC ?? '').trim(),
-      status,
-      url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', // Mock URL
-    };
+    return rows.map((r: any) => {
+      const dt = r.DTVALIDADE ? new Date(r.DTVALIDADE) : new Date(NaN);
+      const status = toStatus(dt, 7);
+      return {
+        description: String(r.DESCRICAO ?? '').trim(),
+        dueDate: dt.toISOString(),
+        docNumber: String(r.NUMDOC ?? '').trim(),
+        status,
+        url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', // Mock URL
+      };
+    });
   });
 }

@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, Button, Badge } from '@pgb/ui'; // Added Badge import if needed, or remove if not used in updated code
+import { Card, Button } from '@pgb/ui';
 import { useFilters } from '../../../../hooks/useFilters';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { Search } from 'lucide-react';
 
 export type Item = {
@@ -54,7 +53,6 @@ export default function MeusPedidosClient({
   pageSize,
   searchParams,
 }: MeusPedidosClientProps) {
-
   const { filters, setFilter, updateFilters, clearFilters, isNavigationLoading } = useFilters({
     initialFilters: {
       dtInicial: searchParams.dtInicial,
@@ -71,11 +69,26 @@ export default function MeusPedidosClient({
   });
 
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [itemsByOrder, setItemsByOrder] = useState<Record<string, Item[]>>(() =>
+    initialPedidos.reduce<Record<string, Item[]>>((acc, pedido) => {
+      if (pedido.itens) acc[pedido.id] = pedido.itens;
+      return acc;
+    }, {})
+  );
+  const [itemsLoading, setItemsLoading] = useState<Record<string, boolean>>({});
+  const [itemsError, setItemsError] = useState<Record<string, string>>({});
 
-  // Sync state with props
   React.useEffect(() => {
-    // Optional: if you want to sync when props change from server, though useFilters handles initial
-  }, [initialPedidos, initialPage, initialTotal]);
+    setItemsByOrder((current) => {
+      const next = { ...current };
+      for (const pedido of initialPedidos) {
+        if (pedido.itens && !next[pedido.id]) {
+          next[pedido.id] = pedido.itens;
+        }
+      }
+      return next;
+    });
+  }, [initialPedidos]);
 
   function onPesquisar() {
     setOpen({});
@@ -94,8 +107,47 @@ export default function MeusPedidosClient({
     });
   }
 
-  function toggleRow(id: string) {
-    setOpen((s) => ({ ...s, [id]: !s[id] }));
+  async function loadItems(id: string) {
+    if (itemsByOrder[id] || itemsLoading[id]) return;
+
+    setItemsLoading((current) => ({ ...current, [id]: true }));
+    setItemsError((current) => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
+
+    try {
+      const res = await fetch(`/api/meus-pedidos/${encodeURIComponent(id)}/items`, {
+        cache: 'no-store',
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data?.error || 'Nao foi possivel carregar os itens.');
+      }
+
+      setItemsByOrder((current) => ({
+        ...current,
+        [id]: Array.isArray(data?.items) ? data.items : [],
+      }));
+    } catch (error: any) {
+      setItemsError((current) => ({
+        ...current,
+        [id]: error?.message || 'Nao foi possivel carregar os itens.',
+      }));
+    } finally {
+      setItemsLoading((current) => ({ ...current, [id]: false }));
+    }
+  }
+
+  async function toggleRow(id: string) {
+    const willOpen = !open[id];
+    setOpen((current) => ({ ...current, [id]: willOpen }));
+
+    if (willOpen && itemsByOrder[id] === undefined) {
+      await loadItems(id);
+    }
   }
 
   function onPageChange(newPage: number) {
@@ -107,18 +159,16 @@ export default function MeusPedidosClient({
   const handleExportCSV = () => {
     if (initialPedidos.length === 0) return;
 
-    // Cabeçalhos do CSV
     const headers = [
       'Pedido',
       'NF',
       'Trans. Venda',
-      'Posição',
+      'Posicao',
       'Data',
       'Filial',
       'Valor Total'
     ];
 
-    // Converter dados para linhas de texto separadas por ponto-e-vírgula
     const rows = initialPedidos.map(p => [
       p.nroPedido,
       p.nroNF || '-',
@@ -129,10 +179,8 @@ export default function MeusPedidosClient({
       (p.vlrTotal ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
     ].join(';'));
 
-    // Adicionar BOM para UTF-8 (necessário para Excel abrir acentos corretamente)
     const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\n');
-    
-    // Criar blob e link de download
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -156,12 +204,10 @@ export default function MeusPedidosClient({
       <Card className="p-0 overflow-hidden border-slate-200 dark:border-zinc-800 shadow-sm">
         <div className="p-6 bg-slate-50/50 dark:bg-zinc-900/50 border-b border-slate-100 dark:border-zinc-800/50 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-
-            {/* Período */}
             <div className="md:col-span-5 space-y-4">
               <div className="font-semibold text-sm text-slate-700 dark:text-zinc-300 flex items-center gap-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
-                Período de Emissão
+                Periodo de Emissao
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white dark:bg-zinc-900 rounded-lg p-1 border border-slate-200 dark:border-zinc-800 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
@@ -175,7 +221,7 @@ export default function MeusPedidosClient({
                   />
                 </div>
                 <div className="bg-white dark:bg-zinc-900 rounded-lg p-1 border border-slate-200 dark:border-zinc-800 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-                  <label htmlFor="dtFinal" className="block text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider px-2 pt-1">Até</label>
+                  <label htmlFor="dtFinal" className="block text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider px-2 pt-1">Ate</label>
                   <input
                     id="dtFinal"
                     type="date"
@@ -187,11 +233,10 @@ export default function MeusPedidosClient({
               </div>
             </div>
 
-            {/* Identificação */}
             <div className="md:col-span-7 space-y-4">
               <div className="font-semibold text-sm text-slate-700 dark:text-zinc-300 flex items-center gap-1.5">
                 <Search size={16} className="text-blue-500" />
-                Identificação
+                Identificacao
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white dark:bg-zinc-900 rounded-lg p-1 border border-slate-200 dark:border-zinc-800 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
@@ -247,7 +292,7 @@ export default function MeusPedidosClient({
               </svg>
             </div>
             <h3 className="text-lg font-medium text-slate-900 dark:text-zinc-100">Nenhum pedido encontrado</h3>
-            <p className="text-slate-500 dark:text-zinc-400 mt-1 max-w-sm">Tente ajustar os filtros ou o período da busca.</p>
+            <p className="text-slate-500 dark:text-zinc-400 mt-1 max-w-sm">Tente ajustar os filtros ou o periodo da busca.</p>
           </div>
         ) : (
           <div className={`overflow-x-auto transition-opacity duration-300 ${isNavigationLoading ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -260,8 +305,8 @@ export default function MeusPedidosClient({
                 </svg>
                 Pedidos Localizados
               </h2>
-              
-              <Button 
+
+              <Button
                 onClick={handleExportCSV}
                 className="bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 shadow-sm text-xs font-bold px-4 py-1.5 rounded-lg flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"
                 disabled={initialPedidos.length === 0 || isNavigationLoading}
@@ -274,115 +319,139 @@ export default function MeusPedidosClient({
                 Exportar (CSV)
               </Button>
             </div>
+
             <table className="w-full text-left text-sm text-slate-600 dark:text-zinc-400">
               <thead className="bg-slate-50 dark:bg-zinc-900/40 border-b border-slate-200 dark:border-zinc-800">
                 <tr>
                   <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Nro Pedido</th>
                   <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Nro NF</th>
                   <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Nro Trans. Venda</th>
-                  <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Posição</th>
+                  <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Posicao</th>
                   <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Data</th>
                   <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Filial</th>
                   <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Vlr. Total</th>
                   <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap text-center">Itens</th>
-                  <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap w-24">Ações</th>
+                  <th className="px-6 py-3 font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap w-24">Acoes</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/50">
-                {initialPedidos.map((p) => (
-                  <React.Fragment key={p.id}>
-                    <tr className={`hover:bg-blue-50/50 dark:bg-blue-950/20 transition-colors ${open[p.id] ? 'bg-blue-50/30' : ''}`}>
-                      <td className="px-6 py-4 font-medium text-slate-900 dark:text-zinc-100">{p.nroPedido}</td>
-                      <td className="px-6 py-4">{p.nroNF || '-'}</td>
-                      <td className="px-6 py-4">{p.nroTransVenda || '-'}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-zinc-400 font-medium bg-slate-100 dark:bg-zinc-800 px-2.5 py-1 rounded-md w-fit border border-slate-200 dark:border-zinc-800">
-                          <div className={`w-1.5 h-1.5 rounded-full ${p.posicao === 'Faturado' || p.posicao === 'F'
-                            ? 'bg-emerald-500'
-                            : p.posicao === 'Cancelado' || p.posicao === 'C'
-                              ? 'bg-red-500'
-                              : 'bg-blue-500'
-                            }`}></div>
-                          {p.posicao || 'Normal'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">{new Date(p.data).toLocaleDateString('pt-BR')}</td>
-                      <td className="px-6 py-4">{p.filial || '-'}</td>
-                      <td className="px-6 py-4 font-semibold text-slate-900 dark:text-zinc-100">{fmtBRL.format(p.vlrTotal ?? 0)}</td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 py-1 px-2 rounded font-medium text-xs border border-slate-200 dark:border-zinc-800">
-                          {p.nroItens ?? p.itens?.length ?? 0}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <button
-                          className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-all ${open[p.id] ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'border-slate-300 dark:border-zinc-700 text-slate-500 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800/50 dark:bg-zinc-900/40 hover:text-slate-700 dark:hover:text-zinc-200 dark:text-zinc-300'}`}
-                          onClick={() => toggleRow(p.id)}
-                          title={open[p.id] ? 'Ocultar itens' : 'Ver itens'}
-                        >
-                          {open[p.id] ? (
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15" /></svg>
-                          ) : (
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
-                          )}
-                        </button>
-                      </td>
-                    </tr>
+                {initialPedidos.map((pedido) => {
+                  const pedidoItems = itemsByOrder[pedido.id] ?? pedido.itens;
+                  const isItemsLoading = !!itemsLoading[pedido.id];
+                  const itemError = itemsError[pedido.id];
 
-                    {open[p.id] && p.itens && (
-                      <tr className="bg-slate-50/50 dark:bg-zinc-900/50 animate-in fade-in slide-in-from-top-1">
-                        <td colSpan={9} className="p-0 border-b border-slate-200 dark:border-zinc-800">
-                          <div className="py-4 px-6 bg-slate-50 dark:bg-zinc-900/40 shadow-inner">
-                            <h4 className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-                              Itens do Pedido
-                            </h4>
-                            <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
-                              <table className="min-w-full text-sm">
-                                <thead>
-                                  <tr className="bg-slate-50/80 border-b border-slate-100 dark:border-zinc-800/50">
-                                    <th className="px-4 py-2 text-left font-medium text-slate-600 dark:text-zinc-400">Cod. Produto</th>
-                                    <th className="px-4 py-2 text-left font-medium text-slate-800 dark:text-zinc-200">Descrição</th>
-                                    <th className="px-4 py-2 text-center font-medium text-slate-600 dark:text-zinc-400">Qtd</th>
-                                    <th className="px-4 py-2 text-center font-medium text-slate-600 dark:text-zinc-400">Qtd Falta</th>
-                                    <th className="px-4 py-2 text-center font-medium text-slate-600 dark:text-zinc-400">P. Venda Unit.</th>
-                                    <th className="px-4 py-2 text-right font-medium text-slate-800 dark:text-zinc-200">P. Venda Total</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/50">
-                                  {p.itens.length > 0 ? p.itens.map((it, idx) => (
-                                    <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 dark:bg-zinc-900/40">
-                                      <td className="px-4 py-2 text-slate-600 dark:text-zinc-400 font-mono text-xs">{it.codProduto}</td>
-                                      <td className="px-4 py-2 font-medium text-slate-800 dark:text-zinc-200">{it.descricao}</td>
-                                      <td className="px-4 py-2 text-center text-slate-600 dark:text-zinc-400">{it.qtd}</td>
-                                      <td className="px-4 py-2 text-center text-red-500 font-medium">{it.qtdFalta > 0 ? it.qtdFalta : '-'}</td>
-                                      <td className="px-4 py-2 text-center text-slate-600 dark:text-zinc-400">{fmtBRL.format(it.pvUnit)}</td>
-                                      <td className="px-4 py-2 text-right font-medium text-slate-800 dark:text-zinc-200">{fmtBRL.format(it.pvTotal)}</td>
-                                    </tr>
-                                  )) : (
-                                    <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500 dark:text-zinc-400">Sem itens registrados para este pedido.</td></tr>
-                                  )}
-                                </tbody>
-                                <tfoot className="bg-slate-50 dark:bg-zinc-900/40 border-t border-slate-100 dark:border-zinc-800/50">
-                                  <tr>
-                                    <td colSpan={5} className="px-4 py-2 text-right font-bold text-slate-700 dark:text-zinc-300 uppercase text-xs tracking-wider">Total do Pedido:</td>
-                                    <td className="px-4 py-2 text-right font-bold text-slate-900 dark:text-zinc-100">{fmtBRL.format(p.vlrTotal ?? 0)}</td>
-                                  </tr>
-                                </tfoot>
-                              </table>
-                            </div>
+                  return (
+                    <React.Fragment key={pedido.id}>
+                      <tr className={`hover:bg-blue-50/50 dark:bg-blue-950/20 transition-colors ${open[pedido.id] ? 'bg-blue-50/30' : ''}`}>
+                        <td className="px-6 py-4 font-medium text-slate-900 dark:text-zinc-100">{pedido.nroPedido}</td>
+                        <td className="px-6 py-4">{pedido.nroNF || '-'}</td>
+                        <td className="px-6 py-4">{pedido.nroTransVenda || '-'}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-zinc-400 font-medium bg-slate-100 dark:bg-zinc-800 px-2.5 py-1 rounded-md w-fit border border-slate-200 dark:border-zinc-800">
+                            <div className={`w-1.5 h-1.5 rounded-full ${pedido.posicao === 'Faturado' || pedido.posicao === 'F'
+                              ? 'bg-emerald-500'
+                              : pedido.posicao === 'Cancelado' || pedido.posicao === 'C'
+                                ? 'bg-red-500'
+                                : 'bg-blue-500'
+                              }`}></div>
+                            {pedido.posicao || 'Normal'}
                           </div>
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap">{new Date(pedido.data).toLocaleDateString('pt-BR')}</td>
+                        <td className="px-6 py-4">{pedido.filial || '-'}</td>
+                        <td className="px-6 py-4 font-semibold text-slate-900 dark:text-zinc-100">{fmtBRL.format(pedido.vlrTotal ?? 0)}</td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 py-1 px-2 rounded font-medium text-xs border border-slate-200 dark:border-zinc-800">
+                            {pedido.nroItens ?? pedidoItems?.length ?? 0}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <button
+                            className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-all ${open[pedido.id] ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'border-slate-300 dark:border-zinc-700 text-slate-500 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800/50 dark:bg-zinc-900/40 hover:text-slate-700 dark:hover:text-zinc-200 dark:text-zinc-300'}`}
+                            onClick={() => void toggleRow(pedido.id)}
+                            title={open[pedido.id] ? 'Ocultar itens' : 'Ver itens'}
+                          >
+                            {open[pedido.id] ? (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15" /></svg>
+                            ) : (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+                            )}
+                          </button>
+                        </td>
                       </tr>
-                    )}
-                  </React.Fragment>
-                ))}
+
+                      {open[pedido.id] && (
+                        <tr className="bg-slate-50/50 dark:bg-zinc-900/50 animate-in fade-in slide-in-from-top-1">
+                          <td colSpan={9} className="p-0 border-b border-slate-200 dark:border-zinc-800">
+                            <div className="py-4 px-6 bg-slate-50 dark:bg-zinc-900/40 shadow-inner">
+                              <h4 className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                                Itens do Pedido
+                              </h4>
+                              <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+                                <table className="min-w-full text-sm">
+                                  <thead>
+                                    <tr className="bg-slate-50/80 border-b border-slate-100 dark:border-zinc-800/50">
+                                      <th className="px-4 py-2 text-left font-medium text-slate-600 dark:text-zinc-400">Cod. Produto</th>
+                                      <th className="px-4 py-2 text-left font-medium text-slate-800 dark:text-zinc-200">Descricao</th>
+                                      <th className="px-4 py-2 text-center font-medium text-slate-600 dark:text-zinc-400">Qtd</th>
+                                      <th className="px-4 py-2 text-center font-medium text-slate-600 dark:text-zinc-400">Qtd Falta</th>
+                                      <th className="px-4 py-2 text-center font-medium text-slate-600 dark:text-zinc-400">P. Venda Unit.</th>
+                                      <th className="px-4 py-2 text-right font-medium text-slate-800 dark:text-zinc-200">P. Venda Total</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/50">
+                                    {isItemsLoading ? (
+                                      <tr>
+                                        <td colSpan={6} className="px-4 py-8 text-center text-slate-500 dark:text-zinc-400">
+                                          Carregando itens do pedido...
+                                        </td>
+                                      </tr>
+                                    ) : itemError ? (
+                                      <tr>
+                                        <td colSpan={6} className="px-4 py-8 text-center text-red-600 dark:text-red-400">
+                                          {itemError}
+                                        </td>
+                                      </tr>
+                                    ) : pedidoItems && pedidoItems.length > 0 ? (
+                                      pedidoItems.map((item, idx) => (
+                                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 dark:bg-zinc-900/40">
+                                          <td className="px-4 py-2 text-slate-600 dark:text-zinc-400 font-mono text-xs">{item.codProduto}</td>
+                                          <td className="px-4 py-2 font-medium text-slate-800 dark:text-zinc-200">{item.descricao}</td>
+                                          <td className="px-4 py-2 text-center text-slate-600 dark:text-zinc-400">{item.qtd}</td>
+                                          <td className="px-4 py-2 text-center text-red-500 font-medium">{item.qtdFalta > 0 ? item.qtdFalta : '-'}</td>
+                                          <td className="px-4 py-2 text-center text-slate-600 dark:text-zinc-400">{fmtBRL.format(item.pvUnit)}</td>
+                                          <td className="px-4 py-2 text-right font-medium text-slate-800 dark:text-zinc-200">{fmtBRL.format(item.pvTotal)}</td>
+                                        </tr>
+                                      ))
+                                    ) : (
+                                      <tr>
+                                        <td colSpan={6} className="px-4 py-8 text-center text-slate-500 dark:text-zinc-400">
+                                          Sem itens registrados para este pedido.
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </tbody>
+                                  <tfoot className="bg-slate-50 dark:bg-zinc-900/40 border-t border-slate-100 dark:border-zinc-800/50">
+                                    <tr>
+                                      <td colSpan={5} className="px-4 py-2 text-right font-bold text-slate-700 dark:text-zinc-300 uppercase text-xs tracking-wider">Total do Pedido:</td>
+                                      <td className="px-4 py-2 text-right font-bold text-slate-900 dark:text-zinc-100">{fmtBRL.format(pedido.vlrTotal ?? 0)}</td>
+                                    </tr>
+                                  </tfoot>
+                                </table>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
 
-        {/* Paginação */}
         {initialTotal > 0 && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-slate-50 dark:bg-zinc-900/40 border-t border-slate-200 dark:border-zinc-800">
             <div className="text-sm text-slate-600 dark:text-zinc-400 flex items-center gap-2">
@@ -391,7 +460,7 @@ export default function MeusPedidosClient({
                 <line x1="3" y1="6" x2="21" y2="6"></line>
                 <path d="M16 10a4 4 0 0 1-8 0"></path>
               </svg>
-              <span>Mostrando página <span className="font-bold text-slate-900 dark:text-zinc-100">{initialPage}</span> de <span className="font-bold text-slate-900 dark:text-zinc-100">{totalPages}</span></span>
+              <span>Mostrando pagina <span className="font-bold text-slate-900 dark:text-zinc-100">{initialPage}</span> de <span className="font-bold text-slate-900 dark:text-zinc-100">{totalPages}</span></span>
             </div>
             <div className="flex items-center gap-1">
               <button className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800/50 dark:bg-zinc-900/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" disabled={initialPage <= 1} onClick={() => onPageChange(initialPage - 1)}>
