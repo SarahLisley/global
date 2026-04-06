@@ -235,25 +235,33 @@ export default async function sacRoutes(app: FastifyInstance) {
           }
 
           const row = rows[0];
-          const [history, commentRows] = await Promise.all([
-            select<TicketTimelineRow>(
-              `
-              SELECT
-                BRSACC.NUMSEQ,
-                BRSACC.DTABERTURA AS DTMOV,
-                BRSACC.DTFINALIZA AS DTMOV_FINAL,
-                BRSACC.RELATOCLIENTE AS DESCRICAO,
-                BRSACC.STATUS
-              FROM ${OWNER}.BRSACC
-              WHERE BRSACC.NUMTICKETPRINC = :NUMTICKET
-                ${codcli ? 'AND BRSACC.CODCLI = :CODCLI' : ''}
-                AND NVL(BRSACC.STATUS,'') <> 'Cancelado'
-              ORDER BY BRSACC.NUMSEQ ASC
-              `,
-              codcli ? { NUMTICKET: numTicket, CODCLI: codcli } : { NUMTICKET: numTicket }
-            ),
-            select<CommentRow>(COMMENTS_SELECT_SQL, { NUMTICKET: numTicket }),
-          ]);
+          const history = await select<TicketTimelineRow>(
+            `
+            SELECT
+              BRSACC.NUMSEQ,
+              BRSACC.DTABERTURA AS DTMOV,
+              BRSACC.DTFINALIZA AS DTMOV_FINAL,
+              BRSACC.RELATOCLIENTE AS DESCRICAO,
+              BRSACC.STATUS
+            FROM ${OWNER}.BRSACC
+            WHERE BRSACC.NUMTICKETPRINC = :NUMTICKET
+              ${codcli ? 'AND BRSACC.CODCLI = :CODCLI' : ''}
+              AND NVL(BRSACC.STATUS,'') <> 'Cancelado'
+            ORDER BY BRSACC.NUMSEQ ASC
+            `,
+            codcli ? { NUMTICKET: numTicket, CODCLI: codcli } : { NUMTICKET: numTicket }
+          );
+
+          let commentRows: CommentRow[] = [];
+          try {
+            commentRows = await select<CommentRow>(COMMENTS_SELECT_SQL, { NUMTICKET: numTicket });
+          } catch (err: any) {
+            const msg = err.message || String(err);
+            if (!msg.includes('ORA-00942') && !msg.includes('ORA-00903')) {
+              throw err;
+            }
+            // Falha silenciosa: se a tabela BRSACC_COMMENTS não existir, retorna sem comentários.
+          }
 
           const ticket = {
             id: String(row.NUMTICKET),

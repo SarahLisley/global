@@ -217,7 +217,6 @@ export async function searchTickets(req: FastifyRequest) {
         numped: q.numped ?? null,
         numnota: q.numnota ?? null,
         codcli: q.codcli ?? null,
-        status: status, // status bind
     };
 
     req.log.info({ binds: safeLogBinds(binds, { fields: ['codcli'] }) }, 'SAC search binds');
@@ -229,21 +228,32 @@ export async function searchTickets(req: FastifyRequest) {
         ? (status === 'finalizado' ? "AND DTFINALIZA IS NOT NULL" : "AND DTFINALIZA IS NULL")
         : "";
 
-    const rows = await select<any>(
-        `
-    SELECT /*+ FIRST_ROWS */ *
-    FROM ${OWNER}.SAC_TICKETS
-    WHERE 1=1
-      AND (:date_from IS NULL OR TRUNC(DTA_CAD) >= TRUNC(TO_DATE(:date_from, 'YYYY-MM-DD')))
-      AND (:date_to   IS NULL OR TRUNC(DTA_CAD) <= TRUNC(TO_DATE(:date_to, 'YYYY-MM-DD')))
-      AND (:numped    IS NULL OR NUMPED = :numped)
-      AND (:numnota   IS NULL OR NUMNOTA = :numnota)
-      AND (:codcli    IS NULL OR CODCLI = :codcli)
-      ${statusFilter}
-    FETCH FIRST 200 ROWS ONLY
-    `,
-        binds
-    );
+    try {
+        const rows = await select<any>(
+            `
+        SELECT /*+ FIRST_ROWS */ *
+        FROM ${OWNER}.BRSACC
+        WHERE NUMTICKET = NUMTICKETPRINC
+          AND NVL(STATUS,'') <> 'Cancelado'
+          AND (:date_from IS NULL OR TRUNC(DTABERTURA) >= TRUNC(TO_DATE(:date_from, 'YYYY-MM-DD')))
+          AND (:date_to   IS NULL OR TRUNC(DTABERTURA) <= TRUNC(TO_DATE(:date_to, 'YYYY-MM-DD')))
+          AND (:numped    IS NULL OR NUMPED = :numped)
+          AND (:numnota   IS NULL OR NUMNOTA = :numnota)
+          AND (:codcli    IS NULL OR CODCLI = :codcli)
+          ${statusFilter}
+        ORDER BY DTABERTURA DESC
+        FETCH FIRST 200 ROWS ONLY
+        `,
+            binds
+        );
 
-    return rows;
+        return rows;
+    } catch (err: any) {
+        const msg = err.message || String(err);
+        if (msg.includes('ORA-00903') || msg.includes('ORA-00942')) {
+            req.log.warn('Tabela BRSACC não encontrada. Retornando vazio para searchTickets.');
+            return [];
+        }
+        throw err;
+    }
 }
