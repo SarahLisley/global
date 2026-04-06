@@ -402,9 +402,10 @@ export async function getDeliveryTimeline(numTransVenda: number, codcli: number 
   const binds: any = { NUMTRANSVENDA: numTransVenda };
   if (codcli) binds.CODCLI = codcli;
 
+  // Removido cache ou setado TTL 0 para garantir "Tempo Real" nas buscas de timeline
   return getOrSetCache(
     `deliveryTimeline:${codcli}:${numTransVenda}`,
-    DELIVERY_TIMELINE_TTL_MS,
+    0, // 0ms TTL = No cache (Busca em Tempo Real no banco de dados)
     async () => {
       try {
         const rows = await select<any>(
@@ -442,7 +443,57 @@ export async function getDeliveryTimeline(numTransVenda: number, codcli: number 
       } catch (err: any) {
         const msg = err.message || String(err);
         if (msg.includes('ORA-00903') || msg.includes('ORA-00942')) {
-          console.warn('[DELIVERIES] Tabela BRLOGSSW não encontrada em ' + OWNER + '. Retornando lista vazia.');
+          console.warn('[DELIVERIES TIMELINE] BRLOGSSW não encontrada em ' + OWNER + '. Realizando fallback de timeline em PCNFSAID.');
+          
+          // Fallback para gerar linha do tempo resumida apenas com base no faturamento
+          const fallbackRows = await select<any>(
+            `
+            SELECT
+              N.DTFAT AS DATA_HORA,
+              N.DTENTREGA AS DATA_HORA_EFETIVA,
+              'Faturado' AS OCORRENCIA,
+              'Nota fiscal emitida e separada para transporte' AS DESCRICAO,
+              C.MUNICENT AS CIDADE,
+              C.CLIENTE AS DESTINATARIO
+            FROM ${OWNER}.PCNFSAID N
+            LEFT JOIN ${OWNER}.PCCLIENT C ON C.CODCLI = N.CODCLI
+            WHERE N.NUMTRANSVENDA = :NUMTRANSVENDA
+              ${codcli ? 'AND N.CODCLI = :CODCLI' : ''}
+            `,
+            binds
+          );
+
+          if (fallbackRows.length > 0) {
+             const row = fallbackRows[0];
+             const timeline = [];
+             
+             // Evento Base: Faturamento/Criação
+             timeline.push({
+               when: toIsoDate(row.DATA_HORA) ?? new Date().toISOString(),
+               occurrence: row.OCORRENCIA,
+               description: row.DESCRICAO,
+               city: row.CIDADE ?? '',
+               destinatario: row.DESTINATARIO ?? '',
+               nomeRecebedor: '',
+               docRecebedor: ''
+             });
+
+             // Evento Extra: Se a data de entrega estiver preenchida no ERP
+             if (row.DATA_HORA_EFETIVA) {
+               timeline.push({
+                 when: toIsoDate(row.DATA_HORA_EFETIVA),
+                 occurrence: 'Entregue',
+                 description: 'Pedido finalizado e entregue ao destinatário',
+                 city: row.CIDADE ?? '',
+                 destinatario: row.DESTINATARIO ?? '',
+                 nomeRecebedor: '',
+                 docRecebedor: ''
+               });
+             }
+
+             return timeline;
+          }
+
           return [];
         }
         throw err;
