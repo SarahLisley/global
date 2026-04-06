@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import MeusPedidosClient from './MeusPedidosClient';
 import MeusPedidosLoading from './loading';
-import { apiServer } from '../../../../lib/api';
+import { apiServerSafe } from '@lib/api';
 
 async function getPedidos(searchParams: { [key: string]: string | string[] | undefined }) {
   const params = new URLSearchParams();
@@ -22,7 +22,10 @@ async function getPedidos(searchParams: { [key: string]: string | string[] | und
   if (nf) params.append('nf', nf);
 
   try {
-    const data = await apiServer<{ pedidos: any[], total: number }>(`/orders?${params.toString()}`);
+    const data = await apiServerSafe<{ pedidos: any[], total: number }>(`/orders?${params.toString()}`);
+    if (!data) {
+      return { pedidos: [], total: 0, page: 1 };
+    }
     return {
       pedidos: data.pedidos || [],
       total: data.total || 0,

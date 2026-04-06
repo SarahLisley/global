@@ -1,7 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { getDashboardSummary, getDashboardKpis } from '../controllers/dashboardController';
-import { verifyToken } from '../utils/token';
-import { env } from '../utils/env';
+import { extractCodcli } from '../utils/auth';
 
 export default async function dashboardRoutes(app: FastifyInstance) {
   app.get('/summary', async (_req, reply) => {
@@ -11,19 +10,18 @@ export default async function dashboardRoutes(app: FastifyInstance) {
 
   app.get('/kpis', async (req, reply) => {
     try {
-      let tokenCodcli: number | undefined;
-      const auth = req.headers.authorization;
-      if (auth?.startsWith('Bearer ')) {
-        const t = auth.slice(7);
-        const v = verifyToken(t, env.JWT_SECRET);
-        if (v.ok && v.payload?.codcli != null) tokenCodcli = Number(v.payload.codcli);
-      }
+      const { codcli: tokenCodcli, tipo } = extractCodcli(req);
       const q = req.query as { email?: string; codcli?: string | number };
       const effectiveCodcli = tokenCodcli ?? q?.codcli;
-      const data = await getDashboardKpis({ email: q?.email, codcli: effectiveCodcli });
+      
+      const data = await getDashboardKpis({ 
+        email: q?.email, 
+        codcli: effectiveCodcli,
+        tipo 
+      });
       return reply.send(data);
     } catch (err) {
-      return reply.status(400).send({ error: (err as Error).message });
+      return reply.status(400).send({ error: (err as any).error || (err as Error).message });
     }
   });
 }

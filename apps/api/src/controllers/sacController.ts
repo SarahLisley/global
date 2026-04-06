@@ -37,8 +37,9 @@ export function classify(row: any): 'resolved' | 'in_progress' | 'pending' {
     return 'in_progress';
 }
 
-export async function getSACSeries(params: { codcli?: number | null }): Promise<SACSeriesDTO> {
-  if (!params.codcli) {
+export async function getSACSeries(params: { codcli?: number | null; tipo?: string | null }): Promise<SACSeriesDTO> {
+  const isAdmin = params.tipo === 'A';
+  if (!params.codcli && !isAdmin) {
     const labels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
     return {
       labels,
@@ -62,9 +63,9 @@ export async function getSACSeries(params: { codcli?: number | null }): Promise<
           AND NVL(BRSACC.STATUS,'') <> 'Cancelado'
           AND BRSACC.DTABERTURA >= TRUNC(SYSDATE)
           AND BRSACC.DTABERTURA < TRUNC(SYSDATE) + 1
-          AND BRSACC.CODCLI = :CODCLI
+          ${params.codcli ? 'AND BRSACC.CODCLI = :CODCLI' : ''}
         `,
-            { CODCLI: params.codcli }
+            params.codcli ? { CODCLI: params.codcli } : {}
         );
 
         const resolved = empty24();
@@ -156,6 +157,7 @@ export type CreateTicketInput = {
     orderNumber?: string | number;
     invoiceNumber?: string | number;
     codfilial?: string;
+    tipo?: string | null;
 };
 
 export type CreateTicketResult = {

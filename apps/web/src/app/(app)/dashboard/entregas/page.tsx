@@ -3,7 +3,10 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import EntregasClient from './EntregasClient';
 import EntregasLoading from './loading';
-import { apiServer } from '../../../../lib/api';
+import { apiServer, apiServerSafe, AUTH_ERROR_MSG } from '../../../../lib/api';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 async function getEntregas(searchParams: { [key: string]: string | string[] | undefined }) {
   const params = new URLSearchParams();
@@ -24,20 +27,12 @@ async function getEntregas(searchParams: { [key: string]: string | string[] | un
   // Backend expects 'status' query param if not 'todos' or 'all'
   if (status && status !== 'todos' && status !== 'all') params.append('status', status);
 
-  try {
-    const data = await apiServer<{ entregas: any[], total: number }>(`/entregas?${params.toString()}`);
-    return {
-      entregas: data.entregas || [],
-      total: data.total || 0,
-      page: Number(page),
-    };
-  } catch (error: any) {
-    if (error?.message === 'NOT_AUTHENTICATED' || error?.digest?.includes('NEXT_REDIRECT')) {
-      redirect('/login?from=/dashboard/entregas');
-    }
-    console.error('Error fetching entregas:', error);
-    return { entregas: [], total: 0, page: 1 };
-  }
+  const data = await apiServer<{ entregas: any[], total: number }>(`/entregas?${params.toString()}`);
+  return {
+    entregas: data.entregas || [],
+    total: data.total || 0,
+    page: Number(page),
+  };
 }
 
 export default async function EntregasPage({

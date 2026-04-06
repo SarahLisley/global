@@ -39,10 +39,14 @@ async function resolveCodcli(params: { email?: string; codcli?: string | number 
 
 
 
-export async function getDashboardKpis(params: { email?: string; codcli?: string | number }): Promise<KPIs> {
+export async function getDashboardKpis(params: { email?: string; codcli?: string | number; tipo?: string | null }): Promise<KPIs> {
+  const isAdmin = params.tipo === 'A';
   const codcli = await resolveCodcli(params);
   
-  if (!codcli) {
+  // Se não for admin e não tiver codcli, retorna zerado.
+  // Se for admin, mas passou um codcli específico, filtra por ele.
+  // Se for admin e NÃO passou codcli, processa a visão global (sem filtro de CODCLI).
+  if (!codcli && !isAdmin) {
     return {
       codcli: 0,
       ordersLast30d: { totalAmount: 0, totalOrders: 0 },
@@ -61,9 +65,9 @@ export async function getDashboardKpis(params: { email?: string; codcli?: string
           FROM ${OWNER}.PCPEDC
          WHERE DATA >= TRUNC(SYSDATE) - 30
            AND POSICAO NOT IN ('C')
-           AND CODCLI = :CODCLI
+           ${codcli ? 'AND CODCLI = :CODCLI' : ''}
         `,
-        { CODCLI: codcli }
+        codcli ? { CODCLI: codcli } : {}
       ),
       select<{ VALOR: number }>(
         `
@@ -72,9 +76,9 @@ export async function getDashboardKpis(params: { email?: string; codcli?: string
          WHERE CODCOB NOT IN ('DESD', 'CANC')
            AND DTCANCEL IS NULL
            AND DTPAG IS NULL
-           AND CODCLI = :CODCLI
+           ${codcli ? 'AND CODCLI = :CODCLI' : ''}
         `,
-        { CODCLI: codcli }
+        codcli ? { CODCLI: codcli } : {}
       ),
       (async () => {
         try {
@@ -91,9 +95,9 @@ export async function getDashboardKpis(params: { email?: string; codcli?: string
               FROM ${OWNER}.BRAGENDANF a
               JOIN ${OWNER}.PCNFSAID n
                 ON n.NUMTRANSVENDA = a.NUMTRANSVENDA
-             WHERE n.CODCLI = :CODCLI
+             ${codcli ? 'WHERE n.CODCLI = :CODCLI' : ''}
             `,
-            { CODCLI: codcli }
+            codcli ? { CODCLI: codcli } : {}
           );
         } catch (err: any) {
           const msg = err.message || String(err);
@@ -110,7 +114,7 @@ export async function getDashboardKpis(params: { email?: string; codcli?: string
     const deliveries = deliveriesRows[0];
 
     return {
-      codcli,
+      codcli: codcli ?? 0,
       ordersLast30d: {
         totalAmount: orders?.VLATENDIDO ?? 0,
         totalOrders: orders?.QTPEDIDOS ?? 0,

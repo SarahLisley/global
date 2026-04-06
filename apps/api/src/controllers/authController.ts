@@ -71,7 +71,13 @@ export async function login(email: string, password: string) {
     const cgc = user.CGC ?? '';
     const codcli = user.CODCLI ?? null;
 
-    const token = signToken({ sub: user.EMAIL, codcli, cgc: unmaskCNPJ(cgc), name: user.NOME }, env.JWT_SECRET, 8 * 60 * 60);
+    const token = signToken({ 
+      sub: user.EMAIL, 
+      codcli, 
+      cgc: unmaskCNPJ(cgc), 
+      name: user.NOME,
+      tipo: user.TIPO 
+    }, env.JWT_SECRET, 8 * 60 * 60);
 
     return {
       ok: true,

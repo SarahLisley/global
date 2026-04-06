@@ -58,9 +58,10 @@ function buildPendingStatusWhere() {
   `;
 }
 
-function buildTicketListCacheKey(codcli: number, query: TicketListQuery, page: number, pageSize: number) {
+function buildTicketListCacheKey(codcli: number | null, tipo: string | null, query: TicketListQuery, page: number, pageSize: number) {
   return JSON.stringify({
     codcli,
+    tipo,
     dateFrom: query.dateFrom ?? null,
     dateTo: query.dateTo ?? null,
     status: query.status ?? null,
@@ -80,20 +81,23 @@ function toIsoDate(value: Date | string | null | undefined) {
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
-function invalidateSacCaches(codcli: number, ticketId?: number) {
-  invalidateCache(`sac:tickets:${codcli}:`);
-  invalidateCache(`sac:series:${codcli}`);
-
-  if (ticketId != null) {
-    invalidateCache(`sac:ticket:${codcli}:${ticketId}`);
+function invalidateSacCaches(codcli: number | null, ticketId?: number) {
+  if (codcli) {
+    invalidateCache(`sac:tickets:${codcli}:`);
+    invalidateCache(`sac:series:${codcli}`);
+    if (ticketId != null) {
+      invalidateCache(`sac:ticket:${codcli}:${ticketId}`);
+    }
   }
+  // Invalida cache global se houver
+  invalidateCache(`sac:tickets:null:`);
 }
 
 export default async function sacRoutes(app: FastifyInstance) {
   app.get('/series', async (req, reply) => {
     try {
-      const { codcli } = extractCodcli(req);
-      const series = await getSACSeries({ codcli });
+      const { codcli, tipo } = extractCodcli(req);
+      const series = await getSACSeries({ codcli, tipo });
       return reply.send(series);
     } catch (err) {
       return handleAuthError(err, reply);
@@ -102,7 +106,8 @@ export default async function sacRoutes(app: FastifyInstance) {
 
   app.get('/tickets', async (req, reply) => {
     try {
-      const { codcli } = extractCodcli(req);
+      const { codcli, tipo } = extractCodcli(req);
+      const isAdmin = tipo === 'A';
       const q = req.query as TicketListQuery;
 
       const page = Math.max(1, Number(q.page ?? 1));
@@ -110,20 +115,23 @@ export default async function sacRoutes(app: FastifyInstance) {
       const offset = (page - 1) * pageSize;
 
       const payload = await getOrSetCache(
-        `sac:tickets:${codcli}:${buildTicketListCacheKey(codcli, q, page, pageSize)}`,
+        `sac:tickets:${codcli}:${buildTicketListCacheKey(codcli, tipo, q, page, pageSize)}`,
         TICKETS_LIST_TTL_MS,
         async () => {
           const binds: Record<string, unknown> = {
-            CODCLI: codcli,
             OFFSET: offset,
             LIMIT: pageSize,
           };
 
           const where: string[] = [
-            'BRSACC.CODCLI = :CODCLI',
             'BRSACC.NUMTICKET = BRSACC.NUMTICKETPRINC',
             "NVL(BRSACC.STATUS,'') <> 'Cancelado'",
           ];
+
+          if (codcli) {
+            where.push('BRSACC.CODCLI = :CODCLI');
+            binds.CODCLI = codcli;
+          }
 
           if (q.dateFrom) {
             where.push("BRSACC.DTABERTURA >= TO_DATE(:DATE_FROM, 'YYYY-MM-DD')");
@@ -194,7 +202,8 @@ export default async function sacRoutes(app: FastifyInstance) {
 
   app.get('/tickets/:id', async (req, reply) => {
     try {
-      const { codcli } = extractCodcli(req);
+      const { codcli, tipo } = extractCodcli(req);
+      const isAdmin = tipo === 'A';
       const numTicket = parseTicketId(req);
 
       const payload = await getOrSetCache(
@@ -215,10 +224,10 @@ export default async function sacRoutes(app: FastifyInstance) {
             FROM ${OWNER}.BRSACC
             WHERE BRSACC.NUMTICKET = :NUMTICKET
               AND BRSACC.NUMTICKET = BRSACC.NUMTICKETPRINC
-              AND BRSACC.CODCLI = :CODCLI
+              ${codcli ? 'AND BRSACC.CODCLI = :CODCLI' : ''}
               AND NVL(BRSACC.STATUS,'') <> 'Cancelado'
             `,
-            { NUMTICKET: numTicket, CODCLI: codcli }
+            codcli ? { NUMTICKET: numTicket, CODCLI: codcli } : { NUMTICKET: numTicket }
           );
 
           if (!rows.length) {
@@ -237,11 +246,11 @@ export default async function sacRoutes(app: FastifyInstance) {
                 BRSACC.STATUS
               FROM ${OWNER}.BRSACC
               WHERE BRSACC.NUMTICKETPRINC = :NUMTICKET
-                AND BRSACC.CODCLI = :CODCLI
+                ${codcli ? 'AND BRSACC.CODCLI = :CODCLI' : ''}
                 AND NVL(BRSACC.STATUS,'') <> 'Cancelado'
               ORDER BY BRSACC.NUMSEQ ASC
               `,
-              { NUMTICKET: numTicket, CODCLI: codcli }
+              codcli ? { NUMTICKET: numTicket, CODCLI: codcli } : { NUMTICKET: numTicket }
             ),
             select<CommentRow>(COMMENTS_SELECT_SQL, { NUMTICKET: numTicket }),
           ]);
@@ -282,7 +291,7 @@ export default async function sacRoutes(app: FastifyInstance) {
 
   app.post('/tickets', async (req, reply) => {
     try {
-      const { codcli } = extractCodcli(req);
+      const { codcli, tipo } = extractCodcli(req);
       const body = (req.body ?? {}) as {
         subject?: string;
         orderNumber?: string | number;
@@ -295,11 +304,12 @@ export default async function sacRoutes(app: FastifyInstance) {
       }
 
       const created = await createTicket({
-        codcli,
+        codcli: codcli ?? (body as any).codcli, 
         subject: String(body.subject),
         orderNumber: body.orderNumber,
         invoiceNumber: body.invoiceNumber,
         codfilial: body.codfilial ?? '1',
+        tipo,
       });
 
       invalidateSacCaches(codcli, created.numTicket);
@@ -318,8 +328,10 @@ export default async function sacRoutes(app: FastifyInstance) {
       const rowsAffected = await execute(
         `UPDATE ${OWNER}.BRSACC
          SET STATUS = 'Finalizado', DTFINALIZA = SYSDATE
-         WHERE NUMTICKET = :NUMTICKET AND CODCLI = :CODCLI AND DTFINALIZA IS NULL`,
-        { NUMTICKET: numTicket, CODCLI: codcli }
+         WHERE NUMTICKET = :NUMTICKET 
+           ${codcli ? 'AND BRSACC.CODCLI = :CODCLI' : ''} 
+           AND DTFINALIZA IS NULL`,
+        codcli ? { NUMTICKET: numTicket, CODCLI: codcli } : { NUMTICKET: numTicket }
       );
 
       if (rowsAffected === 0) {
@@ -334,10 +346,12 @@ export default async function sacRoutes(app: FastifyInstance) {
 
       invalidateSacCaches(codcli, numTicket);
 
-      sendToUser(codcli, {
-        type: 'NOTIFICATION',
-        message: `O Ticket #${numTicket} foi finalizado. Não esqueça de avaliar o nosso atendimento!`,
-      });
+      if (codcli) {
+        sendToUser(codcli, {
+          type: 'NOTIFICATION',
+          message: `O Ticket #${numTicket} foi finalizado. Não esqueça de avaliar o nosso atendimento!`,
+        });
+      }
 
       return reply.send({ ok: true });
     } catch (err) {

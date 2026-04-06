@@ -5,12 +5,12 @@ import { extractCodcli, handleAuthError } from '../utils/auth';
 export default async function ordersRoutes(app: FastifyInstance) {
   app.get('/recent', async (req, reply) => {
     try {
-      const { codcli } = extractCodcli(req);
+      const { codcli, tipo } = extractCodcli(req);
       const q = req.query as { page?: string; pageSize?: string };
       const page = q.page ? Number(q.page) : 1;
       const pageSize = q.pageSize ? Number(q.pageSize) : 10;
 
-      const data = await getRecentOrders({ codcli, page, pageSize });
+      const data = await getRecentOrders({ codcli, tipo, page, pageSize });
       return reply.send(data);
     } catch (err) {
       return handleAuthError(err, reply);
@@ -19,9 +19,9 @@ export default async function ordersRoutes(app: FastifyInstance) {
 
   app.get('/:orderNumber/items', async (req, reply) => {
     try {
-      const { codcli } = extractCodcli(req);
+      const { codcli, tipo } = extractCodcli(req);
       const { orderNumber } = req.params as { orderNumber: string };
-      const items = await getOrderItems({ codcli, orderNumber });
+      const items = await getOrderItems({ codcli, tipo, orderNumber });
       return reply.send({ ok: true, items });
     } catch (err) {
       return handleAuthError(err, reply);
@@ -30,10 +30,11 @@ export default async function ordersRoutes(app: FastifyInstance) {
 
   app.get('/', async (req, reply) => {
     try {
-      const { codcli } = extractCodcli(req);
+      const { codcli, tipo } = extractCodcli(req);
       const q = req.query as any;
       const data = await searchOrders({
         codcli,
+        tipo,
         dtInicial: q.dtInicial,
         dtFinal: q.dtFinal,
         pedido: q.pedido,

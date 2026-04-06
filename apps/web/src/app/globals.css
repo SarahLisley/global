@@ -32,6 +32,12 @@ body {
   @apply rounded-xl bg-slate-100/90 border border-slate-200 px-4 py-3 text-slate-800 placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300;
 }
 
+/* Ocultar controles nativos de senha do navegador (Edge/IE) */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
 .col-divider {
   @apply hidden md:block absolute inset-y-6 left-1/2 -translate-x-1/2 w-px bg-slate-200;
 }

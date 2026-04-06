@@ -59,6 +59,12 @@ function normalizePage(value: number | undefined, fallback: number, max = Number
   return Math.min(Math.trunc(parsed), max);
 }
 
+function toIsoDate(value: Date | string | null | undefined) {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toISOString();
+}
+
 function emptyResult(page: number, pageSize: number) {
   return {
     titulos: [],
@@ -69,7 +75,8 @@ function emptyResult(page: number, pageSize: number) {
 }
 
 export async function getTitulos(params: {
-  codcli: number;
+  codcli: number | null;
+  tipo?: string | null;
   dtInicial?: string;
   dtFinal?: string;
   status?: string;
@@ -78,6 +85,7 @@ export async function getTitulos(params: {
   page?: number;
   pageSize?: number;
 }) {
+  const isAdmin = params.tipo === 'A';
   const page = normalizePage(params.page, DEFAULT_PAGE);
   const pageSize = normalizePage(params.pageSize, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
   const dtInicial = normalizeDateFilter(params.dtInicial);
@@ -88,6 +96,10 @@ export async function getTitulos(params: {
   const hasInvalidNumped = !!params.numped?.trim() && numped === undefined;
   const hasInvalidNf = !!params.nf?.trim() && nf === undefined;
 
+  if (!params.codcli && !isAdmin) {
+    return emptyResult(page, pageSize);
+  }
+
   if (hasInvalidNumped || hasInvalidNf) {
     return emptyResult(page, pageSize);
   }
@@ -95,6 +107,7 @@ export async function getTitulos(params: {
   return getOrSetCache(
     `financeiro:${JSON.stringify({
       codcli: params.codcli,
+      tipo: params.tipo,
       dtInicial: dtInicial ?? null,
       dtFinal: dtFinal ?? null,
       status,
@@ -105,8 +118,13 @@ export async function getTitulos(params: {
     })}`,
     FINANCEIRO_TTL_MS,
     async () => {
-      const binds: Record<string, any> = { CODCLI: params.codcli };
-      const where: string[] = ['P.CODCLI = :CODCLI'];
+      const binds: Record<string, any> = {};
+      const where: string[] = ['1=1'];
+
+      if (params.codcli) {
+        where.push('P.CODCLI = :CODCLI');
+        binds.CODCLI = params.codcli;
+      }
 
       if (dtInicial) {
         where.push('P.DTVENC >= TO_DATE(:DTINICIAL, \'YYYY-MM-DD\')');
@@ -166,22 +184,22 @@ export async function getTitulos(params: {
         const isPaid = !!r.DTPAG;
         let titleStatus: Titulo['status'] = isPaid ? 'paid' : 'unpaid';
 
-        if (!isPaid && new Date(r.DTVENC).getTime() < now) {
+        if (!isPaid && r.DTVENC && new Date(r.DTVENC).getTime() < now) {
           titleStatus = 'overdue';
         }
 
         return {
           id: `${r.NUMTRANSVENDA}-${r.PREST}`,
           codCliente: String(params.codcli),
-          dtEmissao: r.DTEMISSAO ? new Date(r.DTEMISSAO).toISOString() : '',
+          dtEmissao: toIsoDate(r.DTEMISSAO),
           nroDocto: String(r.DUPLIC),
           parcela: String(r.PREST),
           valor: Number(r.VALOR ?? 0),
-          dtVencimento: r.DTVENC ? new Date(r.DTVENC).toISOString() : '',
+          dtVencimento: toIsoDate(r.DTVENC),
           cobranca: 'Boleto',
           jurosTaxas: 0,
           status: titleStatus,
-          dtPgto: r.DTPAG ? new Date(r.DTPAG).toISOString() : undefined,
+          dtPgto: toIsoDate(r.DTPAG) || undefined,
           vlrPago: r.VPAGO ? Number(r.VPAGO) : undefined,
           boletoUrl: r.NOMEARQUIVO ? `/financeiro/boletos/${r.NUMTRANSVENDA}-${r.PREST}` : undefined,
           linhaDigitavel: r.LINHADIG ? String(r.LINHADIG) : undefined,

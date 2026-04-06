@@ -12,14 +12,30 @@ const API_BASE = rawApiBase.includes('globalh.ddns.net')
   ? 'https://127.0.0.1:4001' // Resolve o IP localmente para Server Actions não sofrerem de NAT Loopback
   : rawApiBase;
 
-const MOCK = process.env.NEXT_PUBLIC_MOCK_AUTH === '1';
+const MOCK = false; // Desativar mock para usar a API real
 
 export async function loginAction(form: { email: string; password: string; remember?: boolean }) {
+  console.log('[LOGIN] MOCK mode:', MOCK);
+  console.log('[LOGIN] Form data:', { email: form.email, passwordLength: form.password.length });
+  
   try {
     const maxAge = 60 * 60 * 2; // 2 hours
 
     if (MOCK) {
-      const token = `mock-${Buffer.from(`${form.email}:${Date.now()}`).toString('base64')}`;
+      console.log('[LOGIN] Using mock authentication');
+      // Create a mock JWT token with proper structure
+      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+      const payload = Buffer.from(JSON.stringify({
+        name: form.email.split('@')[0],
+        sub: form.email,
+        email: form.email,
+        codcli: 1,
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + (2 * 60 * 60) // 2 hours
+      })).toString('base64url');
+      const signature = Buffer.from('mock-signature').toString('base64url');
+      const token = `${header}.${payload}.${signature}`;
+      
       (await cookies()).set('pgb_session', token, {
         httpOnly: true,
         sameSite: 'lax',
@@ -30,6 +46,7 @@ export async function loginAction(form: { email: string; password: string; remem
       return { ok: true, redirectTo: '/dashboard' };
     }
 
+    console.log('[LOGIN] Making API call to:', `${API_BASE}/auth/login`);
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -201,4 +218,4 @@ export async function resetPasswordAction(form: { token: string; password?: stri
   } catch (e: any) {
     return { ok: false, message: e?.message ?? 'Erro inesperado' };
   }
-}
+}

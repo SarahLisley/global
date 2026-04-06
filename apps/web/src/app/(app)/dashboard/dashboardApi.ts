@@ -1,4 +1,4 @@
-import { apiServer } from '../../../lib/api';
+import { apiServerSafe } from '../../../lib/api';
 
 export type RawKpis = {
   codcli: number;
@@ -8,7 +8,13 @@ export type RawKpis = {
 };
 
 export async function fetchKpis(): Promise<RawKpis> {
-  return apiServer<RawKpis>('/dashboard/kpis');
+  const data = await apiServerSafe<RawKpis>('/dashboard/kpis');
+  return data || {
+    codcli: 0,
+    ordersLast30d: { totalAmount: 0, totalOrders: 0 },
+    receivablesOpen: { totalAmount: 0 },
+    deliveries: { doneLast30d: 0, doneToday: 0 }
+  };
 }
 
 export type KpiCard = {

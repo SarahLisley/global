@@ -5,6 +5,7 @@ import { Badge, Card } from '@pgb/ui';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Search, ChevronRight, ChevronLeft } from 'lucide-react';
+import clsx from 'clsx';
 
 type Order = {
   orderNumber: string;
@@ -53,23 +54,21 @@ export function RecentOrdersTable({
   const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
   const statusBadge = (s: Order['status']) => {
-    if (s === 'faturado') {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 border border-emerald-200 dark:border-emerald-800/50">
-          Faturado
-        </span>
-      );
-    }
-    if (s === 'liberado') {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-800 border border-blue-200 dark:border-blue-800/50">
-          Liberado
-        </span>
-      );
-    }
+    const dot = {
+      faturado: "bg-emerald-500",
+      liberado: "bg-blue-500",
+      bloqueado: "bg-red-500"
+    };
+    const label = {
+      faturado: "Faturado",
+      liberado: "Liberado",
+      bloqueado: "Bloqueado"
+    };
+
     return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-800 border border-red-200 dark:border-red-800/50">
-        Bloqueado
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] sm:text-xs font-semibold border border-gray-100 bg-gray-50 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 shadow-sm transition-all whitespace-nowrap">
+        <span className={clsx("w-1.5 h-1.5 rounded-full", dot[s])} />
+        {label[s]}
       </span>
     );
   };
@@ -79,69 +78,73 @@ export function RecentOrdersTable({
   const endItem = total === 0 ? 0 : Math.min(startItem + orders.length - 1, total);
 
   return (
-    <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300">
-      {/* Header Responsivo */}
-      <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-gray-50 dark:from-zinc-900 to-white dark:to-zinc-900 dark:to-zinc-800">
-        <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-zinc-100 mb-0.5 sm:mb-1">Pedidos Recentes</h2>
-        <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400">Últimos 30 Dias</p>
+    <Card className="overflow-hidden border-none shadow-xl shadow-gray-200/50 dark:shadow-none bg-white dark:bg-zinc-900 p-0 pb-6">
+      {/* Header Premium */}
+      <div className="p-6 pb-2">
+        <h2 className="text-xl font-bold text-slate-800 dark:text-zinc-100 mb-1">Pedidos Recentes</h2>
+        <p className="text-sm text-gray-400 font-medium tracking-tight">Últimos 30 Dias</p>
       </div>
 
-      <div className="p-4 sm:p-6">
+      <div className="px-6 py-4">
         {/* Filtros Responsivos */}
-        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-zinc-300 whitespace-nowrap">Exibir</label>
-            <select
-              className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg text-xs sm:text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#4a90e2] focus:border-transparent"
-              value={pageSize}
-              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-            >
-              {[10, 25, 50].map(n => <option key={n} value={n}>{n} itens</option>)}
-            </select>
+        <div className="mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold text-slate-700 dark:text-zinc-300 whitespace-nowrap">Exibir</span>
+            <div className="relative">
+              <select
+                className="appearance-none bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl px-4 py-2 pr-10 text-sm font-bold text-slate-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer shadow-sm"
+                value={pageSize}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              >
+                {[10, 25, 50].map(n => <option key={n} value={n}>{n} itens</option>)}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                <ChevronRight size={16} className="rotate-90" />
+              </div>
+            </div>
           </div>
 
-          <div className="relative w-full sm:w-64 sm:ml-auto">
+          <div className="relative w-full sm:w-64 sm:ml-auto group">
             <Search
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
-              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-blue-500 transition-colors"
+              size={18}
             />
             <input
-              className="w-full pl-8 pr-3 py-1.5 sm:py-2 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg text-xs sm:text-sm text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#4a90e2] focus:border-transparent transition-all"
-              placeholder="Filtrar nesta tabela..."
+              className="w-full pl-10 pr-4 py-2 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl text-sm text-slate-800 dark:text-zinc-100 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-50 transition-all shadow-sm"
+              placeholder="Buscar..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
         </div>
 
-        {/* Tabela com scroll horizontal no mobile */}
-        <div className="overflow-x-auto -mx-4 sm:mx-0">
-          <div className="inline-block min-w-full align-middle">
-            <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-zinc-800">
+        {/* Tabela Clean Premium */}
+        <div className="overflow-x-auto -mx-6 sm:mx-0">
+          <div className="inline-block min-w-full align-middle sm:px-2">
+            <div className="overflow-hidden rounded-xl border border-gray-100 dark:border-zinc-800 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
               <table className="min-w-full text-left text-sm">
-                <thead className="bg-gray-50 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800">
+                <thead className="bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800">
                   <tr>
-                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 dark:text-zinc-300 text-xs sm:text-sm whitespace-nowrap">Nro Pedido</th>
-                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 dark:text-zinc-300 text-xs sm:text-sm whitespace-nowrap">Vendedor</th>
-                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 dark:text-zinc-300 text-xs sm:text-sm whitespace-nowrap">Valor Total</th>
-                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 dark:text-zinc-300 text-xs sm:text-sm whitespace-nowrap">Posição</th>
-                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-700 dark:text-zinc-300 text-xs sm:text-sm whitespace-nowrap">Ações</th>
+                    <th className="px-6 py-4 font-semibold text-slate-800 dark:text-zinc-300 text-sm whitespace-nowrap">Nro Pedido</th>
+                    <th className="px-6 py-4 font-semibold text-slate-800 dark:text-zinc-300 text-sm whitespace-nowrap">Vendedor</th>
+                    <th className="px-6 py-4 font-semibold text-slate-800 dark:text-zinc-300 text-sm whitespace-nowrap">Valor Total</th>
+                    <th className="px-6 py-4 font-semibold text-slate-800 dark:text-zinc-300 text-sm whitespace-nowrap">Posição</th>
+                    <th className="px-6 py-4 font-semibold text-slate-800 dark:text-zinc-300 text-sm whitespace-nowrap">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
+                <tbody className="divide-y divide-gray-50 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
                   {filtered.map((o) => (
-                    <tr key={o.orderNumber} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 font-medium text-gray-900 dark:text-zinc-100 text-xs sm:text-sm whitespace-nowrap">{o.orderNumber}</td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-600 dark:text-zinc-400 text-xs sm:text-sm whitespace-nowrap">{o.seller}</td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 dark:text-zinc-100 text-xs sm:text-sm whitespace-nowrap">{fmt.format(o.total)}</td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">{statusBadge(o.status)}</td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                    <tr key={o.orderNumber} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors group">
+                      <td className="px-6 py-4 font-semibold text-slate-800 dark:text-zinc-100 text-sm whitespace-nowrap">{o.orderNumber}</td>
+                      <td className="px-6 py-4 font-medium text-slate-600 dark:text-zinc-400 text-sm whitespace-nowrap">{o.seller}</td>
+                      <td className="px-6 py-4 font-bold text-slate-800 dark:text-zinc-100 text-sm whitespace-nowrap">{fmt.format(o.total)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{statusBadge(o.status)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <Link
                           href={`/dashboard/meus-pedidos?pedido=${o.orderNumber}`}
-                          className="text-blue-600 dark:text-blue-500 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-400 dark:hover:text-blue-300 font-medium text-xs sm:text-sm hover:underline inline-flex items-center gap-1"
+                          className="text-blue-500 hover:text-blue-700 font-semibold text-sm transition-colors flex items-center gap-1 group/link w-fit"
                         >
-                          Ver
-                          <ChevronRight size={14} />
+                          Ver <ChevronRight size={14} className="stroke-[3] transition-transform group-hover/link:translate-x-0.5" />
                         </Link>
                       </td>
                     </tr>
@@ -167,29 +170,28 @@ export function RecentOrdersTable({
           </div>
         </div>
 
-        {/* Footer Responsivo */}
-        <div className="mt-3 sm:mt-4 flex items-center justify-between text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-          <span>
-            Mostrando <span className="font-semibold text-gray-900 dark:text-zinc-100">{startItem}</span> a{' '}
-            <span className="font-semibold text-gray-900 dark:text-zinc-100">{endItem}</span> de{' '}
-            <span className="font-semibold text-gray-900 dark:text-zinc-100">{total}</span>
-          </span>
-          <div className="flex gap-2">
+        {/* Footer Minimalista */}
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-400 dark:text-zinc-500">
+          <div className="select-none">
+            Mostrando <span className="text-slate-900 dark:text-zinc-200 font-bold">{startItem}</span> a <span className="text-slate-900 dark:text-zinc-200 font-bold">{endItem}</span> de <span className="text-slate-900 dark:text-zinc-200 font-bold">{total}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
             <button
               onClick={() => handlePageChange(page - 1)}
               disabled={page <= 1}
-              className="p-1.5 sm:p-2 border border-gray-200 dark:border-zinc-700 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-2 rounded-xl border border-gray-100 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
               title="Anterior"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={20} />
             </button>
             <button
               onClick={() => handlePageChange(page + 1)}
               disabled={page >= totalPages}
-              className="p-1.5 sm:p-2 border border-gray-200 dark:border-zinc-700 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="p-2 rounded-xl border border-gray-100 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
               title="Próxima"
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={20} />
             </button>
           </div>
         </div>

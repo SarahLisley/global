@@ -23,7 +23,9 @@ function mapSearchResults(rows: SearchResultRow[]) {
   }));
 }
 
-export async function searchGlobal(query: string, codcli: number) {
+export async function searchGlobal(query: string, codcli: number | null, tipo?: string | null) {
+  const isAdmin = tipo === 'A';
+  if (!codcli && !isAdmin) return [];
   const normalizedQuery = query.trim().toLowerCase();
   const isNumericQuery = /^\d+$/.test(normalizedQuery);
 
@@ -41,7 +43,7 @@ export async function searchGlobal(query: string, codcli: number) {
         'pedido' AS tipo
       FROM ${OWNER}.PCNFSAID N
       JOIN ${OWNER}.PCCLIENT C ON C.CODCLI = N.CODCLI
-      WHERE N.CODCLI = :CODCLI
+      WHERE ${codcli ? 'N.CODCLI = :CODCLI' : '1=1'}
         AND (
           N.NUMTRANSVENDA = :SEARCH_NUMBER
           OR N.NUMPED = :SEARCH_NUMBER
@@ -56,7 +58,7 @@ export async function searchGlobal(query: string, codcli: number) {
         N.DTFAT DESC
       FETCH FIRST 20 ROWS ONLY
       `,
-      { CODCLI: codcli, SEARCH_NUMBER: searchNumber }
+      codcli ? { CODCLI: codcli, SEARCH_NUMBER: searchNumber } : { SEARCH_NUMBER: searchNumber }
     );
 
     if (exactMatches.length > 0) {
@@ -77,7 +79,7 @@ export async function searchGlobal(query: string, codcli: number) {
       'pedido' AS tipo
     FROM ${OWNER}.PCNFSAID N
     JOIN ${OWNER}.PCCLIENT C ON C.CODCLI = N.CODCLI
-    WHERE N.CODCLI = :CODCLI
+    WHERE ${codcli ? 'N.CODCLI = :CODCLI' : '1=1'}
       AND (
         TO_CHAR(N.NUMTRANSVENDA) LIKE :SEARCH
         OR TO_CHAR(N.NUMPED) LIKE :SEARCH
@@ -86,7 +88,7 @@ export async function searchGlobal(query: string, codcli: number) {
       )
     FETCH FIRST 20 ROWS ONLY
     `,
-    { CODCLI: codcli, SEARCH: searchTerm }
+    codcli ? { CODCLI: codcli, SEARCH: searchTerm } : { SEARCH: searchTerm }
   );
 
   return mapSearchResults(results);

@@ -39,22 +39,28 @@ function mapStatus(row: any): 'faturado' | 'bloqueado' | 'liberado' {
   return 'liberado';
 }
 
+function toIsoDate(value: Date | string | null | undefined) {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 function mapOrderRow(r: any): RecentOrder {
   return {
     orderNumber: String(r.NUMPED),
-    date: r.DATA,
+    date: toIsoDate(r.DATA) || '',
     total: Number(r.VLTOTAL ?? 0),
     codcli: Number(r.CODCLI),
     sellerCode: Number(r.CODUSUR),
     seller: String(r.VENDEDOR ?? ''),
-    dtEntrega: r.DTENTREGA ?? null,
+    dtEntrega: toIsoDate(r.DTENTREGA),
     vlatend: r.VLATEND ?? null,
     desconto: r.VLDESCONTO ?? null,
     frete: r.VLFRETE ?? null,
     numNota: r.NUMNOTA ?? null,
     numTransVenda: r.NUMTRANSVENDA ?? null,
     posicao: r.POSICAO ?? null,
-    dtfat: r.DTFAT ?? null,
+    dtfat: toIsoDate(r.DTFAT),
     status: mapStatus(r),
   };
 }
@@ -70,8 +76,9 @@ function buildOrderBindParams(orderNumbers: number[]) {
   return { binds, placeholders };
 }
 
-async function getOrderItemCounts(codcli: number | null, orderNumbers: number[]) {
-  if (!codcli || orderNumbers.length === 0) return new Map<string, number>();
+async function getOrderItemCounts(codcli: number | null, tipo: string | null, orderNumbers: number[]) {
+  const isAdmin = tipo === 'A';
+  if ((!codcli && !isAdmin) || orderNumbers.length === 0) return new Map<string, number>();
 
   const { binds, placeholders } = buildOrderBindParams(orderNumbers);
   const rows = await select<any>(
@@ -80,11 +87,11 @@ async function getOrderItemCounts(codcli: number | null, orderNumbers: number[])
       FROM ${OWNER}.PCPEDI I
       JOIN ${OWNER}.PCPEDC C
         ON C.NUMPED = I.NUMPED
-     WHERE C.CODCLI = :CODCLI
+     WHERE ${codcli ? 'C.CODCLI = :CODCLI' : '1=1'}
        AND I.NUMPED IN (${placeholders.join(',')})
      GROUP BY I.NUMPED
     `,
-    { CODCLI: codcli, ...binds }
+    codcli ? { CODCLI: codcli, ...binds } : binds
   );
 
   return new Map<string, number>(
@@ -92,8 +99,9 @@ async function getOrderItemCounts(codcli: number | null, orderNumbers: number[])
   );
 }
 
-async function getItemsForOrders(codcli: number | null, orderNumbers: number[]) {
-  if (!codcli || orderNumbers.length === 0) return new Map<string, OrderItem[]>();
+async function getItemsForOrders(codcli: number | null, tipo: string | null, orderNumbers: number[]) {
+  const isAdmin = tipo === 'A';
+  if ((!codcli && !isAdmin) || orderNumbers.length === 0) return new Map<string, OrderItem[]>();
 
   const { binds, placeholders } = buildOrderBindParams(orderNumbers);
   const rows = await select<any>(
@@ -110,11 +118,11 @@ async function getItemsForOrders(codcli: number | null, orderNumbers: number[]) 
         ON C.NUMPED = I.NUMPED
       LEFT JOIN ${OWNER}.PCPRODUT P
         ON P.CODPROD = I.CODPROD
-     WHERE C.CODCLI = :CODCLI
+     WHERE ${codcli ? 'C.CODCLI = :CODCLI' : '1=1'}
        AND I.NUMPED IN (${placeholders.join(',')})
      ORDER BY I.NUMPED, I.NUMSEQ
     `,
-    { CODCLI: codcli, ...binds }
+    codcli ? { CODCLI: codcli, ...binds } : binds
   );
 
   const itemsMap = new Map<string, OrderItem[]>();
@@ -134,12 +142,13 @@ async function getItemsForOrders(codcli: number | null, orderNumbers: number[]) 
   return itemsMap;
 }
 
-export async function getRecentOrders(params: { codcli: number | null; page?: number; pageSize?: number }) {
+export async function getRecentOrders(params: { codcli: number | null; tipo?: string | null; page?: number; pageSize?: number }) {
+  const isAdmin = params.tipo === 'A';
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.max(1, params.pageSize ?? 10);
   const offset = (page - 1) * pageSize;
 
-  if (!params.codcli) {
+  if (!params.codcli && !isAdmin) {
     return { orders: [], total: 0, page, pageSize };
   }
 
@@ -163,12 +172,14 @@ export async function getRecentOrders(params: { codcli: number | null; page?: nu
              COUNT(*) OVER() AS TOTAL_COUNT
         FROM ${OWNER}.PCPEDC P
         LEFT JOIN ${OWNER}.PCUSUARI U ON U.CODUSUR = P.CODUSUR
-       WHERE P.CODCLI = :CODCLI
+       WHERE ${params.codcli ? 'P.CODCLI = :CODCLI' : '1=1'}
          AND P.DATA >= TRUNC(SYSDATE) - 30
        ORDER BY P.DATA DESC
        OFFSET :OFFSET ROWS FETCH NEXT :LIMIT ROWS ONLY
       `,
-      { CODCLI: params.codcli, OFFSET: offset, LIMIT: pageSize }
+      params.codcli 
+        ? { CODCLI: params.codcli, OFFSET: offset, LIMIT: pageSize }
+        : { OFFSET: offset, LIMIT: pageSize }
     );
 
     const total = Number(rows[0]?.TOTAL_COUNT ?? 0);
@@ -180,6 +191,7 @@ export async function getRecentOrders(params: { codcli: number | null; page?: nu
 
 export async function searchOrders(params: {
   codcli: number | null;
+  tipo?: string | null;
   dtInicial?: string;
   dtFinal?: string;
   pedido?: string | number;
@@ -188,16 +200,22 @@ export async function searchOrders(params: {
   pageSize?: number;
   includeItems?: boolean;
 }) {
+  const isAdmin = params.tipo === 'A';
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.max(1, params.pageSize ?? 10);
   const offset = (page - 1) * pageSize;
 
-  if (!params.codcli) {
+  if (!params.codcli && !isAdmin) {
     return { orders: [], total: 0, page, pageSize };
   }
 
-  const binds: any = { CODCLI: params.codcli };
-  const where: string[] = ['P.CODCLI = :CODCLI'];
+  const binds: any = {};
+  const where: string[] = ['1=1'];
+  
+  if (params.codcli) {
+    where.push('P.CODCLI = :CODCLI');
+    binds.CODCLI = params.codcli;
+  }
 
   if (params.dtInicial) {
     where.push('P.DATA >= TO_DATE(:DTINICIAL, \'YYYY-MM-DD\')');
@@ -254,13 +272,13 @@ export async function searchOrders(params: {
     const orderNumbers = mapped.map((order) => Number(order.orderNumber));
 
     try {
-      const itemCounts = await getOrderItemCounts(params.codcli, orderNumbers);
+      const itemCounts = await getOrderItemCounts(params.codcli, params.tipo ?? null, orderNumbers);
       mapped.forEach((order) => {
         order.itemCount = itemCounts.get(order.orderNumber) ?? 0;
       });
 
       if (params.includeItems) {
-        const itemsMap = await getItemsForOrders(params.codcli, orderNumbers);
+        const itemsMap = await getItemsForOrders(params.codcli, params.tipo ?? null, orderNumbers);
         mapped.forEach((order) => {
           order.itens = itemsMap.get(order.orderNumber) || [];
         });
@@ -273,12 +291,12 @@ export async function searchOrders(params: {
   return { orders: mapped, total, page, pageSize };
 }
 
-export async function getOrderItems(params: { codcli: number | null; orderNumber: string | number }) {
+export async function getOrderItems(params: { codcli: number | null; tipo?: string | null; orderNumber: string | number }) {
   const orderNumber = Number(params.orderNumber);
   if (!Number.isFinite(orderNumber)) {
-    throw new Error('Pedido invÃ¡lido');
+    throw new Error('Pedido inválido');
   }
 
-  const itemsMap = await getItemsForOrders(params.codcli, [orderNumber]);
+  const itemsMap = await getItemsForOrders(params.codcli, params.tipo ?? null, [orderNumber]);
   return itemsMap.get(String(orderNumber)) ?? [];
 }

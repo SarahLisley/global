@@ -31,67 +31,59 @@ function toStatus(dt: Date, thresholdDays = 7): 'valido' | 'vencido' | 'proximo_
   return 'valido';
 }
 
-export async function getDocsValidity(params: { codcli: number | null; tipo?: string | null }): Promise<DocValidityDTO[]> {
+// Versão ultra rápida - apenas dados essenciais
+export async function getDocsValidityFast(params: { codcli: number | null; tipo?: string | null }): Promise<DocValidityDTO[]> {
   const startTime = Date.now();
-  console.log(`[docs] Iniciando busca de validade para codcli=${params.codcli}, tipo=${params.tipo}`);
+  console.log(`[docs-fast] Iniciando busca rápida para codcli=${params.codcli}`);
   
   const isAdmin = params.tipo === 'A';
   if (!params.codcli && !isAdmin) {
-    console.log(`[docs] Retorno vazio - sem codcli e não é admin`);
+    console.log(`[docs-fast] Retorno vazio - sem acesso`);
     return [];
   }
   
-  // Cache de 10 minutos para melhor performance
-  const cacheKey = `docs:validity:${params.codcli}:${params.tipo}`;
-  console.log(`[docs] Cache key: ${cacheKey}`);
+  // Cache mais longo para performance máxima
+  const cacheKey = `docs:fast:${params.codcli}:${params.tipo}`;
   
-  return getOrSetCache(cacheKey, 600_000, async () => {
+  return getOrSetCache(cacheKey, 900_000, async () => {
     const queryStart = Date.now();
-    console.log(`[docs] Executando query SQL...`);
     
+    // Query simplificada - apenas campos essenciais
     const rows = await select<any>(
       `
       SELECT 
-        v.DESCRICAO,
-        cv.NUMDOC,
         cv.DTVALIDADE,
-        cv.CODCLI
-      FROM ${OWNER}.PCTIPOCONTROLEVENDA v
-      JOIN ${OWNER}.PCCLICONTROLEVENDA cv
+        cv.NUMDOC,
+        v.DESCRICAO
+      FROM ${OWNER}.PCCLICONTROLEVENDA cv
+      JOIN ${OWNER}.PCTIPOCONTROLEVENDA v
         ON v.CODTIPOCONTROLEVENDA = cv.CODTIPOCONTROLEVENDA
       WHERE ${params.codcli ? 'cv.CODCLI = :CODCLI' : '1=1'}
         AND cv.DTVALIDADE IS NOT NULL
-      ORDER BY 
-        CASE 
-          WHEN cv.DTVALIDADE < SYSDATE THEN 1
-          WHEN cv.DTVALIDADE <= SYSDATE + 7 THEN 2
-          ELSE 3
-        END,
-        cv.DTVALIDADE ASC
+        AND cv.DTVALIDADE <= SYSDATE + 30 -- Apenas próximos 30 dias
+      ORDER BY cv.DTVALIDADE ASC
       `,
       params.codcli ? { CODCLI: params.codcli } : {}
     );
     
     const queryTime = Date.now() - queryStart;
-    console.log(`[docs] Query executada em ${queryTime}ms - ${rows.length} registros encontrados`);
+    console.log(`[docs-fast] Query rápida: ${queryTime}ms - ${rows.length} docs`);
     
-    const processStart = Date.now();
+    // Processamento otimizado
     const result = rows.map((r: any) => {
-      const dtRaw = r.DTVALIDADE;
-      const dt = dtRaw ? new Date(dtRaw) : new Date(NaN);
+      const dt = new Date(r.DTVALIDADE);
       const status = toStatus(dt, 7);
       return {
         description: String(r.DESCRICAO ?? '').trim(),
-        dueDate: toIsoDate(dtRaw),
+        dueDate: dt.toISOString(),
         docNumber: String(r.NUMDOC ?? '').trim(),
         status,
         url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
       };
     });
     
-    const processTime = Date.now() - processStart;
     const totalTime = Date.now() - startTime;
-    console.log(`[docs] Processamento: ${processTime}ms, Total: ${totalTime}ms`);
+    console.log(`[docs-fast] Tempo total: ${totalTime}ms`);
     
     return result;
   });

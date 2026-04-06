@@ -1,4 +1,4 @@
-import { useState, useCallback, useTransition } from 'react';
+import { useState, useCallback, useTransition, useEffect } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
 type PersistenceType = 'cookie' | 'localStorage';
@@ -23,6 +23,14 @@ export function useFilters<T extends Record<string, string>>({
   const [isPending, startTransition] = useTransition();
 
   const [filters, setFilters] = useState<T>(initialFilters);
+  
+  // Sincroniza o estado local quando os filtros iniciais vindos da URL/Servidor mudam
+  // Usamos JSON.stringify para garantir que o efeito só rode se os VALORES mudarem,
+  // já que objetos novos são criados a cada renderização do componente pai.
+  const initialFiltersKey = JSON.stringify(initialFilters);
+  useEffect(() => {
+    setFilters(initialFilters);
+  }, [initialFiltersKey]);
 
   const updateURL = useCallback(
     (newFilters: T) => {

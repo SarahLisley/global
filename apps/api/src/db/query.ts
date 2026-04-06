@@ -9,17 +9,11 @@ function getQuerySnippet(sql: string) {
 }
 
 function logSlowQuery(kind: string, sql: string, startedAt: number) {
-  const thresholdMs = env.DB_SLOW_QUERY_MS;
-  if (!thresholdMs) {
-    return;
-  }
-
+  const thresholdMs = env.DB_SLOW_QUERY_MS || 500; // Reduzido para 500ms
   const elapsedMs = Date.now() - startedAt;
-  if (elapsedMs < thresholdMs) {
-    return;
+  if (elapsedMs > thresholdMs) {
+    console.warn(`[db] Slow ${kind} query (${elapsedMs}ms): ${getQuerySnippet(sql)}`);
   }
-
-  console.warn(`[db] Slow ${kind} query (${elapsedMs}ms): ${getQuerySnippet(sql)}`);
 }
 
 export async function select<T = any>(sql: string, binds?: QueryBinds) {
@@ -45,8 +39,8 @@ export async function select<T = any>(sql: string, binds?: QueryBinds) {
   try {
     const res = await conn.execute(sql, binds ?? {}, {
       outFormat: oracledb.OUT_FORMAT_OBJECT,
-      fetchArraySize: env.DB_FETCH_ARRAY_SIZE,
-      prefetchRows: env.DB_PREFETCH_ROWS,
+      fetchArraySize: env.DB_FETCH_ARRAY_SIZE || 200, // Aumentado
+      prefetchRows: env.DB_PREFETCH_ROWS || 200, // Aumentado
     } as any);
     return (res.rows ?? []) as T[];
   } finally {

@@ -23,7 +23,12 @@ export class ErrorBoundary extends Component<Props, State> {
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: any): State {
+    // Se for um erro de redirecionamento do Next.js (NEXT_REDIRECT), 
+    // não capturamos como erro de UI para que o Next.js lide com o redirect.
+    if (error?.digest?.includes('NEXT_REDIRECT')) {
+      return { hasError: false };
+    }
     return { hasError: true, error };
   }
 

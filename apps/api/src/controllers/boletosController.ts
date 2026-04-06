@@ -4,9 +4,11 @@ import { select } from '../db/query';
 import { OWNER } from '../utils/env';
 
 export async function downloadBoleto(params: {
-  codcli: number;
+  codcli: number | null;
+  tipo?: string | null;
   id: string; // Format: NUMTRANSVENDA-PREST
 }) {
+  const isAdmin = params.tipo === 'A';
   // 1. Parse ID
   const [numTransVenda, prest] = params.id.split('-');
   if (!numTransVenda || !prest) {
@@ -14,17 +16,21 @@ export async function downloadBoleto(params: {
   }
 
   // 2. Query file path from DB
+  const binds: any = {
+    NUMTRANSVENDA: Number(numTransVenda),
+    PREST: Number(prest),
+  };
+  if (params.codcli) {
+    binds.CODCLI = params.codcli;
+  }
+
   const rows = await select<any>(
     `SELECT PASTAARQUIVOBOLETO, NOMEARQUIVO 
      FROM ${OWNER}.PCPREST 
      WHERE NUMTRANSVENDA = :NUMTRANSVENDA 
        AND PREST = :PREST 
-       AND CODCLI = :CODCLI`,
-    {
-      NUMTRANSVENDA: Number(numTransVenda),
-      PREST: Number(prest),
-      CODCLI: params.codcli
-    }
+       ${params.codcli ? 'AND CODCLI = :CODCLI' : ''}`,
+    binds
   );
 
   if (rows.length === 0) {

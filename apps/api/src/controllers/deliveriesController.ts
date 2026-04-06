@@ -1,4 +1,4 @@
-import { select } from '../db/query';
+import { select, execute } from '../db/query';
 import { OWNER } from '../utils/env';
 import { getOrSetCache } from '../utils/ttlCache';
 
@@ -108,17 +108,19 @@ function buildStatusWhere(status?: string) {
 }
 
 function buildDeliveryCacheKey(params: {
-  codcli: number;
+  codcli: number | null;
+  tipo?: string | null;
   dateFrom?: string;
   dateTo?: string;
   nf?: string | number;
   pedido?: string | number;
   status?: string;
-  page: number;
-  pageSize: number;
+  page?: number;
+  pageSize?: number;
 }) {
   return JSON.stringify({
     codcli: params.codcli,
+    tipo: params.tipo,
     dateFrom: params.dateFrom ?? null,
     dateTo: params.dateTo ?? null,
     nf: params.nf ?? null,
@@ -130,160 +132,170 @@ function buildDeliveryCacheKey(params: {
 }
 
 export async function searchDeliveries(params: {
-  codcli: number;
+  codcli: number | null;
+  tipo?: string | null;
   dateFrom?: string;
   dateTo?: string;
-  nf?: string | number;
   pedido?: string | number;
+  nf?: string | number;
   status?: string;
-  page: number;
-  pageSize: number;
+  page?: number;
+  pageSize?: number;
 }) {
   return getOrSetCache(
     `deliveries:${buildDeliveryCacheKey(params)}`,
     DELIVERIES_TTL_MS,
     async () => {
       try {
-        const limit = Math.max(1, Math.min(100, params.pageSize));
-      const offset = (Math.max(1, params.page) - 1) * limit;
-      const startRow = offset + 1;
-      const endRow = offset + limit;
-
-      const binds: Record<string, unknown> = {
-        CODCLI: params.codcli,
-        DATE_FROM: params.dateFrom ?? null,
-        DATE_TO: params.dateTo ?? null,
-        NF: params.nf ?? null,
-        PEDIDO: params.pedido ?? null,
-        START_ROW: startRow,
-        END_ROW: endRow,
-      };
-
-      const statusWhere = buildStatusWhere(params.status);
-
-      const rows = await select<DeliveryRow>(
-        `
-        WITH raw AS (
-          SELECT
-            L.NUMNOTA,
-            L.NUMTRANSVENDA,
-            L.DESTINATARIO,
-            L.NUMPED,
-            L.DATA_HORA,
-            L.DOMINIO,
-            L.FILIAL,
-            L.CIDADE,
-            L.OCORRENCIA,
-            L.DESCRICAO,
-            L.TIPO,
-            L.DATA_HORA_EFETIVA,
-            L.PREVENTREGA,
-            L.NOME_RECEBEDOR,
-            L.NRO_DOC_RECEBEDOR,
-            LOWER(NVL(L.OCORRENCIA, '')) AS OCORRENCIA_NORMALIZADA,
-            N.TRANSPORTADORA,
-            N.VLTOTAL,
-            N.DTFAT
-          FROM ${OWNER}.BRLOGSSW L
-          JOIN ${OWNER}.PCNFSAID N
-            ON N.NUMTRANSVENDA = L.NUMTRANSVENDA
-          WHERE N.CODCLI = :CODCLI
-            AND (:NF IS NULL OR N.NUMNOTA = :NF)
-            AND (:PEDIDO IS NULL OR L.NUMPED = :PEDIDO)
-            AND (
-              :DATE_FROM IS NULL
-              OR (
-                N.DTFAT IS NOT NULL
-                AND N.DTFAT >= TO_DATE(:DATE_FROM, 'YYYY-MM-DD')
-              )
-              OR (
-                N.DTFAT IS NULL
-                AND L.DATA_HORA >= TO_DATE(:DATE_FROM, 'YYYY-MM-DD')
-              )
-            )
-            AND (
-              :DATE_TO IS NULL
-              OR (
-                N.DTFAT IS NOT NULL
-                AND N.DTFAT < TO_DATE(:DATE_TO, 'YYYY-MM-DD') + 1
-              )
-              OR (
-                N.DTFAT IS NULL
-                AND L.DATA_HORA < TO_DATE(:DATE_TO, 'YYYY-MM-DD') + 1
-              )
-            )
-        ),
-        base AS (
-          SELECT
-            R.*,
-            ROW_NUMBER() OVER (
-              PARTITION BY R.NUMTRANSVENDA
-              ORDER BY NVL(R.DATA_HORA_EFETIVA, R.DATA_HORA) DESC NULLS LAST
-            ) AS RN
-          FROM raw R
-          WHERE 1 = 1
-            ${statusWhere}
-        ),
-        filt AS (
-          SELECT
-            B.*,
-            COUNT(*) OVER () AS TOTAL_COUNT
-          FROM base B
-          WHERE B.RN = 1
-        ),
-        pag AS (
-          SELECT
-            F.*,
-            ROW_NUMBER() OVER (
-              ORDER BY NVL(F.DATA_HORA_EFETIVA, NVL(F.PREVENTREGA, F.DATA_HORA)) DESC NULLS LAST
-            ) AS RNO
-          FROM filt F
-        )
-        SELECT *
-        FROM pag
-        WHERE RNO BETWEEN :START_ROW AND :END_ROW
-        `,
-        binds
-      );
-
-      const total = Number(rows[0]?.TOTAL_COUNT ?? 0);
-
-      const toStatus = (row: DeliveryRow): Delivery['status'] => {
-        if (row.DATA_HORA_EFETIVA) return 'Entregue';
-
-        const normalized = String(row.OCORRENCIA ?? '').toLowerCase();
-        if (normalized.includes('coleta')) return 'Aguardando coleta';
-        if (normalized.includes('transit') || normalized.includes('trânsito') || normalized.includes('transito')) {
-          return 'Em trânsito';
+        const isAdmin = params.tipo === 'A';
+        if (!params.codcli && !isAdmin) {
+          return { list: [], total: 0 };
         }
 
-        return 'Agendado';
-      };
+        const page = Math.max(1, params.page ?? 1);
+        const pageSize = Math.max(1, Math.min(100, params.pageSize ?? 10));
+        const offset = (page - 1) * pageSize;
+        const startRow = offset + 1;
+        const endRow = offset + pageSize;
 
-      const list: Delivery[] = rows.map((row) => ({
-        id: String(row.NUMTRANSVENDA),
-        nroPedido: row.NUMPED ? String(row.NUMPED) : '-',
-        filial: row.FILIAL ? String(row.FILIAL) : '-',
-        nroNF: row.NUMNOTA ? String(row.NUMNOTA) : undefined,
-        vlrTotal: Number(row.VLTOTAL ?? 0),
-        prevEntrega: toIsoDate(row.PREVENTREGA),
-        dtAgendamento: toIsoDate(row.DATA_HORA),
-        dtEntrega: toIsoDate(row.DATA_HORA_EFETIVA),
-        transportadora: row.TRANSPORTADORA ?? undefined,
-        status: toStatus(row),
-        rastreio: undefined,
-        descricao: row.DESCRICAO ?? undefined,
-        ocorrencia: row.OCORRENCIA ?? undefined,
-        cidade: row.CIDADE ?? undefined,
-        destinatario: row.DESTINATARIO ?? undefined,
-        nomeRecebedor: row.NOME_RECEBEDOR ?? undefined,
-        docRecebedor: row.NRO_DOC_RECEBEDOR ?? undefined,
-        dominio: row.DOMINIO ?? undefined,
-      }));
+        const binds: any = {
+          START_ROW: startRow,
+          END_ROW: endRow,
+        };
 
-      return { list, total };
+        const where: string[] = ['1=1'];
+
+        if (params.codcli) {
+          where.push('N.CODCLI = :CODCLI');
+          binds.CODCLI = params.codcli;
+        }
+
+        if (params.nf) {
+          where.push('N.NUMNOTA = :NF');
+          binds.NF = params.nf;
+        }
+
+        if (params.pedido) {
+          where.push('L.NUMPED = :PEDIDO');
+          binds.PEDIDO = params.pedido;
+        }
+
+        if (params.dateFrom) {
+          where.push(`(
+            (N.DTFAT IS NOT NULL AND N.DTFAT >= TO_DATE(:DATE_FROM, 'YYYY-MM-DD'))
+            OR (N.DTFAT IS NULL AND L.DATA_HORA >= TO_DATE(:DATE_FROM, 'YYYY-MM-DD'))
+          )`);
+          binds.DATE_FROM = params.dateFrom;
+        }
+
+        if (params.dateTo) {
+          where.push(`(
+            (N.DTFAT IS NOT NULL AND N.DTFAT < TO_DATE(:DATE_TO, 'YYYY-MM-DD') + 1)
+            OR (N.DTFAT IS NULL AND L.DATA_HORA < TO_DATE(:DATE_TO, 'YYYY-MM-DD') + 1)
+          )`);
+          binds.DATE_TO = params.dateTo;
+        }
+
+        const statusWhere = buildStatusWhere(params.status);
+
+        const rows = await select<DeliveryRow>(
+          `
+          WITH raw AS (
+            SELECT
+              L.NUMNOTA,
+              L.NUMTRANSVENDA,
+              L.DESTINATARIO,
+              L.NUMPED,
+              L.DATA_HORA,
+              L.DOMINIO,
+              L.FILIAL,
+              L.CIDADE,
+              L.OCORRENCIA,
+              L.DESCRICAO,
+              L.TIPO,
+              L.DATA_HORA_EFETIVA,
+              L.PREVENTREGA,
+              L.NOME_RECEBEDOR,
+              L.NRO_DOC_RECEBEDOR,
+              LOWER(NVL(L.OCORRENCIA, '')) AS OCORRENCIA_NORMALIZADA,
+              N.TRANSPORTADORA,
+              N.VLTOTAL,
+              N.DTFAT
+            FROM ${OWNER}.BRLOGSSW L
+            JOIN ${OWNER}.PCNFSAID N
+              ON N.NUMTRANSVENDA = L.NUMTRANSVENDA
+            WHERE ${where.join(' AND ')}
+          ),
+          base AS (
+            SELECT
+              R.*,
+              ROW_NUMBER() OVER (
+                PARTITION BY R.NUMTRANSVENDA
+                ORDER BY NVL(R.DATA_HORA_EFETIVA, R.DATA_HORA) DESC NULLS LAST
+              ) AS RN
+            FROM raw R
+            WHERE 1 = 1
+              ${statusWhere}
+          ),
+          filt AS (
+            SELECT
+              B.*,
+              COUNT(*) OVER () AS TOTAL_COUNT
+            FROM base B
+            WHERE B.RN = 1
+          ),
+          pag AS (
+            SELECT
+              F.*,
+              ROW_NUMBER() OVER (
+                ORDER BY NVL(F.DATA_HORA_EFETIVA, NVL(F.PREVENTREGA, F.DATA_HORA)) DESC NULLS LAST
+              ) AS RNO
+            FROM filt F
+          )
+          SELECT *
+          FROM pag
+          WHERE RNO BETWEEN :START_ROW AND :END_ROW
+          `,
+          binds
+        );
+
+        const total = Number(rows[0]?.TOTAL_COUNT ?? 0);
+
+        const toStatus = (row: DeliveryRow): Delivery['status'] => {
+          if (row.DATA_HORA_EFETIVA) return 'Entregue';
+
+          const normalized = String(row.OCORRENCIA ?? '').toLowerCase();
+          if (normalized.includes('coleta')) return 'Aguardando coleta';
+          if (normalized.includes('transit') || normalized.includes('trânsito') || normalized.includes('transito')) {
+            return 'Em trânsito';
+          }
+
+          return 'Agendado';
+        };
+
+        const list: Delivery[] = rows.map((row) => ({
+          id: String(row.NUMTRANSVENDA),
+          nroPedido: row.NUMPED ? String(row.NUMPED) : '-',
+          filial: row.FILIAL ? String(row.FILIAL) : '-',
+          nroNF: row.NUMNOTA ? String(row.NUMNOTA) : undefined,
+          vlrTotal: Number(row.VLTOTAL ?? 0),
+          prevEntrega: toIsoDate(row.PREVENTREGA),
+          dtAgendamento: toIsoDate(row.DATA_HORA),
+          dtEntrega: toIsoDate(row.DATA_HORA_EFETIVA),
+          transportadora: row.TRANSPORTADORA ?? undefined,
+          status: toStatus(row),
+          rastreio: undefined,
+          descricao: row.DESCRICAO ?? undefined,
+          ocorrencia: row.OCORRENCIA ?? undefined,
+          cidade: row.CIDADE ?? undefined,
+          destinatario: row.DESTINATARIO ?? undefined,
+          nomeRecebedor: row.NOME_RECEBEDOR ?? undefined,
+          docRecebedor: row.NRO_DOC_RECEBEDOR ?? undefined,
+          dominio: row.DOMINIO ?? undefined,
+        }));
+
+        return { list, total };
       } catch (err: any) {
-        // Tratar erro de tabela inexistente de forma graciosa
         const msg = err.message || String(err);
         if (msg.includes('ORA-00903') || msg.includes('ORA-00942')) {
           console.warn('[DELIVERIES] Tabela BRLOGSSW não encontrada em ' + OWNER + '. Retornando lista vazia.');
@@ -295,33 +307,39 @@ export async function searchDeliveries(params: {
   );
 }
 
-export async function getDeliveryTimeline(numTrans: number, codcli: number) {
+export async function getDeliveryTimeline(numTransVenda: number, codcli: number | null, tipo?: string | null): Promise<any[]> {
+  const isAdmin = tipo === 'A';
+  if (!codcli && !isAdmin) return [];
+
+  const binds: any = { NUMTRANSVENDA: numTransVenda };
+  if (codcli) binds.CODCLI = codcli;
+
   return getOrSetCache(
-    `deliveryTimeline:${codcli}:${numTrans}`,
+    `deliveryTimeline:${codcli}:${numTransVenda}`,
     DELIVERY_TIMELINE_TTL_MS,
     async () => {
       try {
-        const rows = await select<DeliveryTimelineRow>(
-        `
-        SELECT
-          L.DATA_HORA,
-          L.DATA_HORA_EFETIVA,
-          L.OCORRENCIA,
-          L.DESCRICAO,
-          L.CIDADE,
-          L.DESTINATARIO,
-          L.NOME_RECEBEDOR,
-          L.NRO_DOC_RECEBEDOR,
-          L.DOMINIO
-        FROM ${OWNER}.BRLOGSSW L
-        JOIN ${OWNER}.PCNFSAID N
-          ON N.NUMTRANSVENDA = L.NUMTRANSVENDA
-        WHERE L.NUMTRANSVENDA = :NUMTRANS
-          AND N.CODCLI = :CODCLI
-        ORDER BY NVL(L.DATA_HORA_EFETIVA, L.DATA_HORA) ASC NULLS LAST
-        `,
-        { NUMTRANS: numTrans, CODCLI: codcli }
-      );
+        const rows = await select<any>(
+          `
+          SELECT
+            L.DATA_HORA,
+            L.DATA_HORA_EFETIVA,
+            L.OCORRENCIA,
+            L.DESCRICAO,
+            L.CIDADE,
+            L.DESTINATARIO,
+            L.NOME_RECEBEDOR,
+            L.NRO_DOC_RECEBEDOR,
+            L.DOMINIO
+          FROM ${OWNER}.BRLOGSSW L
+          JOIN ${OWNER}.PCNFSAID N
+            ON N.NUMTRANSVENDA = L.NUMTRANSVENDA
+          WHERE L.NUMTRANSVENDA = :NUMTRANSVENDA
+            ${codcli ? 'AND N.CODCLI = :CODCLI' : ''}
+          ORDER BY NVL(L.DATA_HORA_EFETIVA, L.DATA_HORA) ASC NULLS LAST
+          `,
+          binds
+        );
 
         return rows.map((row) => ({
           when: toIsoDate(row.DATA_HORA_EFETIVA ?? row.DATA_HORA) ?? new Date().toISOString(),
@@ -336,6 +354,7 @@ export async function getDeliveryTimeline(numTrans: number, codcli: number) {
       } catch (err: any) {
         const msg = err.message || String(err);
         if (msg.includes('ORA-00903') || msg.includes('ORA-00942')) {
+          console.warn('[DELIVERIES] Tabela BRLOGSSW não encontrada em ' + OWNER + '. Retornando lista vazia.');
           return [];
         }
         throw err;

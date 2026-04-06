@@ -16,7 +16,10 @@ export default async function sacCommentsRoutes(app: FastifyInstance) {
       const numTicket = parseTicketId(req);
 
       // Verificar propriedade do ticket
-      const ownerCheck = await select<{ '1': number }>(TICKET_OWNERSHIP_SQL, { NUMTICKET: numTicket, CODCLI: codcli });
+      const ownerCheck = await select<{ '1': number }>(
+        codcli ? TICKET_OWNERSHIP_SQL : TICKET_OWNERSHIP_SQL.replace('AND CODCLI = :CODCLI', ''),
+        codcli ? { NUMTICKET: numTicket, CODCLI: codcli } : { NUMTICKET: numTicket }
+      );
       if (!ownerCheck.length) {
         return reply.status(404).send({ error: 'Ticket não encontrado' });
       }
@@ -39,7 +42,10 @@ export default async function sacCommentsRoutes(app: FastifyInstance) {
       const numTicket = parseTicketId(req);
 
       // Verificar propriedade do ticket
-      const ownerCheck = await select<{ '1': number }>(TICKET_OWNERSHIP_SQL, { NUMTICKET: numTicket, CODCLI: codcli });
+      const ownerCheck = await select<{ '1': number }>(
+        codcli ? TICKET_OWNERSHIP_SQL : TICKET_OWNERSHIP_SQL.replace('AND CODCLI = :CODCLI', ''),
+        codcli ? { NUMTICKET: numTicket, CODCLI: codcli } : { NUMTICKET: numTicket }
+      );
       if (!ownerCheck.length) {
         return reply.status(404).send({ error: 'Ticket não encontrado' });
       }
@@ -69,7 +75,7 @@ export default async function sacCommentsRoutes(app: FastifyInstance) {
          )`,
         {
           NUMTICKET: numTicket,
-          CODCLI: codcli,
+          CODCLI: codcli ?? 0,
           AUTOR: userName,
           TIPO_MSG: msgType,
           CONTEUDO: content,
@@ -125,8 +131,10 @@ export default async function sacCommentsRoutes(app: FastifyInstance) {
       const rows = await execute(
         `UPDATE ${OWNER}.BRSACC_COMMENTS 
          SET CONTEUDO = :CONTEUDO 
-         WHERE ID = :ID AND CODCLI = :CODCLI AND TIPO_AUTOR = 'C'`,
-        { CONTEUDO: content, ID: Number(commentId), CODCLI: codcli }
+         WHERE ID = :ID 
+           ${codcli ? 'AND CODCLI = :CODCLI' : ''} 
+           AND TIPO_AUTOR = 'C'`,
+        codcli ? { CONTEUDO: content, ID: Number(commentId), CODCLI: codcli } : { CONTEUDO: content, ID: Number(commentId) }
       );
 
       if (rows === 0) {
@@ -152,8 +160,10 @@ export default async function sacCommentsRoutes(app: FastifyInstance) {
         return reply.status(400).send({ error: 'ID do comentário inválido' });
       }
 
-      const query = `DELETE FROM ${OWNER}.BRSACC_COMMENTS WHERE ID = :ID AND CODCLI = :CODCLI AND TIPO_AUTOR = 'C'`;
-      const binds = { ID: Number(commentId), CODCLI: codcli };
+      const query = `DELETE FROM ${OWNER}.BRSACC_COMMENTS WHERE ID = :ID 
+                     ${codcli ? 'AND CODCLI = :CODCLI' : ''} 
+                     AND TIPO_AUTOR = 'C'`;
+      const binds = codcli ? { ID: Number(commentId), CODCLI: codcli } : { ID: Number(commentId) };
 
       app.log.info({ commentId, codcli }, 'Deleting comment');
 
@@ -201,10 +211,12 @@ export default async function sacCommentsRoutes(app: FastifyInstance) {
         'ID'
       );
 
-      sendToUser(codcli, {
-        type: 'NOTIFICATION',
-        message: `Nova atualização do Winthor (ERP) no ticket #${numTicket}`
-      });
+      if (codcli) {
+        sendToUser(codcli, {
+          type: 'NOTIFICATION',
+          message: `Nova atualização do Winthor (ERP) no ticket #${numTicket}`
+        });
+      }
 
       return reply.send({
         ok: true,

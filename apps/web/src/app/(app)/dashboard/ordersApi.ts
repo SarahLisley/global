@@ -1,4 +1,4 @@
-import { apiServer } from '../../../lib/api';
+import { apiServerSafe } from '../../../lib/api';
 
 export type OrderDTO = {
   orderNumber: string;
@@ -8,7 +8,12 @@ export type OrderDTO = {
 };
 
 export async function fetchRecentOrders(page = 1, pageSize = 10): Promise<{ orders: OrderDTO[], total: number }> {
-  const data = await apiServer<{ orders: OrderDTO[], total: number }>(`/orders/recent?page=${page}&pageSize=${pageSize}`);
+  const data = await apiServerSafe<{ orders: OrderDTO[], total: number }>(`/orders/recent?page=${page}&pageSize=${pageSize}`);
+  
+  if (!data) {
+    return { orders: [], total: 0 };
+  }
+  
   const orders = (data?.orders ?? []) as any[];
   const total = Number(data?.total ?? 0);
 

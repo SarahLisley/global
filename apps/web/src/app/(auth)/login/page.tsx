@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useTransition } from 'react';
+import { Suspense, useState, useTransition, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,7 +11,8 @@ import { Button } from '../../../components/ui/button';
 import { BrandLogo } from '../../../components/brand-logo';
 import { LoginInputSchema } from '@pgb/sdk';
 import { loginAction } from '../actions';
-import { Mail, LockKeyhole, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
+import { TokenErrorHandler } from '../../../components/auth/TokenErrorHandler';
+import { Mail, LockKeyhole, AlertCircle, Loader2, ArrowRight, RefreshCw } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +31,16 @@ function LoginContent() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [capsLockActive, setCapsLockActive] = useState(false);
+
+  // Verificar se foi redirecionado por token inválido
+  const reason = search.get('reason');
+  const from = search.get('from');
+
+  useEffect(() => {
+    if (reason === 'invalid_token') {
+      setServerError('Sua sessão expirou ou é inválida. Por favor, faça login novamente.');
+    }
+  }, [reason]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     const capsLock = e.getModifierState('CapsLock');
@@ -200,6 +211,7 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={null}>
+      <TokenErrorHandler />
       <LoginContent />
     </Suspense>
   );

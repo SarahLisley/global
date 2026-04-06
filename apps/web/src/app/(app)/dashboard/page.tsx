@@ -8,7 +8,7 @@ import { DocsValidity } from '../../../components/dashboard/DocsValidity';
 import { ErrorBoundary } from '../../../components/ErrorBoundary';
 import { fetchKpis, mapKpisToCards } from './dashboardApi';
 import { fetchRecentOrders } from './ordersApi';
-import { fetchDocsValidity } from './docsApi';
+import { fetchDocsValidityUltraFast } from './docsApiStreaming';
 import { fetchSacSeries, fetchPendingTickets } from './sacApi';
 
 /* ───────── Skeleton Components ───────── */
@@ -218,7 +218,7 @@ async function RecentOrdersSection({ page, pageSize }: { page: number; pageSize:
 }
 
 async function DocsSection() {
-  const docs = await fetchDocsValidity();
+  const docs = await fetchDocsValidityUltraFast();
   return <DocsValidity docs={docs} />;
 }
 

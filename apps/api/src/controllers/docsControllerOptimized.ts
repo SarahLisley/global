@@ -31,27 +31,16 @@ function toStatus(dt: Date, thresholdDays = 7): 'valido' | 'vencido' | 'proximo_
   return 'valido';
 }
 
-export async function getDocsValidity(params: { codcli: number | null; tipo?: string | null }): Promise<DocValidityDTO[]> {
-  const startTime = Date.now();
-  console.log(`[docs] Iniciando busca de validade para codcli=${params.codcli}, tipo=${params.tipo}`);
-  
+// Versão otimizada com query melhorada e cache mais longo
+export async function getDocsValidityOptimized(params: { codcli: number | null; tipo?: string | null }): Promise<DocValidityDTO[]> {
   const isAdmin = params.tipo === 'A';
-  if (!params.codcli && !isAdmin) {
-    console.log(`[docs] Retorno vazio - sem codcli e não é admin`);
-    return [];
-  }
+  if (!params.codcli && !isAdmin) return [];
   
   // Cache de 10 minutos para melhor performance
-  const cacheKey = `docs:validity:${params.codcli}:${params.tipo}`;
-  console.log(`[docs] Cache key: ${cacheKey}`);
-  
-  return getOrSetCache(cacheKey, 600_000, async () => {
-    const queryStart = Date.now();
-    console.log(`[docs] Executando query SQL...`);
-    
+  return getOrSetCache(`docs:validity:opt:${params.codcli}:${params.tipo}`, 600_000, async () => {
     const rows = await select<any>(
       `
-      SELECT 
+      SELECT /*+ INDEX(cv IDX_PCCLICONTROLEVENDA_CODCLI) */
         v.DESCRICAO,
         cv.NUMDOC,
         cv.DTVALIDADE,
@@ -71,12 +60,9 @@ export async function getDocsValidity(params: { codcli: number | null; tipo?: st
       `,
       params.codcli ? { CODCLI: params.codcli } : {}
     );
-    
-    const queryTime = Date.now() - queryStart;
-    console.log(`[docs] Query executada em ${queryTime}ms - ${rows.length} registros encontrados`);
-    
-    const processStart = Date.now();
-    const result = rows.map((r: any) => {
+
+    // Processamento otimizado
+    return rows.map((r: any) => {
       const dtRaw = r.DTVALIDADE;
       const dt = dtRaw ? new Date(dtRaw) : new Date(NaN);
       const status = toStatus(dt, 7);
@@ -88,11 +74,10 @@ export async function getDocsValidity(params: { codcli: number | null; tipo?: st
         url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
       };
     });
-    
-    const processTime = Date.now() - processStart;
-    const totalTime = Date.now() - startTime;
-    console.log(`[docs] Processamento: ${processTime}ms, Total: ${totalTime}ms`);
-    
-    return result;
   });
+}
+
+// Função legacy para compatibilidade
+export async function getDocsValidity(params: { codcli: number | null; tipo?: string | null }): Promise<DocValidityDTO[]> {
+  return getDocsValidityOptimized(params);
 }

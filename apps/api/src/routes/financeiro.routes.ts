@@ -6,10 +6,11 @@ import { extractCodcli, handleAuthError } from '../utils/auth';
 export default async function financeiroRoutes(app: FastifyInstance) {
   app.get('/', async (req, reply) => {
     try {
-      const { codcli } = extractCodcli(req);
+      const { codcli, tipo } = extractCodcli(req);
       const q = req.query as any;
       const data = await getTitulos({
         codcli,
+        tipo,
         dtInicial: q.dtInicial,
         dtFinal: q.dtFinal,
         status: q.status,
@@ -27,10 +28,10 @@ export default async function financeiroRoutes(app: FastifyInstance) {
 
   app.get('/boletos/:id', async (req, reply) => {
     try {
-      const { codcli } = extractCodcli(req);
+      const { codcli, tipo } = extractCodcli(req);
       const id = String((req.params as any)?.id ?? '');
 
-      const { stream, filename, size, mimeType } = await downloadBoleto({ codcli, id });
+      const { stream, filename, size, mimeType } = await downloadBoleto({ codcli, tipo, id });
 
       reply.header('Content-Type', mimeType);
       reply.header('Content-Disposition', `attachment; filename="${filename}"`);
