@@ -198,66 +198,159 @@ export async function searchDeliveries(params: {
 
         const statusWhere = buildStatusWhere(params.status);
 
-        const rows = await select<DeliveryRow>(
-          `
-          WITH raw AS (
-            SELECT
-              L.NUMNOTA,
-              L.NUMTRANSVENDA,
-              L.DESTINATARIO,
-              L.NUMPED,
-              L.DATA_HORA,
-              L.DOMINIO,
-              L.FILIAL,
-              L.CIDADE,
-              L.OCORRENCIA,
-              L.DESCRICAO,
-              L.TIPO,
-              L.DATA_HORA_EFETIVA,
-              L.PREVENTREGA,
-              L.NOME_RECEBEDOR,
-              L.NRO_DOC_RECEBEDOR,
-              LOWER(NVL(L.OCORRENCIA, '')) AS OCORRENCIA_NORMALIZADA,
-              N.TRANSPORTADORA,
-              N.VLTOTAL,
-              N.DTFAT
-            FROM ${OWNER}.BRLOGSSW L
-            JOIN ${OWNER}.PCNFSAID N
-              ON N.NUMTRANSVENDA = L.NUMTRANSVENDA
-            WHERE ${where.join(' AND ')}
-          ),
-          base AS (
-            SELECT
-              R.*,
-              ROW_NUMBER() OVER (
-                PARTITION BY R.NUMTRANSVENDA
-                ORDER BY NVL(R.DATA_HORA_EFETIVA, R.DATA_HORA) DESC NULLS LAST
-              ) AS RN
-            FROM raw R
-            WHERE 1 = 1
-              ${statusWhere}
-          ),
-          filt AS (
-            SELECT
-              B.*,
-              COUNT(*) OVER () AS TOTAL_COUNT
-            FROM base B
-            WHERE B.RN = 1
-          ),
-          pag AS (
-            SELECT
-              F.*,
-              ROW_NUMBER() OVER (
-                ORDER BY NVL(F.DATA_HORA_EFETIVA, NVL(F.PREVENTREGA, F.DATA_HORA)) DESC NULLS LAST
-              ) AS RNO
-            FROM filt F
-          )
-          SELECT *
-          FROM pag
-          WHERE RNO BETWEEN :START_ROW AND :END_ROW
-          `,
-          binds
-        );
+        let rows: DeliveryRow[] = [];
+        try {
+          rows = await select<DeliveryRow>(
+            `
+            WITH cte_raw AS (
+              SELECT
+                L.NUMNOTA,
+                L.NUMTRANSVENDA,
+                L.DESTINATARIO,
+                L.NUMPED,
+                L.DATA_HORA,
+                L.DOMINIO,
+                L.FILIAL,
+                L.CIDADE,
+                L.OCORRENCIA,
+                L.DESCRICAO,
+                L.TIPO,
+                L.DATA_HORA_EFETIVA,
+                L.PREVENTREGA,
+                L.NOME_RECEBEDOR,
+                L.NRO_DOC_RECEBEDOR,
+                LOWER(NVL(L.OCORRENCIA, '')) AS OCORRENCIA_NORMALIZADA,
+                N.TRANSPORTADORA,
+                N.VLTOTAL,
+                N.DTFAT
+              FROM ${OWNER}.BRLOGSSW L
+              JOIN ${OWNER}.PCNFSAID N
+                ON N.NUMTRANSVENDA = L.NUMTRANSVENDA
+              WHERE ${where.join(' AND ')}
+            ),
+            cte_base AS (
+              SELECT
+                R.*,
+                ROW_NUMBER() OVER (
+                  PARTITION BY R.NUMTRANSVENDA
+                  ORDER BY NVL(R.DATA_HORA_EFETIVA, R.DATA_HORA) DESC NULLS LAST
+                ) AS RN
+              FROM cte_raw R
+              WHERE 1 = 1
+                ${statusWhere}
+            ),
+            cte_filt AS (
+              SELECT
+                B.*,
+                COUNT(*) OVER () AS TOTAL_COUNT
+              FROM cte_base B
+              WHERE B.RN = 1
+            ),
+            cte_pag AS (
+              SELECT
+                F.*,
+                ROW_NUMBER() OVER (
+                  ORDER BY NVL(F.DATA_HORA_EFETIVA, NVL(F.PREVENTREGA, F.DATA_HORA)) DESC NULLS LAST
+                ) AS RNO
+              FROM cte_filt F
+            )
+            SELECT *
+            FROM cte_pag
+            WHERE RNO BETWEEN :START_ROW AND :END_ROW
+            `,
+            binds
+          );
+        } catch (err: any) {
+          const msg = err.message || String(err);
+          if (msg.includes('ORA-00903') || msg.includes('ORA-00942')) {
+            console.warn('[DELIVERIES] Tabela BRLOGSSW não encontrada em ' + OWNER + '. Realizando consulta fallback em PCNFSAID.');
+
+            const fallbackWhere: string[] = ['1=1'];
+            const fbinds: any = { START_ROW: startRow, END_ROW: endRow };
+            if (params.codcli) {
+              fallbackWhere.push('N.CODCLI = :CODCLI');
+              fbinds.CODCLI = params.codcli;
+            }
+            if (params.nf) {
+              fallbackWhere.push('N.NUMNOTA = :NF');
+              fbinds.NF = params.nf;
+            }
+            if (params.pedido) {
+              fallbackWhere.push('N.NUMPED = :PEDIDO');
+              fbinds.PEDIDO = params.pedido;
+            }
+            if (params.dateFrom) {
+              fallbackWhere.push("N.DTFAT >= TO_DATE(:DATE_FROM, 'YYYY-MM-DD')");
+              fbinds.DATE_FROM = params.dateFrom;
+            }
+            if (params.dateTo) {
+              fallbackWhere.push("N.DTFAT < TO_DATE(:DATE_TO, 'YYYY-MM-DD') + 1");
+              fbinds.DATE_TO = params.dateTo;
+            }
+            
+            rows = await select<DeliveryRow>(
+              `
+              WITH cte_raw AS (
+                SELECT
+                  N.NUMNOTA,
+                  N.NUMTRANSVENDA,
+                  C.CLIENTE AS DESTINATARIO,
+                  N.NUMPED,
+                  N.DTFAT AS DATA_HORA,
+                  NULL AS DOMINIO,
+                  N.CODFILIAL AS FILIAL,
+                  C.MUNICENT AS CIDADE,
+                  'Faturado' AS OCORRENCIA,
+                  'Nota fiscal emitida' AS DESCRICAO,
+                  NULL AS TIPO,
+                  N.DTENTREGA AS DATA_HORA_EFETIVA,
+                  N.DTENTREGA AS PREVENTREGA,
+                  NULL AS NOME_RECEBEDOR,
+                  NULL AS NRO_DOC_RECEBEDOR,
+                  'faturado' AS OCORRENCIA_NORMALIZADA,
+                  N.TRANSPORTADORA,
+                  N.VLTOTAL,
+                  N.DTFAT
+                FROM ${OWNER}.PCNFSAID N
+                LEFT JOIN ${OWNER}.PCCLIENT C ON C.CODCLI = N.CODCLI
+                WHERE ${fallbackWhere.join(' AND ')}
+              ),
+              cte_base AS (
+                SELECT
+                  R.*,
+                  ROW_NUMBER() OVER (
+                    PARTITION BY R.NUMTRANSVENDA
+                    ORDER BY NVL(R.DATA_HORA_EFETIVA, R.DATA_HORA) DESC NULLS LAST
+                  ) AS RN
+                FROM cte_raw R
+                WHERE 1 = 1
+                  ${statusWhere}
+              ),
+              cte_filt AS (
+                SELECT
+                  B.*,
+                  COUNT(*) OVER () AS TOTAL_COUNT
+                FROM cte_base B
+                WHERE B.RN = 1
+              ),
+              cte_pag AS (
+                SELECT
+                  F.*,
+                  ROW_NUMBER() OVER (
+                    ORDER BY NVL(F.DATA_HORA_EFETIVA, NVL(F.PREVENTREGA, F.DATA_HORA)) DESC NULLS LAST
+                  ) AS RNO
+                FROM cte_filt F
+              )
+              SELECT *
+              FROM cte_pag
+              WHERE RNO BETWEEN :START_ROW AND :END_ROW
+              `,
+              fbinds
+            );
+          } else {
+            throw err;
+          }
+        }
 
         const total = Number(rows[0]?.TOTAL_COUNT ?? 0);
 
@@ -296,11 +389,6 @@ export async function searchDeliveries(params: {
 
         return { list, total };
       } catch (err: any) {
-        const msg = err.message || String(err);
-        if (msg.includes('ORA-00903') || msg.includes('ORA-00942')) {
-          console.warn('[DELIVERIES] Tabela BRLOGSSW não encontrada em ' + OWNER + '. Retornando lista vazia.');
-          return { list: [], total: 0 };
-        }
         throw err;
       }
     }
