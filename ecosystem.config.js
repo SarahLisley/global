@@ -11,7 +11,7 @@ module.exports = {
     {
       name: 'pgb-api',
       cwd: './apps/api',
-      script: 'dist/server.js',
+      script: 'dist/apps/api/src/server.js',
       interpreter: 'node',
       env: {
         NODE_ENV: 'production',
