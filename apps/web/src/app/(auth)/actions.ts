@@ -9,7 +9,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Permite conectar no HTTPS int
 // Tenta usar uma URL interna primeiro se fornecida, senão forçamos um mapeamento seguro caso seja o ddns global
 const rawApiBase = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
 const API_BASE = rawApiBase.includes('globalh.ddns.net') 
-  ? 'http://127.0.0.1:4001' // Alterado para HTTP
+  ? 'http://127.0.0.1:4001' // <--- CORRIGIDO AQUI: de https para http
   : rawApiBase;
 
 const MOCK = false; // Desativar mock para usar a API real
@@ -184,11 +184,7 @@ export async function forgotPasswordAction(form: { email: string }) {
     });
 
     if (!res.ok) {
-      // Por segurança, geralmente não devemos informar se o e-mail não existe, mas aqui vamos retornar a mensagem do back se houver
-      // ou uma genérica de sucesso
       const err = await res.json().catch(() => ({}));
-      // Se for 404 ou erro, podemos decidir como tratar. Por enquanto retornamos ok para não vazar info, ou o erro se for crítico.
-      // Mas para UX melhor em dev:
       if (res.status >= 500) {
         return { ok: false, message: 'Erro no servidor. Tente novamente mais tarde.' };
       }
