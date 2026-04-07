@@ -8,11 +8,17 @@ export function middleware(req: NextRequest) {
   const host = req.headers.get('host');
 
   // Redirecionamento Global Condicional — força domínio (mantendo localhost intacto)
-  // TEMPORARIAMENTE DESABILITADO para permitir acesso local sem problemas
-  const isLocalhost = host?.includes('localhost') || host?.startsWith('127.0.0.1') || host?.startsWith('10.');
-  if (false && !isLocalhost && host !== 'globalh.ddns.net:3200' && !pathname.startsWith('/_next') && !pathname.startsWith('/images') && !pathname.startsWith('/favicon.ico')) {
+  // REABILITADO com fallback para evitar problemas de timeout
+  const isLocalhost = host?.includes('localhost') || host?.startsWith('127.0.0.1') || host?.startsWith('10.') || host?.startsWith('192.168.');
+  if (!isLocalhost && host !== 'globalh.ddns.net:3200' && !pathname.startsWith('/_next') && !pathname.startsWith('/images') && !pathname.startsWith('/favicon.ico')) {
     const protocol = req.nextUrl.protocol || 'http:';
-    return NextResponse.redirect(`${protocol}//globalh.ddns.net:3200/login`, 301);
+    // Tentar redirecionar para DDNS, mas com fallback curto
+    try {
+      return NextResponse.redirect(`${protocol}//globalh.ddns.net:3200/login`, 301);
+    } catch (error) {
+      console.warn('Failed to redirect to DDNS, using localhost fallback');
+      return NextResponse.redirect(`${protocol}//localhost:3200/login`, 302);
+    }
   }
 
   // Limpeza automática de sessão solicitada via URL
