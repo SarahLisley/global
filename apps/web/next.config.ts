@@ -18,7 +18,6 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@pgb/ui', '@pgb/sdk'],
-  output: 'standalone',
   poweredByHeader: false,
   async headers() {
     return [

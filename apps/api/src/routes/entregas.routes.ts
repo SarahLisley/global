@@ -90,7 +90,7 @@ export default async function entregasRoutes(app: FastifyInstance) {
         dataHora?: string;
       };
 
-      if (!body.occorrencia || !body.descricao) {
+      if (!body.ocorrencia || !body.descricao) {
         return reply.status(400).send({ error: 'Ocorrência e descrição são obrigatórios' });
       }
 
