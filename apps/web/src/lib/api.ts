@@ -14,18 +14,12 @@ if (typeof window === 'undefined') {
   }
 }
 
-// Tratamento de NAT Loopback: Se estamos no servidor e a URL aponta para o domínio global,
-// redirecionamos para o IP local (127.0.0.1) para evitar bloqueio do roteador.
 export const API_BASE = (typeof window === 'undefined' && rawApiBase.includes('globalh.ddns.net'))
-  ? rawApiBase.replace(/https?:\/\/globalh\.ddns\.net/, 'https://127.0.0.1')
+  ? rawApiBase.replace(/https?:\/\/globalh\.ddns\.net/, 'http://127.0.0.1') // Alterado para HTTP
   : rawApiBase;
 
 export const AUTH_ERROR_MSG = 'Sua sessão é inválida. Por favor, faça login novamente.';
 
-/**
- * Helper centralizado para chamadas server-side à API.
- * Extrai o token da sessão automaticamente e trata erros de forma consistente.
- */
 export async function apiServer<T = any>(
   path: string,
   options?: RequestInit & { requireAuth?: boolean }

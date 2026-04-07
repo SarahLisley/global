@@ -9,7 +9,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Permite conectar no HTTPS int
 // Tenta usar uma URL interna primeiro se fornecida, senão forçamos um mapeamento seguro caso seja o ddns global
 const rawApiBase = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
 const API_BASE = rawApiBase.includes('globalh.ddns.net') 
-  ? 'https://127.0.0.1:4001' // Resolve o IP localmente para Server Actions não sofrerem de NAT Loopback
+  ? 'http://127.0.0.1:4001' // Alterado para HTTP
   : rawApiBase;
 
 const MOCK = false; // Desativar mock para usar a API real
