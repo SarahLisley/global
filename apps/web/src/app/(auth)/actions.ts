@@ -2,12 +2,16 @@
 
 import { cookies } from 'next/headers';
 
+// Comunicação Server-to-Server, usamos 127.0.0.1 direto caso haja NAT loopback.
+// Isso evita que o Next.js fique "rodando infinito" tentando achar a si próprio no roteador externo.
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Permite conectar no HTTPS interno (self-signed)
+// API roda em HTTP (sem certificado)
+const rawApiBase = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
 
-const rawApiBase = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'https://localhost:4001';
-const API_BASE = rawApiBase.includes('globalh.ddns.net') 
-  ? 'https://127.0.0.1:4001' // API roda em HTTPS
+// Se estiver usando globalh.ddns.net E estiver em contexto de desenvolvimento (loopback), usa 127.0.0.1
+// Caso contrário, mantém como está (funciona para DDNS externo)
+const API_BASE = rawApiBase.includes('globalh.ddns.net') && process.env.NODE_ENV === 'development'
+  ? rawApiBase.replace(/https?:\/\/globalh\.ddns\.net/, 'http://127.0.0.1')
   : rawApiBase;
 
 const MOCK = false; // Desativar mock para usar a API real
