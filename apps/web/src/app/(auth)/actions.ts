@@ -2,14 +2,12 @@
 
 import { cookies } from 'next/headers';
 
-// Comunicação Server-to-Server, usamos 127.0.0.1 direto caso haja NAT loopback.
-// Isso evita que o Next.js fique "rodando infinito" tentando achar a si próprio no roteador externo.
+
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Permite conectar no HTTPS interno (self-signed)
 
-// Tenta usar uma URL interna primeiro se fornecida, senão forçamos um mapeamento seguro caso seja o ddns global
-const rawApiBase = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
+const rawApiBase = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'https://localhost:4001';
 const API_BASE = rawApiBase.includes('globalh.ddns.net') 
-  ? 'http://127.0.0.1:4001' // <--- CORRIGIDO AQUI: de https para http
+  ? 'https://127.0.0.1:4001' // API roda em HTTPS
   : rawApiBase;
 
 const MOCK = false; // Desativar mock para usar a API real
@@ -17,6 +15,8 @@ const MOCK = false; // Desativar mock para usar a API real
 export async function loginAction(form: { email: string; password: string; remember?: boolean }) {
   console.log('[LOGIN] MOCK mode:', MOCK);
   console.log('[LOGIN] Form data:', { email: form.email, passwordLength: form.password.length });
+  console.log('[LOGIN] API_BASE:', API_BASE);
+  console.log('[LOGIN] NODE_ENV:', process.env.NODE_ENV);
   
   try {
     const maxAge = 60 * 60 * 2; // 2 hours
@@ -46,20 +46,53 @@ export async function loginAction(form: { email: string; password: string; remem
       return { ok: true, redirectTo: '/dashboard' };
     }
 
-    console.log('[LOGIN] Making API call to:', `${API_BASE}/auth/login`);
-    const res = await fetch(`${API_BASE}/auth/login`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(form),
-      cache: 'no-store',
-    });
+    const loginUrl = `${API_BASE}/auth/login`;
+    console.log('[LOGIN] Making API call to:', loginUrl);
+    console.log('[LOGIN] TLS_REJECT_UNAUTHORIZED:', process.env.NODE_TLS_REJECT_UNAUTHORIZED);
+    
+    const controller = new AbortController();
+    const timeout = setTimeout(() => {
+      controller.abort();
+      console.error('[LOGIN] Timeout - request aborted');
+    }, 10000); // 10 segundos timeout
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      return { ok: false, message: err?.message ?? `Falha no login (${res.status})` };
+    let res;
+    try {
+      res = await fetch(loginUrl, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(form),
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
     }
 
-    const data = (await res.json()) as { token: string; user: any };
+    console.log('[LOGIN] Response received - status:', res.status, 'statusText:', res.statusText);
+
+    if (!res.ok) {
+      let err: any = {};
+      try {
+        err = await res.json();
+      } catch {
+        err = { errorText: await res.text() };
+      }
+      const errorMsg = err?.message ?? `Falha no login (${res.status})`;
+      console.error('[LOGIN] Error response:', errorMsg);
+      return { ok: false, message: errorMsg };
+    }
+
+    let data;
+    try {
+      data = (await res.json()) as { token: string; user: any };
+    } catch (parseErr) {
+      console.error('[LOGIN] Failed to parse response:', parseErr);
+      return { ok: false, message: 'Resposta inválida do servidor' };
+    }
+
+    console.log('[LOGIN] Success! Token received');
+    
     (await cookies()).set('pgb_session', data.token, {
       httpOnly: true,
       sameSite: 'lax',
@@ -77,7 +110,29 @@ export async function loginAction(form: { email: string; password: string; remem
 
     return { ok: true, redirectTo: '/dashboard' };
   } catch (e: any) {
-    return { ok: false, message: e?.message ?? 'Erro inesperado no login' };
+    const errorDetails = {
+      name: e?.name,
+      message: e?.message,
+      code: e?.code,
+      stack: e?.stack?.split('\n')[0],
+    };
+    console.error('[LOGIN] Catch error:', errorDetails);
+    
+    // Diagnóstico melhorado
+    if (e?.name === 'AbortError') {
+      return { ok: false, message: 'Timeout ao conectar na API (10s) - verifique se a API está rodando' };
+    }
+    if (e?.code === 'ECONNREFUSED' || e?.message?.includes('ECONNREFUSED')) {
+      return { ok: false, message: 'API indisponível (ECONNREFUSED) - o servidor está offline?' };
+    }
+    if (e?.code === 'ENOTFOUND' || e?.message?.includes('getaddrinfo') || e?.message?.includes('ENOTFOUND')) {
+      return { ok: false, message: 'Erro de DNS - não conseguir resolver o domínio da API' };
+    }
+    if (e?.message?.includes('listener indicated an asynchronous response')) {
+      return { ok: false, message: 'Erro de comunicação do navegador - desabilite extensões e tente novamente' };
+    }
+    
+    return { ok: false, message: e?.message ?? 'Erro inesperado na conexão' };
   }
 }
 

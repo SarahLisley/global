@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
+const rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://localhost:4001';
 
 // Configuração para permitir conexões internas com certificados autoassinados no server-side
 if (typeof window === 'undefined') {
@@ -15,7 +15,7 @@ if (typeof window === 'undefined') {
 }
 
 export const API_BASE = (typeof window === 'undefined' && rawApiBase.includes('globalh.ddns.net'))
-  ? rawApiBase.replace(/https?:\/\/globalh\.ddns\.net/, 'http://127.0.0.1') // Alterado para HTTP
+  ? rawApiBase.replace(/https?:\/\/globalh\.ddns\.net/, 'https://127.0.0.1') // API roda em HTTPS
   : rawApiBase;
 
 export const AUTH_ERROR_MSG = 'Sua sessão é inválida. Por favor, faça login novamente.';
