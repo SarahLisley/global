@@ -55,7 +55,7 @@ type DeliveryTimelineRow = {
   DOMINIO?: string | null;
 };
 
-const DELIVERIES_TTL_MS = 30_000;
+const DELIVERIES_TTL_MS = 120_000; // 2 minutos — status de entrega não muda a cada 30s
 const DELIVERY_TIMELINE_TTL_MS = 60_000;
 
 function toIsoDate(value: Date | string | null | undefined) {
@@ -405,7 +405,7 @@ export async function getDeliveryTimeline(numTransVenda: number, codcli: number 
   // Removido cache ou setado TTL 0 para garantir "Tempo Real" nas buscas de timeline
   return getOrSetCache(
     `deliveryTimeline:${codcli}:${numTransVenda}`,
-    0, // 0ms TTL = No cache (Busca em Tempo Real no banco de dados)
+    DELIVERY_TIMELINE_TTL_MS, // 60s de cache — timeline muda pouco, reduz carga no Oracle
     async () => {
       try {
         const rows = await select<any>(

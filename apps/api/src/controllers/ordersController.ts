@@ -152,7 +152,7 @@ export async function getRecentOrders(params: { codcli: number | null; tipo?: st
     return { orders: [], total: 0, page, pageSize };
   }
 
-  return getOrSetCache(`orders:recent:${params.codcli}:${page}:${pageSize}`, 30_000, async () => {
+  return getOrSetCache(`orders:recent:${params.codcli}:${page}:${pageSize}`, 120_000, async () => {
     const rows = await select<any>(
       `
       SELECT P.NUMPED,

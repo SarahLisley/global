@@ -15,6 +15,7 @@ module.exports = {
       interpreter: 'node',
       env: {
         NODE_ENV: 'production',
+        NODE_OPTIONS: '--max-old-space-size=512',
       },
       instances: 1,
       autorestart: true,

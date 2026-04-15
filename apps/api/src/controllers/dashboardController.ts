@@ -55,7 +55,7 @@ export async function getDashboardKpis(params: { email?: string; codcli?: string
     };
   }
 
-  return getOrSetCache(`dashboard:kpis:${codcli}`, 30_000, async () => {
+  return getOrSetCache(`dashboard:kpis:${codcli}`, 180_000, async () => { // 3 minutos
     const [ordersRows, receivablesRows, deliveriesRows] = await Promise.all([
       select<{ VLATENDIDO: number; QTPEDIDOS: number }>(
         `
@@ -138,51 +138,53 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   if (summaryCache.data && now < summaryCache.expires) {
     return summaryCache.data;
   }
-  const [u] = await select<{ TOTAL: number; CLIENTES: number }>(
-    `
-    SELECT
-      COUNT(*) AS TOTAL,
-      SUM(CASE WHEN UPPER(TRIM(TIPO)) = 'C' THEN 1 ELSE 0 END) AS CLIENTES
-    FROM ${OWNER}.BRLOGINWEB
-    `
-  );
+  const [usersRows, nfRows] = await Promise.all([
+    select<{ TOTAL: number; CLIENTES: number }>(
+      `
+      SELECT
+        COUNT(*) AS TOTAL,
+        SUM(CASE WHEN UPPER(TRIM(TIPO)) = 'C' THEN 1 ELSE 0 END) AS CLIENTES
+      FROM ${OWNER}.BRLOGINWEB
+      `
+    ),
+    (async () => {
+      try {
+        return await select<{
+          TOTAL_HOJE: number;
+          ERROS_HOJE: number;
+          SUCESSO_HOJE: number;
+          ULT7D: number;
+        }>(
+          `
+          SELECT
+            SUM(CASE WHEN TRUNC(NVL(DATAPROCESSAMENTO, DATAATUALIZACAO)) = TRUNC(SYSDATE) THEN 1 ELSE 0 END) AS TOTAL_HOJE,
+            SUM(CASE WHEN TRUNC(NVL(DATAPROCESSAMENTO, DATAATUALIZACAO)) = TRUNC(SYSDATE)
+                      AND (NVL(ERROINTEGRACAO,0) <> 0 OR NVL(ERROORACLECODE,0) <> 0)
+                THEN 1 ELSE 0 END) AS ERROS_HOJE,
+            SUM(CASE WHEN TRUNC(NVL(DATAPROCESSAMENTO, DATAATUALIZACAO)) = TRUNC(SYSDATE)
+                      AND (NVL(ERROINTEGRACAO,0) = 0 AND NVL(ERROORACLECODE,0) = 0)
+                THEN 1 ELSE 0 END) AS SUCESSO_HOJE,
+            SUM(CASE WHEN NVL(DATAPROCESSAMENTO, DATAATUALIZACAO) >= TRUNC(SYSDATE) - 6 THEN 1 ELSE 0 END) AS ULT7D
+          FROM ${OWNER}.BRLOGNFENTI
+          `
+        );
+      } catch (_) {
+        // BRLOGNFENTI may not exist in all environments — silently ignore
+        return [];
+      }
+    })()
+  ]);
+
+  const u = usersRows[0];
   const usuarios_total = u?.TOTAL ?? 0;
   const usuarios_clientes = u?.CLIENTES ?? 0;
   const usuarios_outros = usuarios_total - usuarios_clientes;
 
-  let nf_total_hoje = 0;
-  let nf_erros_hoje = 0;
-  let nf_sucesso_hoje = 0;
-  let nf_ultimos7d = 0;
-
-  try {
-    const [n] = await select<{
-      TOTAL_HOJE: number;
-      ERROS_HOJE: number;
-      SUCESSO_HOJE: number;
-      ULT7D: number;
-    }>(
-      `
-      SELECT
-        SUM(CASE WHEN TRUNC(NVL(DATAPROCESSAMENTO, DATAATUALIZACAO)) = TRUNC(SYSDATE) THEN 1 ELSE 0 END) AS TOTAL_HOJE,
-        SUM(CASE WHEN TRUNC(NVL(DATAPROCESSAMENTO, DATAATUALIZACAO)) = TRUNC(SYSDATE)
-                  AND (NVL(ERROINTEGRACAO,0) <> 0 OR NVL(ERROORACLECODE,0) <> 0)
-            THEN 1 ELSE 0 END) AS ERROS_HOJE,
-        SUM(CASE WHEN TRUNC(NVL(DATAPROCESSAMENTO, DATAATUALIZACAO)) = TRUNC(SYSDATE)
-                  AND (NVL(ERROINTEGRACAO,0) = 0 AND NVL(ERROORACLECODE,0) = 0)
-            THEN 1 ELSE 0 END) AS SUCESSO_HOJE,
-        SUM(CASE WHEN NVL(DATAPROCESSAMENTO, DATAATUALIZACAO) >= TRUNC(SYSDATE) - 6 THEN 1 ELSE 0 END) AS ULT7D
-      FROM ${OWNER}.BRLOGNFENTI
-      `
-    );
-
-    nf_total_hoje = n?.TOTAL_HOJE ?? 0;
-    nf_erros_hoje = n?.ERROS_HOJE ?? 0;
-    nf_sucesso_hoje = n?.SUCESSO_HOJE ?? 0;
-    nf_ultimos7d = n?.ULT7D ?? 0;
-  } catch (_) {
-    // BRLOGNFENTI may not exist in all environments — silently ignore
-  }
+  const n = nfRows[0];
+  const nf_total_hoje = n?.TOTAL_HOJE ?? 0;
+  const nf_erros_hoje = n?.ERROS_HOJE ?? 0;
+  const nf_sucesso_hoje = n?.SUCESSO_HOJE ?? 0;
+  const nf_ultimos7d = n?.ULT7D ?? 0;
 
   const result: DashboardSummary = {
     usuarios_total,

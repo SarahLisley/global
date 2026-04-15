@@ -26,7 +26,9 @@ export function buildApp(options: { https?: any } = {}) {
   const isProduction = process.env.NODE_ENV === 'production';
 
   const app = Fastify({ 
-    logger: true,
+    logger: isProduction
+      ? { level: 'warn' }  // produção: só erros e avisos
+      : { level: 'info' }, // dev: informações normais sem verbosidade excessiva
     https: options.https
   } as any);
 

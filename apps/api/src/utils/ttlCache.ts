@@ -32,3 +32,13 @@ export function invalidateCache(prefix: string) {
     }
   }
 }
+
+// Limpeza periódica do cache em memória para evitar memory leak
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of cacheStore.entries()) {
+    if (entry.expiresAt <= now) {
+      cacheStore.delete(key);
+    }
+  }
+}, 5 * 60 * 1000).unref(); // Roda a cada 5 minutos

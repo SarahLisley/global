@@ -23,7 +23,7 @@ export type Titulo = {
   notaFiscal?: string;
 };
 
-const FINANCEIRO_TTL_MS = 30_000;
+const FINANCEIRO_TTL_MS = 300_000; // 5 minutos — boletos e títulos mudam raramente
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 100;
