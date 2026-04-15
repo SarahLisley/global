@@ -13,7 +13,7 @@ module.exports = {
       cwd: './apps/api',
       script: 'npx.cmd',
       args: 'tsx src/server.ts',
-      exec_mode: 'fork',
+      interpreter: 'cmd.exe',
       env: {
         NODE_ENV: 'production',
         NODE_OPTIONS: '--max-old-space-size=1024',
@@ -31,7 +31,7 @@ module.exports = {
       cwd: './apps/web',
       script: 'pnpm.cmd',
       args: 'dev -p 3200',
-      exec_mode: 'fork',
+      interpreter: 'cmd.exe',
       env: {
         NODE_ENV: 'development',
         NODE_OPTIONS: '--max-old-space-size=4096',
