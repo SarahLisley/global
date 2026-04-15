@@ -11,9 +11,10 @@ module.exports = {
     {
       name: 'pgb-api',
       cwd: './apps/api',
-      script: 'npx.cmd',
-      args: 'tsx src/server.ts',
-      interpreter: 'cmd.exe',
+      script: './node_modules/tsx/dist/cli.mjs',
+      args: 'src/server.ts',
+      interpreter: 'node',
+      exec_mode: 'fork',
       env: {
         NODE_ENV: 'production',
         NODE_OPTIONS: '--max-old-space-size=1024',
@@ -29,9 +30,10 @@ module.exports = {
     {
       name: 'pgb-web',
       cwd: './apps/web',
-      script: 'pnpm.cmd',
+      script: './node_modules/next/dist/bin/next',
       args: 'dev -p 3200',
-      interpreter: 'cmd.exe',
+      interpreter: 'node',
+      exec_mode: 'fork',
       env: {
         NODE_ENV: 'development',
         NODE_OPTIONS: '--max-old-space-size=4096',
