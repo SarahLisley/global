@@ -67,6 +67,7 @@ export const Input = forwardRef<HTMLInputElement, Props>(function Input(
       <input
         ref={ref}
         type={inputType}
+        suppressHydrationWarning
         className={cn(
           'w-full relative transition-all duration-200 rounded-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 px-4 py-3 text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 dark:focus:border-blue-500/50',
           leftIcon && 'pl-10',
