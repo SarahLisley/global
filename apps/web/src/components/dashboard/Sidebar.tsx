@@ -147,6 +147,7 @@ export function Sidebar({ isOpen = false, onClose, user }: SidebarProps) {
               <Link
                 key={link.href}
                 href={link.href}
+                prefetch={true}
                 onClick={handleLinkClick}
                 className={clsx(
                   'group flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-sm font-medium transition-all duration-200',
