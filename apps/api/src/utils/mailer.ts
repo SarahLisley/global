@@ -9,7 +9,7 @@ const SMTP_PORT = Number(env.SMTP_PORT || 587);
 const SMTP_SECURE = env.SMTP_SECURE === 'true';
 const SMTP_USER = env.SMTP_USER || '';
 const SMTP_PASS = env.SMTP_PASS || '';
-const SMTP_FROM = env.SMTP_FROM || `Bravo Portal <${SMTP_USER || 'noreply@bravotecnologia.com.br'}>`;
+const SMTP_FROM = env.SMTP_FROM || `Portal Global <${SMTP_USER || 'noreply@globalhospitalar.com.br'}>`;
 
 let transporter: nodemailer.Transporter | null = null;
 let etherealReady: Promise<nodemailer.Transporter> | null = null;
@@ -29,7 +29,7 @@ async function createEtherealTransporter(): Promise<nodemailer.Transporter> {
   console.log('╚═══════════════════════════════════════════════════════════════╝');
   console.log('');
 
-  fromAddress = `Bravo Portal <${testAccount.user}>`;
+  fromAddress = `Portal Global <${testAccount.user}>`;
 
   return nodemailer.createTransport({
     host: testAccount.smtp.host,
@@ -77,7 +77,7 @@ function buildEmailHtml(code: string, name?: string): string {
   return `
     <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #ffffff; border-radius: 16px; border: 1px solid #e5e7eb;">
       <div style="text-align: center; margin-bottom: 24px;">
-        <h1 style="margin: 0; font-size: 24px; color: #2563eb; font-weight: 800;">Bravo</h1>
+        <h1 style="margin: 0; font-size: 24px; color: #2563eb; font-weight: 800;">Global Hospitalar</h1>
         <p style="margin: 4px 0 0; font-size: 14px; color: #6b7280;">Portal do Cliente</p>
       </div>
 
@@ -103,7 +103,7 @@ function buildEmailHtml(code: string, name?: string): string {
 
       <hr style="border: none; border-top: 1px solid #f3f4f6; margin: 24px 0;">
       <p style="font-size: 11px; color: #d1d5db; text-align: center;">
-        Bravo — Portal do Cliente &copy; ${new Date().getFullYear()}
+        Global Hospitalar — Portal do Cliente &copy; ${new Date().getFullYear()}
       </p>
     </div>`;
 }
@@ -115,7 +115,7 @@ export async function sendVerificationEmail(to: string, code: string, name?: str
     await transport.sendMail({
       from: fromAddress,
       to,
-      subject: `${code} — Código de verificação Bravo`,
+      subject: `${code} — Código de verificação Global Hospitalar`,
       html: buildEmailHtml(code, name),
     });
     return true;
@@ -129,7 +129,7 @@ function buildPasswordResetEmailHtml(resetUrl: string, name?: string): string {
   return `
     <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #ffffff; border-radius: 16px; border: 1px solid #e5e7eb;">
       <div style="text-align: center; margin-bottom: 24px;">
-        <h1 style="margin: 0; font-size: 24px; color: #2563eb; font-weight: 800;">Bravo</h1>
+        <h1 style="margin: 0; font-size: 24px; color: #2563eb; font-weight: 800;">Global Hospitalar</h1>
         <p style="margin: 4px 0 0; font-size: 14px; color: #6b7280;">Portal do Cliente</p>
       </div>
 
@@ -157,7 +157,7 @@ function buildPasswordResetEmailHtml(resetUrl: string, name?: string): string {
 
       <hr style="border: none; border-top: 1px solid #f3f4f6; margin: 24px 0;">
       <p style="font-size: 11px; color: #d1d5db; text-align: center;">
-        Bravo — Portal do Cliente &copy; ${new Date().getFullYear()}
+        Global Hospitalar — Portal do Cliente &copy; ${new Date().getFullYear()}
       </p>
     </div>`;
 }
@@ -173,7 +173,7 @@ export async function sendPasswordResetEmail(to: string, token: string, name?: s
     await transport.sendMail({
       from: fromAddress,
       to,
-      subject: 'Recuperação de Senha Bravo',
+      subject: 'Recuperação de Senha Global Hospitalar',
       html: buildPasswordResetEmailHtml(resetUrl, name),
     });
     return true;
