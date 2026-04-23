@@ -31,7 +31,7 @@ module.exports = {
       name: 'pgb-web',
       cwd: './apps/web',
       script: './node_modules/next/dist/bin/next',
-      args: 'dev -p 3200',
+      args: 'dev --turbo -p 3200',
       interpreter: 'node',
       exec_mode: 'fork',
       env: {
