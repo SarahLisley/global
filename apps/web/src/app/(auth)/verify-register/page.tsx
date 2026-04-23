@@ -60,32 +60,43 @@ function VerifyContent() {
 
   return (
     <div className="w-full max-w-[400px] mx-auto">
-      <div className="mb-8 text-center">
-        <BrandLogo className="mb-6 mx-auto" width={180} height={60} />
-        <div className="w-16 h-16 bg-blue-50 dark:bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <MailOpen className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+      {/* Header */}
+      <div className="mb-6 sm:mb-8 text-center animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out fill-mode-both">
+        <BrandLogo className="mb-4 sm:mb-6 mx-auto" width={180} height={60} />
+        <div className="w-14 h-14 bg-blue-50 dark:bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <MailOpen className="w-7 h-7 text-blue-600 dark:text-blue-400" />
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
           Verificar sua conta
         </h1>
-        <p className="text-slate-500 dark:text-zinc-400 mt-2 text-sm">
+        <p className="text-slate-500 dark:text-zinc-400 mt-2 text-sm sm:text-base">
           Enviamos um código de 6 dígitos para
         </p>
-        <p className="text-blue-600 dark:text-blue-400 font-semibold text-sm">{email}</p>
+        <p className="text-blue-600 dark:text-blue-400 font-semibold text-sm mt-1">{email}</p>
       </div>
 
+      {/* Error / Success Message */}
       {message && (
         <div className={`w-full p-3 rounded-xl border flex items-start gap-3 mb-6 animate-in fade-in slide-in-from-top-1 duration-200 ${
           message.ok ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'
         }`}>
-          {message.ok ? <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-red-600 mt-0.5" />}
-          <p className={`text-sm ${message.ok ? 'text-emerald-700' : 'text-red-700'}`}>{message.text}</p>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${message.ok ? 'bg-emerald-100' : 'bg-red-100'}`}>
+            {message.ok ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
+          </div>
+          <div className="pt-0.5">
+            <p className={`text-sm font-semibold ${message.ok ? 'text-emerald-800' : 'text-red-800'}`}>
+              {message.ok ? 'Sucesso' : 'Erro'}
+            </p>
+            <p className={`text-xs mt-0.5 ${message.ok ? 'text-emerald-600' : 'text-red-600'}`}>{message.text}</p>
+          </div>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="text-xs font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-wider mb-2 block">
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 ease-out fill-mode-both">
+        {/* Código de Verificação */}
+        <div className="space-y-1.5">
+          <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">
             Código de Verificação
           </label>
           <input
@@ -94,56 +105,62 @@ function VerifyContent() {
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
             placeholder="000000"
-            className="w-full h-14 text-center text-3xl font-mono font-bold tracking-[0.5em] rounded-xl border-2 border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-200 dark:placeholder:text-zinc-800"
+            className="w-full h-14 text-center text-3xl font-mono font-bold tracking-[0.5em] rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all duration-200 placeholder:text-slate-200 dark:placeholder:text-zinc-800 shadow-sm"
             autoFocus
           />
         </div>
 
+        {/* Submit Button */}
         <Button
           type="submit"
           disabled={code.length !== 6 || isPending}
-          className="w-full h-12 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-base font-semibold rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 transition-all duration-300"
+          className="w-full h-12 !mt-10 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-base font-semibold rounded-xl shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2"
         >
           {isPending ? (
-            <span className="flex items-center gap-2">
+            <>
               <Loader2 className="h-5 w-5 animate-spin" />
               Validando...
-            </span>
+            </>
           ) : (
             'Ativar minha Conta'
           )}
         </Button>
-
-        <div className="flex flex-col items-center gap-4 pt-4 border-t border-slate-100 dark:border-zinc-800">
-          <p className="text-sm text-slate-500 dark:text-zinc-500">
-            Não recebeu o código?
-          </p>
-          <div className="flex items-center gap-6">
-            <button
-              type="button"
-              onClick={() => {
-                setMessage(null);
-                startResend(async () => {
-                  const res = await resendCodeAction({ email });
-                  setMessage({ ok: res.ok, text: res.message });
-                });
-              }}
-              disabled={isResending}
-              className="text-sm text-blue-600 hover:text-blue-700 font-bold flex items-center gap-2 disabled:opacity-50 transition-colors uppercase tracking-wider"
-            >
-              {isResending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              Reenviar Código
-            </button>
-            
-            <div className="w-px h-4 bg-slate-200 dark:bg-zinc-800" />
-            
-            <Link href="/register" className="text-sm text-slate-500 hover:text-slate-700 font-medium flex items-center gap-1.5 transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-              Alterar e-mail
-            </Link>
-          </div>
-        </div>
       </form>
+
+      {/* Footer */}
+      <div className="mt-8 text-center pt-6 border-t border-slate-100 dark:border-zinc-800 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 ease-out fill-mode-both">
+        <p className="text-sm text-slate-500 dark:text-zinc-500 mb-4">
+          Não recebeu o código?
+        </p>
+        <div className="flex items-center justify-center gap-6">
+          <button
+            type="button"
+            onClick={() => {
+              setMessage(null);
+              startResend(async () => {
+                const res = await resendCodeAction({ email });
+                setMessage({ ok: res.ok, text: res.message });
+              });
+            }}
+            disabled={isResending}
+            className="inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline transition-colors gap-2 disabled:opacity-50"
+          >
+            {isResending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Reenviar Código
+          </button>
+          
+          <div className="w-px h-4 bg-slate-200 dark:bg-zinc-800" />
+          
+          <Link
+            href="/register"
+            prefetch={true}
+            className="inline-flex items-center text-sm font-medium text-slate-500 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-zinc-200 transition-colors gap-1.5"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Alterar e-mail
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
