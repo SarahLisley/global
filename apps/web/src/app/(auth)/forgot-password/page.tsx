@@ -133,6 +133,7 @@ function ForgotPasswordContent() {
       <div className="mt-8 text-center pt-6 border-t border-slate-100 dark:border-zinc-800 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 ease-out fill-mode-both">
         <Link
           href="/login"
+          prefetch={true}
           className="inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline transition-colors gap-2"
         >
           <ArrowLeft className="w-4 h-4" />

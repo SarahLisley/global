@@ -166,7 +166,7 @@ function ResetPasswordForm() {
         </Button>
 
         <Button asChild variant="ghost" className="w-full text-zinc-500 hover:text-white hover:bg-white/5">
-          <Link href="/login" className="flex items-center justify-center gap-2">
+          <Link href="/login" prefetch={true} className="flex items-center justify-center gap-2">
             <ArrowLeft className="w-4 h-4" />
             Voltar para Login
           </Link>
