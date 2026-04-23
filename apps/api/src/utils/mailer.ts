@@ -54,6 +54,9 @@ async function getTransporter(): Promise<nodemailer.Transporter> {
         user: SMTP_USER,
         pass: SMTP_PASS,
       },
+      tls: {
+        rejectUnauthorized: false,
+      },
     });
     console.log(`📧 SMTP configurado: ${SMTP_HOST}:${SMTP_PORT} (user: ${SMTP_USER})`);
     return transporter;

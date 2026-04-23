@@ -8,9 +8,9 @@ import { execute } from './src/db/query';
 const OWNER = process.env.ORACLE_USER || 'GLOBALHTESTE';
 
 async function createAdminUser() {
-  const email = 'admin@global.com';
-  const plainPassword = 'BravoAdmin2024';
-  const nome = 'Administrador Global (Bravo)';
+  const email = 'gestaodedados@globalhospitalar.com.br';
+  const plainPassword = 'Global@m1e2';
+  const nome = 'Gestão de Dados Global';
   const tipo = 'A'; // Admin
   // CGC pode ser o CNPJ da própria Global se necessário, ou nulo para admin geral
   const cgc = '00000000000100'; 

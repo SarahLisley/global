@@ -3,8 +3,8 @@ import { OWNER } from './src/utils/env';
 import bcrypt from 'bcrypt';
 
 async function checkUser() {
-  const email = 'saralisleyy@gmail.com';
-  const passwordToTest = '123456';
+  const email = 'gestaodedados@globalhospitalar.com.br';
+  const passwordToTest = 'Global@m1e2';
 
   try {
     const rows = await select<any>(
