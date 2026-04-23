@@ -44,7 +44,7 @@ const schema = z.object({
   email: z.string().email('Informe um e-mail válido'),
   confirmEmail: z.string().email('Confirme seu e-mail'),
   password: z.string().min(6, 'Mínimo de 6 caracteres'),
-  confirm: z.string().min(6),
+  confirm: z.string().min(6, 'Mínimo de 6 caracteres'),
 }).refine((d) => d.email === d.confirmEmail, {
   path: ['confirmEmail'],
   message: 'Os e-mails não coincidem',
